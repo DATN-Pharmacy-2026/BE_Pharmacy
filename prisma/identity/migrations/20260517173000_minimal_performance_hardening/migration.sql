@@ -1,0 +1,13 @@
+CREATE INDEX "User_status_idx" ON "User"("status");
+CREATE INDEX "User_createdAt_idx" ON "User"("createdAt");
+CREATE INDEX "Role_createdAt_idx" ON "Role"("createdAt");
+CREATE INDEX "Permission_module_idx" ON "Permission"("module");
+CREATE INDEX "Permission_action_idx" ON "Permission"("action");
+CREATE INDEX "UserRole_userId_idx" ON "UserRole"("userId");
+CREATE INDEX "UserRole_roleId_idx" ON "UserRole"("roleId");
+CREATE INDEX "RolePermission_roleId_idx" ON "RolePermission"("roleId");
+CREATE INDEX "RolePermission_permissionId_idx" ON "RolePermission"("permissionId");
+CREATE UNIQUE INDEX "RefreshToken_tokenHash_key" ON "RefreshToken"("tokenHash");
+CREATE INDEX "RefreshToken_revokedAt_idx" ON "RefreshToken"("revokedAt");
+CREATE INDEX "RefreshToken_expiresAt_idx" ON "RefreshToken"("expiresAt");
+CREATE INDEX "RefreshToken_createdAt_idx" ON "RefreshToken"("createdAt");

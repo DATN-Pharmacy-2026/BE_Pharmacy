@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client/notification"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("NOTIFICATION_DATABASE_URL")
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  WEBSOCKET
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model NotificationTemplate {
+  id              String              @id @default(uuid()) @db.Uuid
+  code            String              @unique
+  name            String
+  channel         NotificationChannel
+  subjectTemplate String?
+  bodyTemplate    String
+  isActive        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  events          NotificationEvent[]
+}
+
+model NotificationPreference {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @db.Uuid
+  channel   NotificationChannel
+  eventType String
+  isEnabled Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@unique([userId, channel, eventType])
+}
+
+model NotificationEvent {
+  id          String                @id @default(uuid()) @db.Uuid
+  userId      String?               @db.Uuid
+  branchId    String?               @db.Uuid
+  templateId  String?               @db.Uuid
+  eventType   String
+  channel     NotificationChannel
+  payload     Json
+  status      NotificationStatus
+  createdAt   DateTime              @default(now())
+  processedAt DateTime?
+  template    NotificationTemplate? @relation(fields: [templateId], references: [id])
+  logs        NotificationLog[]
+  emailLogs   EmailLog[]
+  webSocketEvents WebSocketEvent[]
+  smsLogs     SMSLog[]
+
+  @@index([userId, createdAt])
+  @@index([branchId, createdAt])
+  @@index([status, createdAt])
+}
+
+model NotificationLog {
+  id                  String             @id @default(uuid()) @db.Uuid
+  notificationEventId String             @db.Uuid
+  channel             NotificationChannel
+  recipient           String
+  status              NotificationStatus
+  provider            String?
+  errorMessage        String?
+  sentAt              DateTime?
+  createdAt           DateTime           @default(now())
+  notificationEvent   NotificationEvent  @relation(fields: [notificationEventId], references: [id])
+
+  @@index([notificationEventId])
+}
+
+model EmailLog {
+  id                  String             @id @default(uuid()) @db.Uuid
+  notificationEventId String             @db.Uuid
+  toEmail             String
+  subject             String
+  status              NotificationStatus
+  providerMessageId   String?
+  sentAt              DateTime?
+  createdAt           DateTime           @default(now())
+  notificationEvent   NotificationEvent  @relation(fields: [notificationEventId], references: [id])
+
+  @@index([notificationEventId])
+}
+
+model WebSocketEvent {
+  id                  String             @id @default(uuid()) @db.Uuid
+  notificationEventId String             @db.Uuid
+  userId              String?            @db.Uuid
+  branchId            String?            @db.Uuid
+  eventName           String
+  payload             Json
+  deliveredAt         DateTime?
+  createdAt           DateTime           @default(now())
+  notificationEvent   NotificationEvent  @relation(fields: [notificationEventId], references: [id])
+
+  @@index([userId])
+  @@index([branchId])
+  @@index([notificationEventId])
+}
+
+model SMSLog {
+  id                  String             @id @default(uuid()) @db.Uuid
+  notificationEventId String             @db.Uuid
+  phone               String
+  content             String
+  status              NotificationStatus
+  providerMessageId   String?
+  sentAt              DateTime?
+  createdAt           DateTime           @default(now())
+  notificationEvent   NotificationEvent  @relation(fields: [notificationEventId], references: [id])
+
+  @@index([notificationEventId])
+}

@@ -1,0 +1,18 @@
+CREATE INDEX "PurchaseOrder_status_idx" ON "PurchaseOrder"("status");
+CREATE INDEX "PurchaseOrder_createdAt_idx" ON "PurchaseOrder"("createdAt");
+CREATE INDEX "GoodsReceipt_status_idx" ON "GoodsReceipt"("status");
+CREATE INDEX "GoodsReceipt_createdAt_idx" ON "GoodsReceipt"("createdAt");
+CREATE INDEX "GoodsReceipt_purchaseOrderId_idx" ON "GoodsReceipt"("purchaseOrderId");
+CREATE INDEX "Batch_expiryDate_idx" ON "Batch"("expiryDate");
+CREATE INDEX "Batch_status_idx" ON "Batch"("status");
+CREATE INDEX "InventoryItem_updatedAt_idx" ON "InventoryItem"("updatedAt");
+CREATE INDEX "InventoryItem_branchId_warehouseId_idx" ON "InventoryItem"("branchId", "warehouseId");
+CREATE INDEX "StockMovement_createdAt_idx" ON "StockMovement"("createdAt");
+CREATE INDEX "StockTransfer_fromWarehouseId_idx" ON "StockTransfer"("fromWarehouseId");
+CREATE INDEX "StockTransfer_toWarehouseId_idx" ON "StockTransfer"("toWarehouseId");
+CREATE INDEX "StockTransfer_status_idx" ON "StockTransfer"("status");
+CREATE INDEX "StockTransfer_requestedAt_idx" ON "StockTransfer"("requestedAt");
+CREATE INDEX "POSOrder_status_idx" ON "POSOrder"("status");
+CREATE INDEX "Receipt_posOrderId_idx" ON "Receipt"("posOrderId");
+CREATE INDEX "Receipt_branchId_idx" ON "Receipt"("branchId");
+CREATE INDEX "Receipt_issuedAt_idx" ON "Receipt"("issuedAt");

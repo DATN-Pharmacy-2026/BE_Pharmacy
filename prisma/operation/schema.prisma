@@ -1,0 +1,758 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client/operation"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("OPERATION_DATABASE_URL")
+}
+
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StoreStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum WarehouseType {
+  CENTRAL
+  BRANCH
+  TRANSIT
+}
+
+enum WarehouseStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum LocationType {
+  STORAGE
+  PICKING
+  RECEIVING
+  SHIPPING
+}
+
+enum LocationStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum POSTerminalStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum POSSessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum GoodsReceiptStatus {
+  DRAFT
+  RECEIVED
+  CANCELLED
+}
+
+enum BatchStatus {
+  ACTIVE
+  QUARANTINED
+  EXPIRED
+}
+
+enum InventoryMovementType {
+  INITIAL_STOCK
+  INCREASE
+  DECREASE
+  ADJUSTMENT_INCREASE
+  ADJUSTMENT_DECREASE
+  TRANSFER_OUT
+  TRANSFER_IN
+  SALE_RESERVED
+  SALE_RELEASED
+  SALE_DECREASE
+}
+
+enum StockAdjustmentStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum StockTransferStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SHIPPED
+  RECEIVED
+  CANCELLED
+}
+
+enum ShipmentStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum AllocationOrderType {
+  POS_ORDER
+  ONLINE_ORDER
+}
+
+enum AllocationStatus {
+  RESERVED
+  PICKED
+  RELEASED
+  CONSUMED
+  CANCELLED
+}
+
+enum POSOrderStatus {
+  CREATED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  E_WALLET
+  COD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum VerificationResult {
+  VALID
+  INVALID
+  EXPIRED
+  NOT_FOUND
+}
+
+
+enum EventOutboxStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  CANCELED
+}
+
+enum EventInboxStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+  SKIPPED
+}
+
+model Company {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  taxCode   String?
+  phone     String?
+  email     String?
+  address   String?
+  status    CompanyStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  branches  Branch[]
+}
+
+model Branch {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  code      String   @unique
+  name      String
+  phone     String?
+  email     String?
+  address   String
+  province  String?
+  district  String?
+  ward      String?
+  status    BranchStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  company   Company  @relation(fields: [companyId], references: [id])
+  stores    Store[]
+  warehouses Warehouse[]
+  posTerminals POSTerminal[]
+  posSessions POSSession[]
+  posOrders POSOrder[]
+  receipts Receipt[]
+  barcodeVerifications BarcodeVerification[]
+}
+
+model Store {
+  id        String   @id @default(uuid()) @db.Uuid
+  branchId  String   @db.Uuid
+  code      String   @unique
+  name      String
+  address   String
+  phone     String?
+  status    StoreStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  branch    Branch   @relation(fields: [branchId], references: [id])
+  posTerminals POSTerminal[]
+  posSessions POSSession[]
+  posOrders POSOrder[]
+  receipts Receipt[]
+  barcodeVerifications BarcodeVerification[]
+}
+
+model Warehouse {
+  id        String   @id @default(uuid()) @db.Uuid
+  branchId  String?  @db.Uuid
+  code      String   @unique
+  name      String
+  type      WarehouseType
+  address   String?
+  isCentral Boolean  @default(false)
+  status    WarehouseStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  locations WarehouseLocation[]
+  inventories Inventory[]
+  inventoryItems InventoryItem[]
+  stockMovements StockMovement[]
+}
+
+model WarehouseLocation {
+  id          String         @id @default(uuid()) @db.Uuid
+  warehouseId String         @db.Uuid
+  code        String
+  name        String
+  type        LocationType
+  status      LocationStatus
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  warehouse   Warehouse      @relation(fields: [warehouseId], references: [id])
+  inventories Inventory[]
+  stockMovements StockMovement[]
+  inventoryItems InventoryItem[]
+
+  @@unique([warehouseId, code])
+}
+
+model Inventory {
+  id               String             @id @default(uuid()) @db.Uuid
+  tenantId         String             @db.Uuid
+  warehouseId      String             @db.Uuid
+  locationId       String?            @db.Uuid
+  productId        String             @db.Uuid
+  quantity         Int
+  reservedQuantity Int                @default(0)
+  availableQuantity Int
+  minQuantity      Int?
+  maxQuantity      Int?
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  warehouse        Warehouse          @relation(fields: [warehouseId], references: [id])
+  location         WarehouseLocation? @relation(fields: [locationId], references: [id])
+
+  @@index([tenantId, warehouseId])
+  @@index([tenantId, productId])
+  @@index([tenantId, locationId])
+  @@unique([tenantId, warehouseId, locationId, productId])
+}
+
+model POSTerminal {
+  id           String           @id @default(uuid()) @db.Uuid
+  branchId     String           @db.Uuid
+  storeId      String           @db.Uuid
+  code         String           @unique
+  name         String
+  deviceSerial String?
+  status       POSTerminalStatus
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  branch       Branch           @relation(fields: [branchId], references: [id])
+  store        Store            @relation(fields: [storeId], references: [id])
+  posSessions  POSSession[]
+  posOrders    POSOrder[]
+}
+
+model POSSession {
+  id            String           @id @default(uuid()) @db.Uuid
+  branchId      String           @db.Uuid
+  storeId       String           @db.Uuid
+  posTerminalId String           @db.Uuid
+  cashierUserId String           @db.Uuid
+  openingCash   Decimal          @db.Decimal(18, 2)
+  closingCash   Decimal?         @db.Decimal(18, 2)
+  openedAt      DateTime
+  closedAt      DateTime?
+  status        POSSessionStatus
+  posTerminal   POSTerminal      @relation(fields: [posTerminalId], references: [id])
+  branch        Branch           @relation(fields: [branchId], references: [id])
+  store         Store            @relation(fields: [storeId], references: [id])
+  posOrders     POSOrder[]
+
+  @@index([cashierUserId])
+}
+
+model Supplier {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique
+  name      String
+  taxCode   String?
+  phone     String?
+  email     String?
+  address   String?
+  status    SupplierStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  purchaseOrders PurchaseOrder[]
+  goodsReceipts GoodsReceipt[]
+  batches Batch[]
+}
+
+model PurchaseOrder {
+  id               String              @id @default(uuid()) @db.Uuid
+  poNo             String              @unique
+  supplierId       String              @db.Uuid
+  warehouseId      String              @db.Uuid
+  branchId         String?             @db.Uuid
+  status           PurchaseOrderStatus
+  orderedByUserId  String              @db.Uuid
+  approvedByUserId String?             @db.Uuid
+  expectedDate     DateTime?
+  totalAmount      Decimal             @db.Decimal(18, 2)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  supplier         Supplier            @relation(fields: [supplierId], references: [id])
+  items            PurchaseOrderItem[]
+  goodsReceipts    GoodsReceipt[]
+
+  @@index([warehouseId])
+  @@index([branchId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PurchaseOrderItem {
+  id                  String        @id @default(uuid()) @db.Uuid
+  purchaseOrderId     String        @db.Uuid
+  productId           String        @db.Uuid
+  sku                 String?
+  productNameSnapshot String
+  quantity            Int
+  unitCost            Decimal       @db.Decimal(18, 2)
+  totalCost           Decimal       @db.Decimal(18, 2)
+  createdAt           DateTime      @default(now())
+  purchaseOrder       PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+
+  @@index([productId])
+}
+
+model GoodsReceipt {
+  id               String            @id @default(uuid()) @db.Uuid
+  receiptNo        String            @unique
+  purchaseOrderId  String?           @db.Uuid
+  supplierId       String?           @db.Uuid
+  warehouseId      String            @db.Uuid
+  branchId         String?           @db.Uuid
+  receivedByUserId String            @db.Uuid
+  status           GoodsReceiptStatus
+  receivedAt       DateTime?
+  note             String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  purchaseOrder    PurchaseOrder?    @relation(fields: [purchaseOrderId], references: [id])
+  supplier         Supplier?         @relation(fields: [supplierId], references: [id])
+  items            GoodsReceiptItem[]
+
+  @@index([warehouseId])
+  @@index([branchId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([purchaseOrderId])
+}
+
+model GoodsReceiptItem {
+  id              String       @id @default(uuid()) @db.Uuid
+  goodsReceiptId  String       @db.Uuid
+  productId       String       @db.Uuid
+  batchId         String?      @db.Uuid
+  batchNo         String
+  expiryDate      DateTime
+  manufactureDate DateTime?
+  quantity        Int
+  unitCost        Decimal      @db.Decimal(18, 2)
+  createdAt       DateTime     @default(now())
+  goodsReceipt    GoodsReceipt @relation(fields: [goodsReceiptId], references: [id])
+  batch           Batch?       @relation(fields: [batchId], references: [id])
+
+  @@index([productId])
+}
+
+model Batch {
+  id              String      @id @default(uuid()) @db.Uuid
+  productId       String      @db.Uuid
+  batchNo         String
+  manufactureDate DateTime?
+  expiryDate      DateTime
+  supplierId      String?     @db.Uuid
+  status          BatchStatus
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  supplier        Supplier?   @relation(fields: [supplierId], references: [id])
+  inventoryItems  InventoryItem[]
+  goodsReceiptItems GoodsReceiptItem[]
+
+  @@unique([productId, batchNo])
+  @@index([productId, expiryDate])
+  @@index([expiryDate])
+  @@index([status])
+}
+
+model InventoryItem {
+  id                String             @id @default(uuid()) @db.Uuid
+  productId         String             @db.Uuid
+  batchId           String             @db.Uuid
+  warehouseId       String             @db.Uuid
+  locationId        String?            @db.Uuid
+  branchId          String?            @db.Uuid
+  quantityOnHand    Int
+  quantityReserved  Int
+  quantityAvailable Int
+  unitCost          Decimal?           @db.Decimal(18, 2)
+  expiryDate        DateTime
+  updatedAt         DateTime           @updatedAt
+  batch             Batch              @relation(fields: [batchId], references: [id])
+  warehouse         Warehouse          @relation(fields: [warehouseId], references: [id])
+  location          WarehouseLocation? @relation(fields: [locationId], references: [id])
+
+  @@index([productId, warehouseId])
+  @@index([productId, warehouseId, expiryDate])
+  @@index([batchId])
+  @@index([warehouseId, expiryDate])
+  @@index([branchId])
+  @@index([updatedAt])
+  @@index([branchId, warehouseId])
+  @@unique([productId, batchId, warehouseId, locationId])
+}
+
+model StockMovement {
+  id              String                @id @default(uuid()) @db.Uuid
+  tenantId        String                @db.Uuid
+  productId       String                @db.Uuid
+  warehouseId     String?               @db.Uuid
+  locationId      String?               @db.Uuid
+  movementType    InventoryMovementType
+  quantity        Int
+  beforeQuantity  Int
+  afterQuantity   Int
+  referenceType   String?
+  referenceId     String?
+  reason          String?
+  createdByUserId String                @db.Uuid
+  createdAt       DateTime              @default(now())
+  warehouse       Warehouse?            @relation(fields: [warehouseId], references: [id])
+  location        WarehouseLocation?    @relation(fields: [locationId], references: [id])
+
+  @@index([tenantId, productId, createdAt])
+  @@index([tenantId, warehouseId, createdAt])
+  @@index([tenantId, locationId, createdAt])
+  @@index([referenceType, referenceId])
+  @@index([createdAt])
+}
+
+model StockAdjustment {
+  id               String                @id @default(uuid()) @db.Uuid
+  warehouseId      String                @db.Uuid
+  branchId         String?               @db.Uuid
+  reason           String
+  status           StockAdjustmentStatus
+  createdByUserId  String                @db.Uuid
+  approvedByUserId String?               @db.Uuid
+  createdAt        DateTime              @default(now())
+  approvedAt       DateTime?
+  items            StockAdjustmentItem[]
+
+  @@index([warehouseId])
+  @@index([branchId])
+}
+
+model StockAdjustmentItem {
+  id                String          @id @default(uuid()) @db.Uuid
+  stockAdjustmentId String          @db.Uuid
+  productId         String          @db.Uuid
+  batchId           String?         @db.Uuid
+  oldQuantity       Int
+  newQuantity       Int
+  difference        Int
+  stockAdjustment   StockAdjustment @relation(fields: [stockAdjustmentId], references: [id])
+
+  @@index([productId])
+}
+
+model StockTransfer {
+  id               String              @id @default(uuid()) @db.Uuid
+  transferNo       String              @unique
+  fromWarehouseId  String              @db.Uuid
+  toWarehouseId    String              @db.Uuid
+  fromBranchId     String?             @db.Uuid
+  toBranchId       String?             @db.Uuid
+  requestedByUserId String             @db.Uuid
+  approvedByUserId String?             @db.Uuid
+  status           StockTransferStatus
+  requestedAt      DateTime
+  approvedAt       DateTime?
+  shippedAt        DateTime?
+  receivedAt       DateTime?
+  items            StockTransferItem[]
+  shipments        Shipment[]
+
+  @@index([fromWarehouseId])
+  @@index([toWarehouseId])
+  @@index([status])
+  @@index([requestedAt])
+}
+
+model StockTransferItem {
+  id              String        @id @default(uuid()) @db.Uuid
+  stockTransferId String        @db.Uuid
+  productId       String        @db.Uuid
+  batchId         String?       @db.Uuid
+  requestedQty    Int
+  shippedQty      Int?
+  receivedQty     Int?
+  stockTransfer   StockTransfer @relation(fields: [stockTransferId], references: [id])
+
+  @@index([productId])
+}
+
+model Shipment {
+  id               String         @id @default(uuid()) @db.Uuid
+  stockTransferId  String         @db.Uuid
+  shipmentNo       String         @unique
+  carrierName      String?
+  trackingNo       String?
+  status           ShipmentStatus
+  shippedByUserId  String?        @db.Uuid
+  receivedByUserId String?        @db.Uuid
+  shippedAt        DateTime?
+  deliveredAt      DateTime?
+  createdAt        DateTime       @default(now())
+  stockTransfer    StockTransfer  @relation(fields: [stockTransferId], references: [id])
+}
+
+model FEFOAllocation {
+  id           String            @id @default(uuid()) @db.Uuid
+  productId    String            @db.Uuid
+  orderType    AllocationOrderType
+  orderId      String            @db.Uuid
+  orderItemId  String            @db.Uuid
+  warehouseId  String            @db.Uuid
+  branchId     String?           @db.Uuid
+  batchId      String            @db.Uuid
+  expiryDate   DateTime
+  allocatedQty Int
+  status       AllocationStatus
+  createdAt    DateTime          @default(now())
+
+  @@index([productId, warehouseId, expiryDate])
+  @@index([orderType, orderId])
+  @@index([branchId])
+}
+
+model POSOrder {
+  id             String         @id @default(uuid()) @db.Uuid
+  orderNo        String         @unique
+  branchId       String         @db.Uuid
+  storeId        String         @db.Uuid
+  posTerminalId  String         @db.Uuid
+  posSessionId   String         @db.Uuid
+  cashierUserId  String         @db.Uuid
+  customerUserId String?        @db.Uuid
+  status         POSOrderStatus
+  subtotal       Decimal        @db.Decimal(18, 2)
+  discountTotal  Decimal        @db.Decimal(18, 2)
+  taxTotal       Decimal        @db.Decimal(18, 2)
+  grandTotal     Decimal        @db.Decimal(18, 2)
+  createdAt      DateTime       @default(now())
+  branch         Branch         @relation(fields: [branchId], references: [id])
+  store          Store          @relation(fields: [storeId], references: [id])
+  posTerminal    POSTerminal    @relation(fields: [posTerminalId], references: [id])
+  posSession     POSSession     @relation(fields: [posSessionId], references: [id])
+  items          POSOrderItem[]
+  payments       POSPayment[]
+  receipt        Receipt?
+
+  @@index([branchId, createdAt])
+  @@index([cashierUserId, createdAt])
+  @@index([customerUserId])
+  @@index([status])
+}
+
+model POSOrderItem {
+  id                  String    @id @default(uuid()) @db.Uuid
+  posOrderId          String    @db.Uuid
+  productId           String    @db.Uuid
+  batchId             String?   @db.Uuid
+  sku                 String?
+  productNameSnapshot String
+  quantity            Int
+  unitPrice           Decimal   @db.Decimal(18, 2)
+  discountAmount      Decimal   @db.Decimal(18, 2)
+  totalAmount         Decimal   @db.Decimal(18, 2)
+  posOrder            POSOrder  @relation(fields: [posOrderId], references: [id])
+
+  @@index([productId])
+}
+
+model POSPayment {
+  id         String        @id @default(uuid()) @db.Uuid
+  posOrderId String        @db.Uuid
+  method     PaymentMethod
+  amount     Decimal       @db.Decimal(18, 2)
+  status     PaymentStatus
+  paidAt     DateTime?
+  posOrder   POSOrder      @relation(fields: [posOrderId], references: [id])
+}
+
+model Receipt {
+  id           String    @id @default(uuid()) @db.Uuid
+  receiptNo    String    @unique
+  posOrderId   String?   @unique @db.Uuid
+  onlineOrderId String?  @db.Uuid
+  branchId     String    @db.Uuid
+  storeId      String?   @db.Uuid
+  issuedByUserId String  @db.Uuid
+  totalAmount  Decimal   @db.Decimal(18, 2)
+  issuedAt     DateTime
+  posOrder     POSOrder? @relation(fields: [posOrderId], references: [id])
+  branch       Branch    @relation(fields: [branchId], references: [id])
+  store        Store?    @relation(fields: [storeId], references: [id])
+
+  @@index([onlineOrderId])
+  @@index([posOrderId])
+  @@index([branchId])
+  @@index([issuedAt])
+}
+
+model BarcodeVerification {
+  id               String             @id @default(uuid()) @db.Uuid
+  branchId         String             @db.Uuid
+  storeId          String?            @db.Uuid
+  warehouseId      String?            @db.Uuid
+  productId        String?            @db.Uuid
+  batchId          String?            @db.Uuid
+  barcode          String
+  result           VerificationResult
+  verifiedByUserId String             @db.Uuid
+  verifiedAt       DateTime
+  branch           Branch             @relation(fields: [branchId], references: [id])
+  store            Store?             @relation(fields: [storeId], references: [id])
+
+  @@index([warehouseId])
+  @@index([productId])
+  @@index([batchId])
+}
+
+model EventOutbox {
+  id            String           @id @default(uuid()) @db.Uuid
+  eventId       String           @unique @db.Uuid
+  eventType     String
+  eventVersion  Int              @default(1)
+  aggregateType String
+  aggregateId   String
+  sourceService String
+  sourceModule  String?
+  correlationId String?
+  causationId   String?
+  idempotencyKey String?         @unique
+  branchId      String?          @db.Uuid
+  warehouseId   String?          @db.Uuid
+  actorUserId   String?          @db.Uuid
+  payload       Json
+  metadata      Json?
+  status        EventOutboxStatus @default(PENDING)
+  publishedAt   DateTime?
+  failedAt      DateTime?
+  attempts      Int              @default(0)
+  lastError     String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([eventType])
+  @@index([aggregateType, aggregateId])
+  @@index([sourceService])
+  @@index([status])
+  @@index([createdAt])
+  @@index([publishedAt])
+  @@index([correlationId])
+  @@index([branchId])
+  @@index([warehouseId])
+}
+
+model EventInbox {
+  id            String          @id @default(uuid()) @db.Uuid
+  eventId       String          @db.Uuid
+  eventType     String
+  eventVersion  Int
+  sourceService String
+  consumerService String
+  consumerName  String
+  aggregateType String?
+  aggregateId   String?
+  correlationId String?
+  causationId   String?
+  idempotencyKey String?
+  payload       Json?
+  status        EventInboxStatus @default(RECEIVED)
+  processedAt   DateTime?
+  failedAt      DateTime?
+  attempts      Int             @default(0)
+  lastError     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([eventId, consumerService, consumerName])
+  @@index([eventType])
+  @@index([sourceService])
+  @@index([consumerService])
+  @@index([consumerName])
+  @@index([status])
+  @@index([createdAt])
+  @@index([processedAt])
+  @@index([correlationId])
+  @@index([aggregateType, aggregateId])
+}

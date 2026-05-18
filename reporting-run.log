@@ -1,0 +1,82 @@
+
+> pharma-backend@0.1.0 start:reporting
+> nest start reporting-setting-service
+
+webpack 5.106.0 compiled [1m[32msuccessfully[39m[22m in 3020 ms
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mLoggerModule dependencies initialized[39m[38;5;3m +12ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mReportingPrismaModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +5ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mSettingsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDashboardModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mKpisModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuditLogsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mReportsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mReportExportsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mHealthController {/health}:[39m[38;5;3m +30ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/health, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mSettingsController {/api/settings}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/settings, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/settings/key/:key, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/settings/effective/:key, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/settings/:id, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/settings, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/settings/key/:key, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/settings/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/settings/:id, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuditLogsController {/api/audit-logs}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit-logs, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit-logs/entity/:entityType/:entityId, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit-logs/user/:actorUserId, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit-logs/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/audit-logs, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mDashboardController {/api/dashboard}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/dashboard/overview, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/dashboard/snapshots, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/dashboard/snapshots/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/dashboard/snapshots, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mKpisController {/api/kpis}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/kpis, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/kpis/metric/:metricCode, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/kpis/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/kpis, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/kpis/bulk, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mReportsController {/api/reports}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/types, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/summary, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/:id/status, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/reports/:id/process, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mReportExportsController {/api/report-exports}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/report-exports, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/report-exports/report/:reportJobId, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/report-exports/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/report-exports, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 16868  - [39m17/05/2026, 15:12:32 [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +33ms[39m
+[31m[Nest] 16868  - [39m17/05/2026, 15:12:32 [31m  ERROR[39m [38;5;3m[NestApplication] [39m[31mError: listen EADDRINUSE: address already in use :::3004[39m[38;5;3m +2ms[39m
+node:net:1948
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1948:16)
+    at listenInCluster (node:net:2005:12)
+    at Server.listen (node:net:2110:7)
+    at ExpressAdapter.listen (C:\Users\LongLe\Documents\PharmaProject\backend\node_modules\@nestjs\platform-express\adapters\express-adapter.js:115:32)
+    at C:\Users\LongLe\Documents\PharmaProject\backend\node_modules\@nestjs\core\nest-application.js:188:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (C:\Users\LongLe\Documents\PharmaProject\backend\node_modules\@nestjs\core\nest-application.js:178:16)
+    at async bootstrapHttpApp (C:\Users\LongLe\Documents\PharmaProject\backend\dist\apps\reporting-setting-service\main.js:65:5)
+    at async bootstrap (C:\Users\LongLe\Documents\PharmaProject\backend\dist\apps\reporting-setting-service\main.js:3807:5) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3004
+}
+
+Node.js v24.14.0

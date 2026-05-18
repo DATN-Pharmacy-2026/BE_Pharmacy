@@ -1,0 +1,495 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client/commerce"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("COMMERCE_DATABASE_URL")
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+}
+
+enum CartStatus {
+  ACTIVE
+  CHECKED_OUT
+  ABANDONED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  PARTIALLY_FULFILLED
+  FULFILLED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  E_WALLET
+  COD
+}
+
+enum PaymentGatewayProvider {
+  VNPAY
+  MOMO
+  ZALOPAY
+}
+
+enum PaymentGatewayTransactionStatus {
+  INITIATED
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+  EXPIRED
+  REFUNDED
+  UNKNOWN
+}
+
+
+enum EventOutboxStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  CANCELED
+}
+
+enum EventInboxStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+  SKIPPED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum CouponStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+model Category {
+  id          String     @id @default(uuid()) @db.Uuid
+  parentId    String?    @db.Uuid
+  name        String
+  slug        String     @unique
+  description String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  products    Product[]
+
+  @@index([parentId])
+  @@index([isActive])
+}
+
+model Brand {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String    @unique
+  country   String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@index([isActive])
+}
+
+model Product {
+  id                    String          @id @default(uuid()) @db.Uuid
+  categoryId            String          @db.Uuid
+  brandId               String?         @db.Uuid
+  sku                   String          @unique
+  barcode               String?
+  name                  String
+  slug                  String          @unique
+  description           String?
+  activeIngredient      String?
+  dosageForm            String?
+  strength              String?
+  registrationNumber    String?
+  requiresPrescription  Boolean         @default(false)
+  unit                  String
+  basePrice             Decimal         @db.Decimal(18, 2)
+  status                ProductStatus
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  deletedAt             DateTime?
+  category              Category        @relation(fields: [categoryId], references: [id])
+  brand                 Brand?          @relation(fields: [brandId], references: [id])
+  images                ProductImage[]
+  variants              ProductVariant[]
+  cartItems             CartItem[]
+  onlineOrderItems      OnlineOrderItem[]
+  reviews               Review[]
+
+  @@index([barcode])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([categoryId, status])
+  @@index([brandId, status])
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  url       String
+  alt       String?
+  sortOrder Int
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  sku       String   @unique
+  name      String
+  unit      String
+  price     Decimal  @db.Decimal(18, 2)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id])
+  cartItems CartItem[]
+  onlineOrderItems OnlineOrderItem[]
+}
+
+model Cart {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String?    @db.Uuid
+  sessionId String?
+  branchId  String?    @db.Uuid
+  status    CartStatus
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+
+  @@index([userId])
+  @@index([branchId])
+  @@index([status])
+  @@index([userId, status])
+}
+
+model CartItem {
+  id        String          @id @default(uuid()) @db.Uuid
+  cartId    String          @db.Uuid
+  productId String          @db.Uuid
+  variantId String?         @db.Uuid
+  quantity  Int
+  unitPrice Decimal         @db.Decimal(18, 2)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  cart      Cart            @relation(fields: [cartId], references: [id])
+  product   Product         @relation(fields: [productId], references: [id])
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@unique([cartId, productId, variantId])
+  @@index([cartId])
+  @@index([productId])
+}
+
+model OnlineOrder {
+  id                  String            @id @default(uuid()) @db.Uuid
+  orderNo             String            @unique
+  userId              String?           @db.Uuid
+  branchId            String?           @db.Uuid
+  assignedWarehouseId String?           @db.Uuid
+  status              OrderStatus
+  paymentStatus       PaymentStatus
+  fulfillmentStatus   FulfillmentStatus
+  subtotal            Decimal           @db.Decimal(18, 2)
+  discountTotal       Decimal           @db.Decimal(18, 2)
+  shippingFee         Decimal           @db.Decimal(18, 2)
+  grandTotal          Decimal           @db.Decimal(18, 2)
+  customerName        String
+  customerPhone       String
+  shippingAddress     String
+  note                String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  items               OnlineOrderItem[]
+  payments            Payment[]
+  gatewayTransactions PaymentGatewayTransaction[]
+  couponUsages        CouponUsage[]
+
+  @@index([userId, createdAt])
+  @@index([branchId, createdAt])
+  @@index([status, createdAt])
+  @@index([assignedWarehouseId])
+  @@index([paymentStatus, createdAt])
+  @@index([createdAt])
+}
+
+model OnlineOrderItem {
+  id                  String          @id @default(uuid()) @db.Uuid
+  onlineOrderId       String          @db.Uuid
+  productId           String          @db.Uuid
+  variantId           String?         @db.Uuid
+  sku                 String?
+  productNameSnapshot String
+  quantity            Int
+  unitPrice           Decimal         @db.Decimal(18, 2)
+  discountAmount      Decimal         @db.Decimal(18, 2)
+  totalAmount         Decimal         @db.Decimal(18, 2)
+  onlineOrder         OnlineOrder     @relation(fields: [onlineOrderId], references: [id])
+  product             Product         @relation(fields: [productId], references: [id])
+  variant             ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([onlineOrderId])
+  @@index([productId])
+}
+
+model Payment {
+  id            String        @id @default(uuid()) @db.Uuid
+  onlineOrderId String        @db.Uuid
+  method        PaymentMethod
+  provider      String?
+  transactionNo String?
+  amount        Decimal       @db.Decimal(18, 2)
+  status        PaymentStatus
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  onlineOrder   OnlineOrder   @relation(fields: [onlineOrderId], references: [id])
+  gatewayTransactions PaymentGatewayTransaction[]
+
+  @@index([onlineOrderId])
+  @@index([status])
+  @@index([method])
+  @@index([createdAt])
+}
+
+model PaymentGatewayTransaction {
+  id                    String                          @id @default(uuid()) @db.Uuid
+  paymentId             String?                         @db.Uuid
+  orderId               String?                         @db.Uuid
+  provider              PaymentGatewayProvider
+  providerOrderId       String
+  providerTransactionId String?
+  requestId             String
+  idempotencyKey        String?
+  amount                Decimal                         @db.Decimal(18, 2)
+  currency              String                          @default("VND")
+  status                PaymentGatewayTransactionStatus @default(INITIATED)
+  paymentUrl            String?
+  qrCodeUrl             String?
+  deeplink              String?
+  appLink               String?
+  returnUrl             String?
+  ipnUrl                String?
+  rawRequest            Json?
+  rawResponse           Json?
+  verifiedPayload       Json?
+  lastCallbackAt        DateTime?
+  paidAt                DateTime?
+  failedAt              DateTime?
+  expiredAt             DateTime?
+  syncedAt              DateTime?
+  errorCode             String?
+  errorMessage          String?
+  branchId              String?                         @db.Uuid
+  warehouseId           String?                         @db.Uuid
+  customerUserId        String?                         @db.Uuid
+  createdAt             DateTime                        @default(now())
+  updatedAt             DateTime                        @updatedAt
+  payment               Payment?                        @relation(fields: [paymentId], references: [id])
+  order                 OnlineOrder?                    @relation(fields: [orderId], references: [id])
+  callbackLogs          PaymentGatewayCallbackLog[]
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([provider])
+  @@index([providerOrderId])
+  @@index([providerTransactionId])
+  @@index([requestId])
+  @@index([status])
+  @@index([branchId])
+  @@index([warehouseId])
+  @@index([customerUserId])
+  @@index([createdAt])
+  @@unique([provider, providerOrderId])
+  @@unique([provider, requestId])
+  @@unique([idempotencyKey])
+}
+
+model PaymentGatewayCallbackLog {
+  id               String                 @id @default(uuid()) @db.Uuid
+  transactionId    String?                @db.Uuid
+  provider         PaymentGatewayProvider
+  type             String
+  payload          Json
+  headers          Json?
+  signatureValid   Boolean                @default(false)
+  processed        Boolean                @default(false)
+  processingResult Json?
+  errorMessage     String?
+  receivedAt       DateTime               @default(now())
+  createdAt        DateTime               @default(now())
+  transaction      PaymentGatewayTransaction? @relation(fields: [transactionId], references: [id])
+
+  @@index([transactionId])
+  @@index([provider])
+  @@index([type])
+  @@index([signatureValid])
+  @@index([processed])
+  @@index([receivedAt])
+}
+
+model Review {
+  id        String       @id @default(uuid()) @db.Uuid
+  productId String       @db.Uuid
+  userId    String       @db.Uuid
+  rating    Int
+  content   String?
+  status    ReviewStatus
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  product   Product      @relation(fields: [productId], references: [id])
+
+  @@index([productId, userId])
+  @@index([rating])
+  @@index([createdAt])
+  @@index([productId, createdAt])
+}
+
+model Coupon {
+  id                String        @id @default(uuid()) @db.Uuid
+  code              String        @unique
+  name              String
+  discountType      DiscountType
+  discountValue     Decimal       @db.Decimal(18, 2)
+  minOrderAmount    Decimal?      @db.Decimal(18, 2)
+  maxDiscountAmount Decimal?      @db.Decimal(18, 2)
+  usageLimit        Int?
+  startsAt          DateTime
+  endsAt            DateTime
+  status            CouponStatus
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  usages            CouponUsage[]
+
+  @@index([status])
+  @@index([startsAt])
+  @@index([endsAt])
+}
+
+model CouponUsage {
+  id            String      @id @default(uuid()) @db.Uuid
+  couponId      String      @db.Uuid
+  userId        String?     @db.Uuid
+  onlineOrderId String      @db.Uuid
+  usedAt        DateTime
+  coupon        Coupon      @relation(fields: [couponId], references: [id])
+  onlineOrder   OnlineOrder @relation(fields: [onlineOrderId], references: [id])
+
+  @@index([userId])
+}
+
+model EventOutbox {
+  id            String           @id @default(uuid()) @db.Uuid
+  eventId       String           @unique @db.Uuid
+  eventType     String
+  eventVersion  Int              @default(1)
+  aggregateType String
+  aggregateId   String
+  sourceService String
+  sourceModule  String?
+  correlationId String?
+  causationId   String?
+  idempotencyKey String?         @unique
+  branchId      String?          @db.Uuid
+  warehouseId   String?          @db.Uuid
+  actorUserId   String?          @db.Uuid
+  payload       Json
+  metadata      Json?
+  status        EventOutboxStatus @default(PENDING)
+  publishedAt   DateTime?
+  failedAt      DateTime?
+  attempts      Int              @default(0)
+  lastError     String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([eventType])
+  @@index([aggregateType, aggregateId])
+  @@index([sourceService])
+  @@index([status])
+  @@index([createdAt])
+  @@index([publishedAt])
+  @@index([correlationId])
+  @@index([branchId])
+  @@index([warehouseId])
+}
+
+model EventInbox {
+  id            String          @id @default(uuid()) @db.Uuid
+  eventId       String          @db.Uuid
+  eventType     String
+  eventVersion  Int
+  sourceService String
+  consumerService String
+  consumerName  String
+  aggregateType String?
+  aggregateId   String?
+  correlationId String?
+  causationId   String?
+  idempotencyKey String?
+  payload       Json?
+  status        EventInboxStatus @default(RECEIVED)
+  processedAt   DateTime?
+  failedAt      DateTime?
+  attempts      Int             @default(0)
+  lastError     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([eventId, consumerService, consumerName])
+  @@index([eventType])
+  @@index([sourceService])
+  @@index([consumerService])
+  @@index([consumerName])
+  @@index([status])
+  @@index([createdAt])
+  @@index([processedAt])
+  @@index([correlationId])
+  @@index([aggregateType, aggregateId])
+}

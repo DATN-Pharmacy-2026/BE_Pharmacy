@@ -1,0 +1,10 @@
+CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
+CREATE INDEX "AuditLog_serviceName_module_createdAt_idx" ON "AuditLog"("serviceName", "module", "createdAt");
+CREATE INDEX "AuditLog_branchId_createdAt_idx" ON "AuditLog"("branchId", "createdAt");
+CREATE INDEX "ReportJob_status_createdAt_idx" ON "ReportJob"("status", "createdAt");
+CREATE INDEX "ReportJob_reportType_idx" ON "ReportJob"("reportType");
+CREATE INDEX "ReportExport_reportJobId_idx" ON "ReportExport"("reportJobId");
+CREATE INDEX "ReportExport_fileType_idx" ON "ReportExport"("fileType");
+CREATE INDEX "ReportExport_createdAt_idx" ON "ReportExport"("createdAt");
+CREATE INDEX "NotificationEvent_recipientUserId_status_createdAt_idx" ON "NotificationEvent"("recipientUserId", "status", "createdAt");
+CREATE INDEX "NotificationEvent_branchId_status_createdAt_idx" ON "NotificationEvent"("branchId", "status", "createdAt");

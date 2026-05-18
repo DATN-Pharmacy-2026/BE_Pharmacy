@@ -1,0 +1,2 @@
+storage/report-exports/*
+!storage/report-exports/.gitkeep

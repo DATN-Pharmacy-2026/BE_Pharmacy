@@ -1,0 +1,418 @@
+# Pharma Backend Monorepo
+
+NestJS monorepo for the multi-branch Pharmacy ERP + Ecommerce + POS platform.
+
+## Frontend Rule
+React frontend must call backend only through API Gateway.
+
+Frontend must NOT call internal services directly:
+- `identity-service`
+- `commerce-service`
+- `operation-service`
+- `reporting-setting-service`
+- `notification-service`
+
+## Architecture Summary
+
+- Microservices:
+  - `gateway`
+  - `identity-service`
+  - `commerce-service`
+  - `operation-service`
+  - `reporting-setting-service`
+  - `notification-service`
+- Shared libs: `libs/common`, `libs/config`, `libs/database`, `libs/logger`, `libs/auth`, `libs/contracts`
+- Event libs: `libs/event-contracts`, `libs/event-bus`
+- Database: PostgreSQL + Prisma (modular by service)
+- ERD source of truth: `pharmacy_microservices_database_erd.puml`
+
+## Service Docs
+
+- [Gateway](./apps/gateway/README.md)
+- [Identity Service](./apps/identity-service/README.md)
+- [Commerce Service](./apps/commerce-service/README.md)
+- [Operation Service](./apps/operation-service/README.md)
+- [Reporting Setting Service](./apps/reporting-setting-service/README.md)
+- [Notification Service](./apps/notification-service/README.md)
+
+## Database ERD
+
+Source of truth:
+
+- [pharmacy_microservices_database_erd.puml](./pharmacy_microservices_database_erd.puml)
+
+Preview:
+![Pharmacy Microservices Database ERD](./pharmacy_microservices_database_erd.png)
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env
+```
+
+## Local Infrastructure (Docker)
+
+Start infrastructure:
+
+```bash
+docker compose up -d
+```
+
+Stop infrastructure:
+
+```bash
+docker compose down
+```
+
+Shortcut scripts:
+
+```bash
+npm run docker:up
+npm run docker:down
+npm run docker:logs
+npm run docker:restart
+```
+
+PostgreSQL:
+
+- Host: `localhost`
+- Port: `5432`
+- User: `postgres`
+- Password: `postgres`
+- Databases auto-created:
+  - `pharmacy_identity`
+  - `pharmacy_commerce`
+  - `pharmacy_operation`
+  - `pharmacy_reporting`
+  - `pharmacy_notification`
+
+pgAdmin:
+
+- URL: `http://localhost:5050`
+- Email: `admin@pharmacy.local`
+- Password: `admin123`
+
+After infrastructure is up, run migrations:
+
+```bash
+npm run prisma:migrate:all
+```
+
+## Environment
+Core ports:
+- `GATEWAY_PORT=3000`
+- `IDENTITY_SERVICE_PORT=3001`
+- `COMMERCE_SERVICE_PORT=3002`
+- `OPERATION_SERVICE_PORT=3003`
+- `REPORTING_SETTING_SERVICE_PORT=3004`
+- `NOTIFICATION_SERVICE_PORT=3005`
+
+Database URLs:
+- `IDENTITY_DATABASE_URL`
+- `COMMERCE_DATABASE_URL`
+- `OPERATION_DATABASE_URL`
+- `REPORTING_DATABASE_URL`
+- `NOTIFICATION_DATABASE_URL`
+
+## Run Services
+```bash
+npm run start:gateway
+npm run start:identity
+npm run start:commerce
+npm run start:operation
+npm run start:reporting
+npm run start:notification
+```
+
+Run all in watch mode:
+```bash
+npm run start:dev:all
+```
+
+## Gateway
+- Global prefix: `/api`
+- CORS: `http://localhost:4008`, `http://localhost:3000` (credentials enabled)
+- Swagger docs: `http://localhost:3000/docs`
+- Health check: `http://localhost:3000/api/health`
+- Service health: `http://localhost:3000/api/health/services`
+- Base API URL for FE: `http://localhost:3000/api`
+- Gateway Swagger documents proxy entrypoints only.
+- Service-level Swagger endpoints remain for development/debug.
+
+Proxy examples:
+- `POST http://localhost:3000/api/auth/login`
+- `GET http://localhost:3000/api/products`
+- `GET http://localhost:3000/api/inventory`
+
+Commerce catalog endpoints:
+- Categories: `GET/POST /api/categories`, `GET/PATCH/DELETE /api/categories/:id`
+- Brands: `GET/POST /api/brands`, `GET/PATCH/DELETE /api/brands/:id`
+- Products: `GET/POST /api/products`, `GET /api/products/:id`, `GET /api/products/sku/:sku`, `GET /api/products/barcode/:barcode`, `PATCH/DELETE /api/products/:id`
+- Product images: `POST /api/products/:productId/images`, `DELETE /api/products/:productId/images/:imageId`
+- Product variants: `POST /api/products/:productId/variants`, `PATCH /api/products/:productId/variants/:variantId`, `DELETE /api/products/:productId/variants/:variantId`
+
+Internal service URLs are for development/debug only.
+
+Internal service Swagger (development/debug only):
+- `http://localhost:3001/docs`
+- `http://localhost:3002/docs`
+- `http://localhost:3003/docs`
+- `http://localhost:3004/docs`
+- `http://localhost:3005/docs`
+
+Route ownership:
+- Auth + Identity routes -> `identity-service`
+- Commerce routes -> `commerce-service`
+- Operation routes -> `operation-service`
+- Reporting routes -> `reporting-setting-service`
+- Notification routes -> `notification-service`
+
+Headers:
+- `Authorization: Bearer <token>`
+- `x-request-id: optional`
+
+Docs helper endpoints:
+- `GET /api/docs/gateway/routes`
+- `GET /api/docs/gateway/services`
+- `GET /api/docs/gateway/conventions`
+
+## Request Logging And Correlation ID
+- Every request receives `x-request-id`.
+- Every request also receives `x-correlation-id` (reuses incoming value when provided).
+- If client provides `x-request-id`, backend reuses it.
+- Gateway forwards `x-request-id` to internal services.
+- Gateway forwards `x-correlation-id` to internal services.
+- Responses include `x-request-id` header.
+
+Example:
+```bash
+curl -H "x-request-id: test-123" http://localhost:3000/api/health
+```
+
+Request log fields:
+- `requestId`
+- `serviceName`
+- `method`
+- `path`
+- `statusCode`
+- `durationMs`
+- `ip`
+- `userAgent`
+
+Sensitive fields are redacted (`[REDACTED]`) if logged.
+
+## Prisma Layout
+Schemas:
+- `prisma/identity/schema.prisma`
+- `prisma/commerce/schema.prisma`
+- `prisma/operation/schema.prisma`
+- `prisma/reporting/schema.prisma`
+- `prisma/notification/schema.prisma`
+
+Rules:
+- No database foreign keys across services.
+- Cross-service references are UUID logical fields only.
+- Internal relations inside same service are allowed.
+
+## Prisma Commands
+Generate clients:
+```bash
+npm run prisma:generate:identity
+npm run prisma:generate:commerce
+npm run prisma:generate:operation
+npm run prisma:generate:reporting
+npm run prisma:generate:notification
+npm run prisma:generate:all
+```
+
+Migrate baseline:
+```bash
+npm run prisma:migrate:identity
+npm run prisma:migrate:commerce
+npm run prisma:migrate:operation
+npm run prisma:migrate:reporting
+npm run prisma:migrate:notification
+npm run prisma:migrate:all
+```
+
+Seed baseline:
+```bash
+npm run prisma:seed:identity
+npm run prisma:seed:commerce
+npm run prisma:seed:operation
+npm run prisma:seed:reporting
+npm run prisma:seed:notification
+npm run prisma:seed:all
+```
+
+Suggested order:
+1. `npm run prisma:generate:all`
+2. `npm run prisma:migrate:all`
+3. `npm run prisma:seed:all`
+
+## Build
+```bash
+npm run build:all
+```
+
+## Event Broker Foundation (Phase 5 Task 2)
+- Default broker type: RabbitMQ (`BROKER_TYPE=rabbitmq`)
+- Optional foundations: Kafka adapter (`BROKER_TYPE=kafka`), memory broker for tests/dev (`BROKER_TYPE=memory`)
+- Event envelope standard: `eventId`, `eventType`, `eventVersion`, `correlationId`, `causationId`, `idempotencyKey`, `payload`, metadata fields
+- Outbox pattern: each service persists `EventOutbox` in its own DB
+- Inbox pattern: each service persists `EventInbox` for idempotent consumption
+- No cross-service DB queries/FKs in handlers
+
+Core event examples:
+- `commerce.payment.gateway.initiated.v1`
+- `commerce.payment.gateway.paid.v1`
+- `commerce.payment.gateway.failed.v1`
+- `commerce.order.created.v1`
+- `commerce.order.paid.v1`
+- `operation.inventory.low_stock_detected.v1`
+- `operation.batch.expiring_detected.v1`
+- `reporting.report.export.completed.v1`
+- `reporting.report.export.failed.v1`
+- `reporting.settings.changed.v1`
+
+RabbitMQ local:
+- Start: `docker compose up -d rabbitmq`
+- UI: `http://localhost:15672` (`guest` / `guest`)
+
+Smoke docs:
+- `scripts/smoke/event-broker-smoke.md`
+
+## Phase 5 Task 3 - Retry and DLQ Foundation
+- Added shared retry policy, error classification, poison detection, replay helpers in libs/event-bus/src/retry.
+- Added RabbitMQ retry topology and DLQ helpers in libs/event-bus/src/brokers.
+- Added EventFailure and EventReplayAudit models to identity/commerce/operation/reporting Prisma schemas.
+- Added reporting operational endpoints under /api/reporting-events/* for failures, summary, replay, resolve, ignore, and retry policy evaluation.
+- Added smoke guide: scripts/smoke/event-retry-dlq-smoke.md.
+
+
+## Security Hardening (Phase 5 Task 3)
+- Global ValidationPipe enabled in all backend services (whitelist, orbidNonWhitelisted, 	ransform).
+- SQL injection risk reduced by Prisma ORM usage and no \ / \ usage.
+- JWT secrets validated from env (JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, min length 16). Access token and refresh token are signed separately; refresh tokens are hashed in DB and revoked on refresh/logout.
+- Basic brute-force protection with @nestjs/throttler:
+  - global: 100 requests/min/IP
+  - login: 5 requests/min/IP
+  - refresh: 20 requests/min/IP
+- Security headers via helmet() across gateway and services (CSP relaxed in development only).
+- CORS uses whitelist from CORS_ORIGINS; no wildcard with credentials.
+- Global exception filter now returns safe error payloads with correlationId and hides 500 internals.
+- Sensitive log redaction masks tokens, auth headers, cookies, secrets, DB URLs, and similar keys.
+- Student demo limitation: throttling is in-memory (single instance), not distributed.
+
+
+## Minimal Performance Notes (Phase 5 Task 4)
+- List APIs use pagination (page, limit) with default page=1, limit=20, and max limit=100 via DTO validation.
+- Safe sorting is enforced on key list endpoints using per-module whitelists (sortBy, sortOrder). Invalid sort fields return 400.
+- Added high-value indexes for common filters/sorts: status, createdAt, branch/warehouse references, and frequent lookup fields.
+- Query cleanup applied to key lists (products, orders, inventory, payment gateway transactions, audit logs, notifications, report jobs): list endpoints now return summary fields and avoid heavy nested payloads.
+- Audit log list and notification event list now avoid large JSON fields in list responses; use detail endpoints for full payload.
+- Obvious redundant querying was reduced (e.g., low-stock inventory query no longer runs an extra list query).
+- Prisma ORM is used; unsafe raw SQL methods are not used.
+- This demo intentionally avoids Redis, distributed caching, Prometheus, Grafana, and OpenTelemetry.
+
+
+## Thesis Demo Quick Guide
+
+### Services and Ports
+| Service | Port | Description |
+|---|---:|---|
+| API Gateway | 3000 | Frontend entrypoint and API proxy |
+| Identity Service | 3001 | Auth, users, roles, permissions |
+| Commerce Service | 3002 | Catalog, cart, checkout, orders, payments |
+| Operation Service | 3003 | Inventory, batches, POS, receipts |
+| Reporting Setting Service | 3004 | Reports, settings, notifications, audit logs |
+| Notification Service | 3005 | Notification runtime foundation |
+| Frontend (UI-PHARMACY) | 4008 (or 5173) | React thesis/demo UI |
+
+### Database Ownership
+- identity-service -> `pharmacy_identity`
+- commerce-service -> `pharmacy_commerce`
+- operation-service -> `pharmacy_operation`
+- reporting-setting-service -> `pharmacy_reporting`
+- notification-service -> `pharmacy_notification`
+
+### Demo Accounts (Seed)
+- Admin username: `admin`
+- Admin email: `admin@pharmacy.local`
+- Admin password: `admin123`
+
+### Quick Start
+```bash
+npm install
+cp .env.example .env
+docker compose up -d
+npm run prisma:generate:all
+npm run prisma:migrate:all
+npm run prisma:seed:all
+npm run start:dev:all
+```
+
+Frontend:
+```bash
+cd ../UI-PHARMACY
+npm install
+npm run dev
+```
+
+### Smoke and Demo Tests
+Backend smoke:
+```bash
+npm run test:smoke
+```
+
+Backend demo API tests:
+```bash
+npm run test:demo
+```
+
+Playwright happy paths:
+```bash
+cd ../UI-PHARMACY
+npm run test:e2e
+```
+
+### Demo Docs
+- `docs/DEMO_GUIDE.md`
+- `docs/DEMO_CHECKLIST.md`
+- `docs/TROUBLESHOOTING.md`
+- `docs/SECURITY_NOTES.md`
+- `docs/TESTING_NOTES.md`
+- `scripts/smoke/demo-smoke.md`
+- `scripts/smoke/api-smoke.http`
+
+### Main Demo Flow (10–15 minutes)
+1. Login as admin.
+2. Show dashboard.
+3. Show products and product detail.
+4. Show cart/checkout/order APIs.
+5. Show inventory and batches/expiry.
+6. Show POS page and receipt/order APIs.
+7. Show report list/process/export.
+8. Show notification list and mark-read.
+9. Show audit logs.
+10. Show security checks (invalid token, invalid DTO field).
+
+### Swagger Links
+- Gateway: `http://localhost:3000/docs`
+- Identity: `http://localhost:3001/docs`
+- Commerce: `http://localhost:3002/docs`
+- Operation: `http://localhost:3003/docs`
+- Reporting: `http://localhost:3004/docs`
+
+### Known Limitations (Student Demo)
+- No Kubernetes/cloud deployment guide.
+- No Prometheus/Grafana/OpenTelemetry.
+- No enterprise SIEM/WAF.
+- Payment gateway is sandbox/foundation oriented.
+- Event broker/retry is practical and simplified.
+- In-memory rate limiting is used.
+- No advanced cache layer (Redis/cluster cache).
+- Security hardening is practical demo-grade, not enterprise-grade.
+
+Note: .env files are local-only and must not be committed. Use .env.example placeholders.

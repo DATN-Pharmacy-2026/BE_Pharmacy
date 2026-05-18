@@ -1,0 +1,111 @@
+@baseUrl = http://localhost:3000
+@branchId = 11111111-1111-1111-1111-111111111111
+@warehouseId = 22222222-2222-2222-2222-222222222222
+@token = paste-token-here
+
+### Gateway health
+GET {{baseUrl}}/api/health
+
+### Login (admin seed)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Me
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Product list
+GET {{baseUrl}}/api/products?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### Product create (admin only if allowed)
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "categoryId": "replace-category-id",
+  "brandId": "replace-brand-id",
+  "sku": "DEMO-SKU-001",
+  "name": "Demo Product",
+  "slug": "demo-product",
+  "unit": "box",
+  "basePrice": 10000,
+  "status": "ACTIVE"
+}
+
+### Cart add item
+POST {{baseUrl}}/api/carts/items
+Authorization: Bearer {{token}}
+x-branch-id: {{branchId}}
+Content-Type: application/json
+
+{
+  "productId": "replace-product-id",
+  "quantity": 1
+}
+
+### Checkout
+POST {{baseUrl}}/api/checkout
+Authorization: Bearer {{token}}
+x-branch-id: {{branchId}}
+x-warehouse-id: {{warehouseId}}
+Content-Type: application/json
+
+{
+  "customerName": "Demo Customer",
+  "customerPhone": "0900000001",
+  "shippingAddress": "Demo Address",
+  "paymentMethod": "COD"
+}
+
+### Order list
+GET {{baseUrl}}/api/orders?page=1&limit=20
+Authorization: Bearer {{token}}
+x-branch-id: {{branchId}}
+
+### Inventory list
+GET {{baseUrl}}/api/inventory?page=1&limit=20
+Authorization: Bearer {{token}}
+x-branch-id: {{branchId}}
+x-warehouse-id: {{warehouseId}}
+
+### POS orders list
+GET {{baseUrl}}/api/pos-orders?page=1&limit=20
+Authorization: Bearer {{token}}
+x-branch-id: {{branchId}}
+
+### Report list
+GET {{baseUrl}}/api/reports?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### Process report (replace report id)
+POST {{baseUrl}}/api/reports/replace-report-id/process
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fileType": "xlsx"
+}
+
+### Notification list
+GET {{baseUrl}}/api/notification-events?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### Mark notification read (replace notification id)
+PATCH {{baseUrl}}/api/notification-events/replace-notification-id/read
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "READ"
+}
+
+### Audit log list
+GET {{baseUrl}}/api/audit-logs?page=1&limit=20
+Authorization: Bearer {{token}}
