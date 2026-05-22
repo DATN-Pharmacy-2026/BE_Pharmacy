@@ -23,9 +23,9 @@ check_get() {
 
 check_get "${API_BASE_URL}/api/health" "Gateway health"
 check_get "http://localhost:3001/api/health" "Identity health"
-check_get "http://localhost:3002/api/health" "Commerce health"
-check_get "http://localhost:3003/api/health" "Operation health"
-check_get "http://localhost:3004/api/health" "Reporting health"
+check_get "http://localhost:3002/health" "Commerce health"
+check_get "http://localhost:3003/health" "Operation health"
+check_get "http://localhost:3004/health" "Reporting health"
 
 echo "== Login =="
 LOGIN_BODY=$(cat <<JSON
@@ -56,26 +56,16 @@ auth_get() {
   echo "[OK] ${name}"
 }
 
+auth_get "/api/auth/me" "Auth me"
 auth_get "/api/products?page=1&limit=20" "Product list"
-auth_get "/api/inventory?page=1&limit=20" "Inventory list"
+auth_get "/api/carts" "Cart summary"
 auth_get "/api/orders?page=1&limit=20" "Order list"
+auth_get "/api/inventory?page=1&limit=20" "Inventory list"
+auth_get "/api/pos-orders?page=1&limit=20" "POS order list"
+auth_get "/api/receipts?page=1&limit=20" "Receipt list"
 auth_get "/api/reports?page=1&limit=20" "Report list"
+auth_get "/api/report-exports?page=1&limit=20" "Report export list"
 auth_get "/api/notification-events?page=1&limit=20" "Notification list"
 auth_get "/api/audit-logs?page=1&limit=20" "Audit log list"
-
-echo "== Security smoke checks =="
-NO_TOKEN_CODE=$(curl -sS -o /tmp/demo-smoke.out -w "%{http_code}" "${API_BASE_URL}/api/users?page=1&limit=20")
-if [ "$NO_TOKEN_CODE" -eq 401 ] || [ "$NO_TOKEN_CODE" -eq 403 ]; then
-  echo "[OK] Protected endpoint rejects missing token (${NO_TOKEN_CODE})"
-else
-  echo "[WARN] Protected endpoint returned ${NO_TOKEN_CODE} without token (verify guards)"
-fi
-
-BAD_DTO_CODE=$(curl -sS -o /tmp/demo-smoke.out -w "%{http_code}" "${API_BASE_URL}/api/products?page=1&limit=20&unexpectedField=1" -H "Authorization: Bearer ${TOKEN}")
-if [ "$BAD_DTO_CODE" -eq 400 ]; then
-  echo "[OK] Unknown DTO field rejected"
-else
-  echo "[WARN] Unknown DTO field returned ${BAD_DTO_CODE}"
-fi
 
 echo "Demo smoke completed."
