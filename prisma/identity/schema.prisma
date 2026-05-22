@@ -1,0 +1,287 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client/identity"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("IDENTITY_DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+enum RoleScope {
+  SYSTEM
+  BRANCH
+  WAREHOUSE
+}
+
+enum AccessStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+
+enum EventOutboxStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  CANCELED
+}
+
+enum EventInboxStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+  SKIPPED
+}
+model User {
+  id             String                   @id @default(uuid()) @db.Uuid
+  username       String                   @unique
+  email          String                   @unique
+  phone          String
+  passwordHash   String
+  fullName       String
+  avatarUrl      String?
+  status         UserStatus
+  isSystemAdmin  Boolean                  @default(false)
+  lastLoginAt    DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  deletedAt      DateTime?
+  userRoles      UserRole[]
+  branchAccesses UserBranchAccess[]
+  warehouseAccesses UserWarehouseAccess[]
+  refreshTokens  RefreshToken[]
+  sessions       UserSession[]
+  passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+
+  @@index([phone])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Role {
+  id            String           @id @default(uuid()) @db.Uuid
+  code          String           @unique
+  name          String
+  description   String?
+  scope         RoleScope
+  isSystemRole  Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  userRoles     UserRole[]
+  rolePermissions RolePermission[]
+  branchAccesses UserBranchAccess[]
+  warehouseAccesses UserWarehouseAccess[]
+
+  @@index([createdAt])
+}
+
+model Permission {
+  id            String           @id @default(uuid()) @db.Uuid
+  code          String           @unique
+  name          String
+  module        String
+  action        String
+  description   String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  rolePermissions RolePermission[]
+
+  @@unique([module, action])
+  @@index([module])
+  @@index([action])
+}
+
+model UserRole {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  roleId    String   @db.Uuid
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  role      Role     @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  id           String     @id @default(uuid()) @db.Uuid
+  roleId       String     @db.Uuid
+  permissionId String     @db.Uuid
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserBranchAccess {
+  id                  String       @id @default(uuid()) @db.Uuid
+  userId              String       @db.Uuid
+  branchId            String       @db.Uuid
+  roleId              String?      @db.Uuid
+  canAccessPOS        Boolean      @default(false)
+  canManageInventory  Boolean      @default(false)
+  canApproveTransfer  Boolean      @default(false)
+  isDefaultBranch     Boolean      @default(false)
+  status              AccessStatus
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  user                User         @relation(fields: [userId], references: [id])
+  role                Role?        @relation(fields: [roleId], references: [id])
+
+  @@index([branchId])
+  @@unique([userId, branchId])
+}
+
+model UserWarehouseAccess {
+  id                String       @id @default(uuid()) @db.Uuid
+  userId            String       @db.Uuid
+  warehouseId       String       @db.Uuid
+  roleId            String?      @db.Uuid
+  canReceiveStock   Boolean      @default(false)
+  canTransferStock  Boolean      @default(false)
+  canAdjustStock    Boolean      @default(false)
+  status            AccessStatus
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  user              User         @relation(fields: [userId], references: [id])
+  role              Role?        @relation(fields: [roleId], references: [id])
+
+  @@index([warehouseId])
+  @@unique([userId, warehouseId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([tokenHash])
+  @@index([userId])
+  @@index([revokedAt])
+  @@index([expiresAt])
+  @@index([createdAt])
+}
+
+model UserSession {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @db.Uuid
+  deviceId      String?
+  ipAddress     String?
+  userAgent     String?
+  branchId      String?   @db.Uuid
+  posTerminalId String?   @db.Uuid
+  loggedInAt    DateTime
+  loggedOutAt   DateTime?
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, loggedInAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model EmailVerificationToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  tokenHash  String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model EventOutbox {
+  id            String           @id @default(uuid()) @db.Uuid
+  eventId       String           @unique @db.Uuid
+  eventType     String
+  eventVersion  Int              @default(1)
+  aggregateType String
+  aggregateId   String
+  sourceService String
+  sourceModule  String?
+  correlationId String?
+  causationId   String?
+  idempotencyKey String?         @unique
+  branchId      String?          @db.Uuid
+  warehouseId   String?          @db.Uuid
+  actorUserId   String?          @db.Uuid
+  payload       Json
+  metadata      Json?
+  status        EventOutboxStatus @default(PENDING)
+  publishedAt   DateTime?
+  failedAt      DateTime?
+  attempts      Int              @default(0)
+  lastError     String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([eventType])
+  @@index([aggregateType, aggregateId])
+  @@index([sourceService])
+  @@index([status])
+  @@index([createdAt])
+  @@index([publishedAt])
+  @@index([correlationId])
+  @@index([branchId])
+  @@index([warehouseId])
+}
+
+model EventInbox {
+  id            String          @id @default(uuid()) @db.Uuid
+  eventId       String          @db.Uuid
+  eventType     String
+  eventVersion  Int
+  sourceService String
+  consumerService String
+  consumerName  String
+  aggregateType String?
+  aggregateId   String?
+  correlationId String?
+  causationId   String?
+  idempotencyKey String?
+  payload       Json?
+  status        EventInboxStatus @default(RECEIVED)
+  processedAt   DateTime?
+  failedAt      DateTime?
+  attempts      Int             @default(0)
+  lastError     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([eventId, consumerService, consumerName])
+  @@index([eventType])
+  @@index([sourceService])
+  @@index([consumerService])
+  @@index([consumerName])
+  @@index([status])
+  @@index([createdAt])
+  @@index([processedAt])
+  @@index([correlationId])
+  @@index([aggregateType, aggregateId])
+}

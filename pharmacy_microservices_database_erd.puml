@@ -1,0 +1,897 @@
+@startuml pharmacy_microservices_database_erd
+
+' =========================================================
+' Pharmacy / Ecommerce / POS Microservices Database ERD
+' Rule:
+' - Each service owns its own tables.
+' - No database foreign keys across services.
+' - Cross-service references are stored as plain UUID fields.
+' =========================================================
+
+hide circle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+' =========================================================
+' IDENTITY SERVICE
+' Owns users, roles, permissions, organization access
+' =========================================================
+
+package "identity-service" {
+
+  class User {
+    + id: UUID
+    + username: String
+    + email: String
+    + phone: String
+    + passwordHash: String
+    + fullName: String
+    + avatarUrl: String?
+    + status: UserStatus
+    + isSystemAdmin: Boolean
+    + lastLoginAt: DateTime?
+    + createdAt: DateTime
+    + updatedAt: DateTime
+    + deletedAt: DateTime?
+  }
+
+  class Role {
+    + id: UUID
+    + code: String
+    + name: String
+    + description: String?
+    + scope: RoleScope
+    + isSystemRole: Boolean
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class Permission {
+    + id: UUID
+    + code: String
+    + name: String
+    + module: String
+    + action: String
+    + description: String?
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class UserRole {
+    + id: UUID
+    + userId: UUID
+    + roleId: UUID
+    + createdAt: DateTime
+  }
+
+  class RolePermission {
+    + id: UUID
+    + roleId: UUID
+    + permissionId: UUID
+    + createdAt: DateTime
+  }
+
+  class UserBranchAccess {
+    + id: UUID
+    + userId: UUID
+    + branchId: UUID
+    + roleId: UUID?
+    + canAccessPOS: Boolean
+    + canManageInventory: Boolean
+    + canApproveTransfer: Boolean
+    + isDefaultBranch: Boolean
+    + status: AccessStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class UserWarehouseAccess {
+    + id: UUID
+    + userId: UUID
+    + warehouseId: UUID
+    + roleId: UUID?
+    + canReceiveStock: Boolean
+    + canTransferStock: Boolean
+    + canAdjustStock: Boolean
+    + status: AccessStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class RefreshToken {
+    + id: UUID
+    + userId: UUID
+    + tokenHash: String
+    + expiresAt: DateTime
+    + revokedAt: DateTime?
+    + createdAt: DateTime
+  }
+
+  class UserSession {
+    + id: UUID
+    + userId: UUID
+    + deviceId: String?
+    + ipAddress: String?
+    + userAgent: String?
+    + branchId: UUID?
+    + posTerminalId: UUID?
+    + loggedInAt: DateTime
+    + loggedOutAt: DateTime?
+  }
+
+  class PasswordResetToken {
+    + id: UUID
+    + userId: UUID
+    + tokenHash: String
+    + expiresAt: DateTime
+    + usedAt: DateTime?
+    + createdAt: DateTime
+  }
+
+  class EmailVerificationToken {
+    + id: UUID
+    + userId: UUID
+    + tokenHash: String
+    + expiresAt: DateTime
+    + verifiedAt: DateTime?
+    + createdAt: DateTime
+  }
+
+  User "1" -- "many" UserRole
+  Role "1" -- "many" UserRole
+  Role "1" -- "many" RolePermission
+  Permission "1" -- "many" RolePermission
+  User "1" -- "many" UserBranchAccess
+  User "1" -- "many" UserWarehouseAccess
+  User "1" -- "many" RefreshToken
+  User "1" -- "many" UserSession
+  User "1" -- "many" PasswordResetToken
+  User "1" -- "many" EmailVerificationToken
+}
+
+' =========================================================
+' OPERATION SERVICE
+' Owns branch, warehouse, POS, procurement, transfer, inventory
+' =========================================================
+
+package "operation-service" {
+
+  class Company {
+    + id: UUID
+    + name: String
+    + taxCode: String?
+    + phone: String?
+    + email: String?
+    + address: String?
+    + status: CompanyStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class Branch {
+    + id: UUID
+    + companyId: UUID
+    + code: String
+    + name: String
+    + phone: String?
+    + email: String?
+    + address: String
+    + province: String?
+    + district: String?
+    + ward: String?
+    + status: BranchStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+    + deletedAt: DateTime?
+  }
+
+  class Store {
+    + id: UUID
+    + branchId: UUID
+    + code: String
+    + name: String
+    + address: String
+    + phone: String?
+    + status: StoreStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class Warehouse {
+    + id: UUID
+    + branchId: UUID?
+    + code: String
+    + name: String
+    + type: WarehouseType
+    + address: String?
+    + isCentral: Boolean
+    + status: WarehouseStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class WarehouseLocation {
+    + id: UUID
+    + warehouseId: UUID
+    + code: String
+    + name: String
+    + type: LocationType
+    + status: LocationStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class POSTerminal {
+    + id: UUID
+    + branchId: UUID
+    + storeId: UUID
+    + code: String
+    + name: String
+    + deviceSerial: String?
+    + status: POSTerminalStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class POSSession {
+    + id: UUID
+    + branchId: UUID
+    + storeId: UUID
+    + posTerminalId: UUID
+    + cashierUserId: UUID
+    + openingCash: Decimal
+    + closingCash: Decimal?
+    + openedAt: DateTime
+    + closedAt: DateTime?
+    + status: POSSessionStatus
+  }
+
+  class Supplier {
+    + id: UUID
+    + code: String
+    + name: String
+    + taxCode: String?
+    + phone: String?
+    + email: String?
+    + address: String?
+    + status: SupplierStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class PurchaseOrder {
+    + id: UUID
+    + poNo: String
+    + supplierId: UUID
+    + warehouseId: UUID
+    + branchId: UUID?
+    + status: PurchaseOrderStatus
+    + orderedByUserId: UUID
+    + approvedByUserId: UUID?
+    + expectedDate: DateTime?
+    + totalAmount: Decimal
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class PurchaseOrderItem {
+    + id: UUID
+    + purchaseOrderId: UUID
+    + productId: UUID
+    + sku: String?
+    + productNameSnapshot: String
+    + quantity: Int
+    + unitCost: Decimal
+    + totalCost: Decimal
+    + createdAt: DateTime
+  }
+
+  class GoodsReceipt {
+    + id: UUID
+    + receiptNo: String
+    + purchaseOrderId: UUID?
+    + supplierId: UUID?
+    + warehouseId: UUID
+    + branchId: UUID?
+    + receivedByUserId: UUID
+    + status: GoodsReceiptStatus
+    + receivedAt: DateTime?
+    + note: String?
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class GoodsReceiptItem {
+    + id: UUID
+    + goodsReceiptId: UUID
+    + productId: UUID
+    + batchId: UUID?
+    + batchNo: String
+    + expiryDate: DateTime
+    + manufactureDate: DateTime?
+    + quantity: Int
+    + unitCost: Decimal
+    + createdAt: DateTime
+  }
+
+  class Batch {
+    + id: UUID
+    + productId: UUID
+    + batchNo: String
+    + manufactureDate: DateTime?
+    + expiryDate: DateTime
+    + supplierId: UUID?
+    + status: BatchStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class InventoryItem {
+    + id: UUID
+    + productId: UUID
+    + batchId: UUID
+    + warehouseId: UUID
+    + locationId: UUID?
+    + branchId: UUID?
+    + quantityOnHand: Int
+    + quantityReserved: Int
+    + quantityAvailable: Int
+    + unitCost: Decimal?
+    + expiryDate: DateTime
+    + updatedAt: DateTime
+  }
+
+  class StockMovement {
+    + id: UUID
+    + productId: UUID
+    + batchId: UUID?
+    + warehouseId: UUID
+    + branchId: UUID?
+    + movementType: InventoryMovementType
+    + quantity: Int
+    + referenceType: String?
+    + referenceId: UUID?
+    + createdByUserId: UUID
+    + createdAt: DateTime
+  }
+
+  class StockAdjustment {
+    + id: UUID
+    + warehouseId: UUID
+    + branchId: UUID?
+    + reason: String
+    + status: StockAdjustmentStatus
+    + createdByUserId: UUID
+    + approvedByUserId: UUID?
+    + createdAt: DateTime
+    + approvedAt: DateTime?
+  }
+
+  class StockAdjustmentItem {
+    + id: UUID
+    + stockAdjustmentId: UUID
+    + productId: UUID
+    + batchId: UUID?
+    + oldQuantity: Int
+    + newQuantity: Int
+    + difference: Int
+  }
+
+  class StockTransfer {
+    + id: UUID
+    + transferNo: String
+    + fromWarehouseId: UUID
+    + toWarehouseId: UUID
+    + fromBranchId: UUID?
+    + toBranchId: UUID?
+    + requestedByUserId: UUID
+    + approvedByUserId: UUID?
+    + status: StockTransferStatus
+    + requestedAt: DateTime
+    + approvedAt: DateTime?
+    + shippedAt: DateTime?
+    + receivedAt: DateTime?
+  }
+
+  class StockTransferItem {
+    + id: UUID
+    + stockTransferId: UUID
+    + productId: UUID
+    + batchId: UUID?
+    + requestedQty: Int
+    + shippedQty: Int?
+    + receivedQty: Int?
+  }
+
+  class Shipment {
+    + id: UUID
+    + stockTransferId: UUID
+    + shipmentNo: String
+    + carrierName: String?
+    + trackingNo: String?
+    + status: ShipmentStatus
+    + shippedByUserId: UUID?
+    + receivedByUserId: UUID?
+    + shippedAt: DateTime?
+    + deliveredAt: DateTime?
+    + createdAt: DateTime
+  }
+
+  class FEFOAllocation {
+    + id: UUID
+    + productId: UUID
+    + orderType: AllocationOrderType
+    + orderId: UUID
+    + orderItemId: UUID
+    + warehouseId: UUID
+    + branchId: UUID?
+    + batchId: UUID
+    + expiryDate: DateTime
+    + allocatedQty: Int
+    + status: AllocationStatus
+    + createdAt: DateTime
+  }
+
+  class POSOrder {
+    + id: UUID
+    + orderNo: String
+    + branchId: UUID
+    + storeId: UUID
+    + posTerminalId: UUID
+    + posSessionId: UUID
+    + cashierUserId: UUID
+    + customerUserId: UUID?
+    + status: POSOrderStatus
+    + subtotal: Decimal
+    + discountTotal: Decimal
+    + taxTotal: Decimal
+    + grandTotal: Decimal
+    + createdAt: DateTime
+  }
+
+  class POSOrderItem {
+    + id: UUID
+    + posOrderId: UUID
+    + productId: UUID
+    + batchId: UUID?
+    + sku: String?
+    + productNameSnapshot: String
+    + quantity: Int
+    + unitPrice: Decimal
+    + discountAmount: Decimal
+    + totalAmount: Decimal
+  }
+
+  class POSPayment {
+    + id: UUID
+    + posOrderId: UUID
+    + method: PaymentMethod
+    + amount: Decimal
+    + status: PaymentStatus
+    + paidAt: DateTime?
+  }
+
+  class Receipt {
+    + id: UUID
+    + receiptNo: String
+    + posOrderId: UUID?
+    + onlineOrderId: UUID?
+    + branchId: UUID
+    + storeId: UUID?
+    + issuedByUserId: UUID
+    + totalAmount: Decimal
+    + issuedAt: DateTime
+  }
+
+  class BarcodeVerification {
+    + id: UUID
+    + branchId: UUID
+    + storeId: UUID?
+    + warehouseId: UUID?
+    + productId: UUID?
+    + batchId: UUID?
+    + barcode: String
+    + result: VerificationResult
+    + verifiedByUserId: UUID
+    + verifiedAt: DateTime
+  }
+
+  Company "1" -- "many" Branch
+  Branch "1" -- "many" Store
+  Branch "1" -- "many" Warehouse
+  Store "1" -- "many" POSTerminal
+  POSTerminal "1" -- "many" POSSession
+  Supplier "1" -- "many" PurchaseOrder
+  PurchaseOrder "1" -- "many" PurchaseOrderItem
+  PurchaseOrder "1" -- "many" GoodsReceipt
+  GoodsReceipt "1" -- "many" GoodsReceiptItem
+  Supplier "1" -- "many" Batch
+  Batch "1" -- "many" InventoryItem
+  Warehouse "1" -- "many" WarehouseLocation
+  Warehouse "1" -- "many" InventoryItem
+  Warehouse "1" -- "many" StockMovement
+  StockAdjustment "1" -- "many" StockAdjustmentItem
+  StockTransfer "1" -- "many" StockTransferItem
+  StockTransfer "1" -- "many" Shipment
+  POSSession "1" -- "many" POSOrder
+  POSOrder "1" -- "many" POSOrderItem
+  POSOrder "1" -- "many" POSPayment
+  POSOrder "1" -- "1" Receipt
+}
+
+' =========================================================
+' COMMERCE SERVICE
+' Owns catalog, cart, online order, payment, review, coupon
+' Product catalog is owned here. Operation references productId logically.
+' =========================================================
+
+package "commerce-service" {
+
+  class Category {
+    + id: UUID
+    + parentId: UUID?
+    + name: String
+    + slug: String
+    + description: String?
+    + isActive: Boolean
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class Brand {
+    + id: UUID
+    + name: String
+    + slug: String
+    + country: String?
+    + isActive: Boolean
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class Product {
+    + id: UUID
+    + categoryId: UUID
+    + brandId: UUID?
+    + sku: String
+    + barcode: String?
+    + name: String
+    + slug: String
+    + description: String?
+    + activeIngredient: String?
+    + dosageForm: String?
+    + strength: String?
+    + registrationNumber: String?
+    + requiresPrescription: Boolean
+    + unit: String
+    + basePrice: Decimal
+    + status: ProductStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+    + deletedAt: DateTime?
+  }
+
+  class ProductImage {
+    + id: UUID
+    + productId: UUID
+    + url: String
+    + alt: String?
+    + sortOrder: Int
+    + createdAt: DateTime
+  }
+
+  class ProductVariant {
+    + id: UUID
+    + productId: UUID
+    + sku: String
+    + name: String
+    + unit: String
+    + price: Decimal
+    + isActive: Boolean
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class Cart {
+    + id: UUID
+    + userId: UUID?
+    + sessionId: String?
+    + branchId: UUID?
+    + status: CartStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class CartItem {
+    + id: UUID
+    + cartId: UUID
+    + productId: UUID
+    + variantId: UUID?
+    + quantity: Int
+    + unitPrice: Decimal
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class OnlineOrder {
+    + id: UUID
+    + orderNo: String
+    + userId: UUID?
+    + branchId: UUID?
+    + assignedWarehouseId: UUID?
+    + status: OrderStatus
+    + paymentStatus: PaymentStatus
+    + fulfillmentStatus: FulfillmentStatus
+    + subtotal: Decimal
+    + discountTotal: Decimal
+    + shippingFee: Decimal
+    + grandTotal: Decimal
+    + customerName: String
+    + customerPhone: String
+    + shippingAddress: String
+    + note: String?
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class OnlineOrderItem {
+    + id: UUID
+    + onlineOrderId: UUID
+    + productId: UUID
+    + variantId: UUID?
+    + sku: String?
+    + productNameSnapshot: String
+    + quantity: Int
+    + unitPrice: Decimal
+    + discountAmount: Decimal
+    + totalAmount: Decimal
+  }
+
+  class Payment {
+    + id: UUID
+    + onlineOrderId: UUID
+    + method: PaymentMethod
+    + provider: String?
+    + transactionNo: String?
+    + amount: Decimal
+    + status: PaymentStatus
+    + paidAt: DateTime?
+    + createdAt: DateTime
+  }
+
+  class Review {
+    + id: UUID
+    + productId: UUID
+    + userId: UUID
+    + rating: Int
+    + content: String?
+    + status: ReviewStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class Coupon {
+    + id: UUID
+    + code: String
+    + name: String
+    + discountType: DiscountType
+    + discountValue: Decimal
+    + minOrderAmount: Decimal?
+    + maxDiscountAmount: Decimal?
+    + usageLimit: Int?
+    + startsAt: DateTime
+    + endsAt: DateTime
+    + status: CouponStatus
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class CouponUsage {
+    + id: UUID
+    + couponId: UUID
+    + userId: UUID?
+    + onlineOrderId: UUID
+    + usedAt: DateTime
+  }
+
+  Category "1" -- "many" Product
+  Brand "1" -- "many" Product
+  Product "1" -- "many" ProductImage
+  Product "1" -- "many" ProductVariant
+  Cart "1" -- "many" CartItem
+  Product "1" -- "many" CartItem
+  OnlineOrder "1" -- "many" OnlineOrderItem
+  OnlineOrder "1" -- "many" Payment
+  Product "1" -- "many" Review
+  Coupon "1" -- "many" CouponUsage
+}
+
+' =========================================================
+' REPORTING SETTING SERVICE
+' Owns settings, audit logs, report jobs, dashboard/KPI snapshots
+' =========================================================
+
+package "reporting-setting-service" {
+
+  class Setting {
+    + id: UUID
+    + key: String
+    + value: Json
+    + scope: SettingScope
+    + branchId: UUID?
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class AuditLog {
+    + id: UUID
+    + actorUserId: UUID?
+    + branchId: UUID?
+    + warehouseId: UUID?
+    + serviceName: String
+    + module: String
+    + action: String
+    + entityType: String
+    + entityId: UUID?
+    + beforeData: Json?
+    + afterData: Json?
+    + ipAddress: String?
+    + userAgent: String?
+    + createdAt: DateTime
+  }
+
+  class ReportJob {
+    + id: UUID
+    + reportType: String
+    + requestedByUserId: UUID
+    + branchId: UUID?
+    + warehouseId: UUID?
+    + status: ReportJobStatus
+    + filters: Json?
+    + createdAt: DateTime
+    + completedAt: DateTime?
+  }
+
+  class ReportExport {
+    + id: UUID
+    + reportJobId: UUID
+    + fileName: String
+    + fileUrl: String
+    + fileType: String
+    + createdAt: DateTime
+  }
+
+  class DashboardSnapshot {
+    + id: UUID
+    + branchId: UUID?
+    + warehouseId: UUID?
+    + snapshotDate: Date
+    + data: Json
+    + createdAt: DateTime
+  }
+
+  class KPISnapshot {
+    + id: UUID
+    + branchId: UUID?
+    + warehouseId: UUID?
+    + metricCode: String
+    + metricValue: Decimal
+    + snapshotDate: Date
+    + createdAt: DateTime
+  }
+
+  ReportJob "1" -- "many" ReportExport
+}
+
+' =========================================================
+' NOTIFICATION SERVICE
+' Owns templates, preferences, events, delivery logs
+' =========================================================
+
+package "notification-service" {
+
+  class NotificationTemplate {
+    + id: UUID
+    + code: String
+    + name: String
+    + channel: NotificationChannel
+    + subjectTemplate: String?
+    + bodyTemplate: String
+    + isActive: Boolean
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class NotificationPreference {
+    + id: UUID
+    + userId: UUID
+    + channel: NotificationChannel
+    + eventType: String
+    + isEnabled: Boolean
+    + createdAt: DateTime
+    + updatedAt: DateTime
+  }
+
+  class NotificationEvent {
+    + id: UUID
+    + userId: UUID?
+    + branchId: UUID?
+    + templateId: UUID?
+    + eventType: String
+    + channel: NotificationChannel
+    + payload: Json
+    + status: NotificationStatus
+    + createdAt: DateTime
+    + processedAt: DateTime?
+  }
+
+  class NotificationLog {
+    + id: UUID
+    + notificationEventId: UUID
+    + channel: NotificationChannel
+    + recipient: String
+    + status: NotificationStatus
+    + provider: String?
+    + errorMessage: String?
+    + sentAt: DateTime?
+    + createdAt: DateTime
+  }
+
+  class EmailLog {
+    + id: UUID
+    + notificationEventId: UUID
+    + toEmail: String
+    + subject: String
+    + status: NotificationStatus
+    + providerMessageId: String?
+    + sentAt: DateTime?
+    + createdAt: DateTime
+  }
+
+  class WebSocketEvent {
+    + id: UUID
+    + notificationEventId: UUID
+    + userId: UUID?
+    + branchId: UUID?
+    + eventName: String
+    + payload: Json
+    + deliveredAt: DateTime?
+    + createdAt: DateTime
+  }
+
+  class SMSLog {
+    + id: UUID
+    + notificationEventId: UUID
+    + phone: String
+    + content: String
+    + status: NotificationStatus
+    + providerMessageId: String?
+    + sentAt: DateTime?
+    + createdAt: DateTime
+  }
+
+  NotificationTemplate "1" -- "many" NotificationEvent
+  NotificationEvent "1" -- "many" NotificationLog
+  NotificationEvent "1" -- "many" EmailLog
+  NotificationEvent "1" -- "many" WebSocketEvent
+  NotificationEvent "1" -- "many" SMSLog
+}
+
+' =========================================================
+' Logical cross-service references only
+' =========================================================
+
+User ..> Branch : logical branch access by branchId
+User ..> Warehouse : logical warehouse access by warehouseId
+Cart ..> User : logical userId
+OnlineOrder ..> User : logical userId
+OnlineOrder ..> Branch : logical branchId
+OnlineOrder ..> Warehouse : logical assignedWarehouseId
+Review ..> User : logical userId
+InventoryItem ..> Product : logical productId
+Batch ..> Product : logical productId
+POSOrder ..> User : logical cashierUserId/customerUserId
+AuditLog ..> User : logical actorUserId
+NotificationEvent ..> User : logical userId
+NotificationEvent ..> Branch : logical branchId
+
+@enduml

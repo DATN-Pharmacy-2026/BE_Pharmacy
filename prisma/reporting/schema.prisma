@@ -1,0 +1,356 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client/reporting"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("REPORTING_DATABASE_URL")
+}
+
+enum SettingScope {
+  SYSTEM
+  BRANCH
+  WAREHOUSE
+}
+
+enum ReportJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum NotificationEventType {
+  SYSTEM
+  AUDIT
+  SETTINGS_CHANGED
+  REPORT_JOB_CREATED
+  REPORT_EXPORT_COMPLETED
+  REPORT_EXPORT_FAILED
+  LOW_STOCK
+  EXPIRING_BATCH
+  ORDER_CREATED
+  PAYMENT_UPDATED
+  POS_ORDER_CREATED
+  RECEIPT_CREATED
+  STORE_VERIFY_REQUIRED
+  CUSTOM
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  WEBSOCKET
+}
+
+enum NotificationSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum NotificationEventStatus {
+  PENDING
+  DELIVERED
+  READ
+  FAILED
+  CANCELED
+}
+
+
+enum EventOutboxStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  CANCELED
+}
+
+enum EventInboxStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  FAILED
+  SKIPPED
+}
+
+model Setting {
+  id        String       @id @default(uuid()) @db.Uuid
+  key       String
+  value     Json
+  scope     SettingScope
+  branchId  String?      @db.Uuid
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([branchId])
+  @@unique([key, scope, branchId])
+}
+
+model AuditLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  actorUserId String?   @db.Uuid
+  branchId    String?   @db.Uuid
+  warehouseId String?   @db.Uuid
+  serviceName String
+  module      String
+  action      String
+  entityType  String
+  entityId    String?   @db.Uuid
+  beforeData  Json?
+  afterData   Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([branchId])
+  @@index([warehouseId])
+  @@index([serviceName, module, action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([serviceName, module, createdAt])
+  @@index([branchId, createdAt])
+}
+
+model ReportJob {
+  id                String          @id @default(uuid()) @db.Uuid
+  reportType        String
+  requestedByUserId String          @db.Uuid
+  branchId          String?         @db.Uuid
+  warehouseId       String?         @db.Uuid
+  status            ReportJobStatus
+  filters           Json?
+  createdAt         DateTime        @default(now())
+  completedAt       DateTime?
+  exports           ReportExport[]
+
+  @@index([requestedByUserId, createdAt])
+  @@index([branchId])
+  @@index([warehouseId])
+  @@index([status, createdAt])
+  @@index([reportType])
+}
+
+model ReportExport {
+  id          String    @id @default(uuid()) @db.Uuid
+  reportJobId String    @db.Uuid
+  fileName    String
+  fileUrl     String
+  fileType    String
+  createdAt   DateTime  @default(now())
+  reportJob   ReportJob @relation(fields: [reportJobId], references: [id])
+
+  @@index([reportJobId])
+  @@index([fileType])
+  @@index([createdAt])
+}
+
+model DashboardSnapshot {
+  id           String   @id @default(uuid()) @db.Uuid
+  branchId     String?  @db.Uuid
+  warehouseId  String?  @db.Uuid
+  snapshotDate DateTime @db.Date
+  data         Json
+  createdAt    DateTime @default(now())
+
+  @@index([branchId, snapshotDate])
+}
+
+model KPISnapshot {
+  id           String   @id @default(uuid()) @db.Uuid
+  branchId     String?  @db.Uuid
+  warehouseId  String?  @db.Uuid
+  metricCode   String
+  metricValue  Decimal  @db.Decimal(18, 2)
+  snapshotDate DateTime @db.Date
+  createdAt    DateTime @default(now())
+
+  @@index([branchId, metricCode, snapshotDate])
+}
+
+model NotificationEvent {
+  id               String                  @id @default(uuid()) @db.Uuid
+  type             NotificationEventType
+  channel          NotificationChannel     @default(IN_APP)
+  severity         NotificationSeverity    @default(INFO)
+  title            String
+  message          String
+  recipientUserId  String?                 @db.Uuid
+  actorUserId      String?                 @db.Uuid
+  branchId         String?                 @db.Uuid
+  warehouseId      String?                 @db.Uuid
+  sourceService    String
+  sourceModule     String?
+  sourceEntityType String?
+  sourceEntityId   String?
+  payload          Json?
+  status           NotificationEventStatus @default(PENDING)
+  readAt           DateTime?
+  deliveredAt      DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  attempts         NotificationDeliveryAttempt[]
+
+  @@index([recipientUserId])
+  @@index([branchId])
+  @@index([warehouseId])
+  @@index([type])
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+  @@index([recipientUserId, status, createdAt])
+  @@index([branchId, status, createdAt])
+  @@index([sourceService, sourceModule])
+  @@index([sourceEntityType, sourceEntityId])
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  SKIPPED
+}
+
+model NotificationPreference {
+  id                String               @id @default(uuid()) @db.Uuid
+  userId            String?              @db.Uuid
+  branchId          String?              @db.Uuid
+  warehouseId       String?              @db.Uuid
+  eventType         NotificationEventType
+  channel           NotificationChannel
+  enabled           Boolean              @default(true)
+  severityThreshold NotificationSeverity?
+  quietHoursStart   String?
+  quietHoursEnd     String?
+  timezone          String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@unique([userId, branchId, warehouseId, eventType, channel])
+  @@index([userId])
+  @@index([branchId])
+  @@index([warehouseId])
+  @@index([eventType])
+  @@index([channel])
+  @@index([enabled])
+}
+
+model NotificationTemplate {
+  id              String                @id @default(uuid()) @db.Uuid
+  code            String                @unique
+  eventType       NotificationEventType
+  channel         NotificationChannel
+  locale          String                @default("vi")
+  subject         String?
+  titleTemplate   String
+  messageTemplate String
+  htmlTemplate    String?
+  variables       Json?
+  enabled         Boolean               @default(true)
+  isDefault       Boolean               @default(false)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([code])
+  @@index([eventType])
+  @@index([channel])
+  @@index([locale])
+  @@index([enabled])
+  @@index([isDefault])
+}
+
+model NotificationDeliveryAttempt {
+  id                  String                     @id @default(uuid()) @db.Uuid
+  notificationEventId String                     @db.Uuid
+  channel             NotificationChannel
+  status              NotificationDeliveryStatus
+  provider            String?
+  recipient           String?
+  errorMessage        String?
+  response            Json?
+  attemptedAt         DateTime                   @default(now())
+  deliveredAt         DateTime?
+  createdAt           DateTime                   @default(now())
+  notificationEvent   NotificationEvent          @relation(fields: [notificationEventId], references: [id])
+
+  @@index([notificationEventId])
+  @@index([channel])
+  @@index([status])
+  @@index([attemptedAt])
+  @@index([provider])
+}
+
+model EventOutbox {
+  id            String           @id @default(uuid()) @db.Uuid
+  eventId       String           @unique @db.Uuid
+  eventType     String
+  eventVersion  Int              @default(1)
+  aggregateType String
+  aggregateId   String
+  sourceService String
+  sourceModule  String?
+  correlationId String?
+  causationId   String?
+  idempotencyKey String?         @unique
+  branchId      String?          @db.Uuid
+  warehouseId   String?          @db.Uuid
+  actorUserId   String?          @db.Uuid
+  payload       Json
+  metadata      Json?
+  status        EventOutboxStatus @default(PENDING)
+  publishedAt   DateTime?
+  failedAt      DateTime?
+  attempts      Int              @default(0)
+  lastError     String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([eventType])
+  @@index([aggregateType, aggregateId])
+  @@index([sourceService])
+  @@index([status])
+  @@index([createdAt])
+  @@index([publishedAt])
+  @@index([correlationId])
+  @@index([branchId])
+  @@index([warehouseId])
+}
+
+model EventInbox {
+  id            String          @id @default(uuid()) @db.Uuid
+  eventId       String          @db.Uuid
+  eventType     String
+  eventVersion  Int
+  sourceService String
+  consumerService String
+  consumerName  String
+  aggregateType String?
+  aggregateId   String?
+  correlationId String?
+  causationId   String?
+  idempotencyKey String?
+  payload       Json?
+  status        EventInboxStatus @default(RECEIVED)
+  processedAt   DateTime?
+  failedAt      DateTime?
+  attempts      Int             @default(0)
+  lastError     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([eventId, consumerService, consumerName])
+  @@index([eventType])
+  @@index([sourceService])
+  @@index([consumerService])
+  @@index([consumerName])
+  @@index([status])
+  @@index([createdAt])
+  @@index([processedAt])
+  @@index([correlationId])
+  @@index([aggregateType, aggregateId])
+}

@@ -1,0 +1,82 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaymentGatewayProvider } from '.prisma/client/commerce';
+import { Type } from 'class-transformer';
+import { IsEnum, IsNumber, IsOptional, IsString, IsUUID, IsUrl, Min } from 'class-validator';
+
+export class InitiatePaymentGatewayDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  paymentId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  orderId?: string;
+
+  @ApiProperty({ enum: PaymentGatewayProvider })
+  @IsEnum(PaymentGatewayProvider)
+  provider!: PaymentGatewayProvider;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  amount?: number;
+
+  @ApiPropertyOptional({ default: 'VND' })
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  orderInfo?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl()
+  returnUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl()
+  ipnUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  customerUserId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  branchId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  warehouseId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  locale?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  bankCode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  requestId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  idempotencyKey?: string;
+}
