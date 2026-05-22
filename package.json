@@ -47,7 +47,9 @@
     "test:demo": "jest --runInBand --testPathPatterns=demo\\.spec\\.ts",
     "test:smoke": "sh scripts/smoke/demo-smoke.sh",
     "test:e2e": "npm --prefix ../UI-PHARMACY run test:e2e",
+    "test:e2e:demo": "npm --prefix ../UI-PHARMACY run test:e2e:demo",
     "test:e2e:ui": "npm --prefix ../UI-PHARMACY run test:e2e:ui",
+    "demo:setup": "npm install",
     "demo:seed": "npm run prisma:seed:all",
     "demo:reset": "npm run prisma:migrate:all && npm run prisma:seed:all",
     "demo:start": "npm run start:dev:all"
