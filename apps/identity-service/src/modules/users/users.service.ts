@@ -7,8 +7,10 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { Prisma, UserStatus } from '.prisma/client/identity';
 import { IdentityPrismaService } from '../../prisma/identity-prisma.service';
+import { AssignUserRolesDto } from './dto/assign-user-roles.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
@@ -118,6 +120,61 @@ export class UsersService {
     });
 
     return { message: 'User soft deleted' };
+  }
+
+  async resetPassword(id: string, dto: ResetPasswordDto) {
+    await this.findOne(id);
+    const rawPassword =
+      dto.newPassword || this.configService.get<string>('auth.defaultPassword', 'admin123');
+
+    const passwordHash = await this.normalizePasswordHash(rawPassword);
+    await this.prisma.user.update({
+      where: { id },
+      data: { passwordHash },
+    });
+
+    return { message: 'Password reset successfully' };
+  }
+
+  async assignRoles(id: string, dto: AssignUserRolesDto) {
+    await this.findOne(id);
+
+    let roleIds = dto.roleIds ?? [];
+    if (dto.roleCode) {
+      const role = await this.prisma.role.findUnique({
+        where: { code: dto.roleCode },
+        select: { id: true },
+      });
+      if (!role) {
+        throw new BadRequestException('Role code does not exist');
+      }
+      roleIds = [role.id];
+    }
+
+    if (!roleIds.length) {
+      throw new BadRequestException('roleIds or roleCode is required');
+    }
+
+    const roles = await this.prisma.role.findMany({
+      where: { id: { in: roleIds } },
+      select: { id: true },
+    });
+    if (roles.length !== roleIds.length) {
+      throw new BadRequestException('One or more roleIds are invalid');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.userRole.deleteMany({ where: { userId: id } }),
+      this.prisma.userRole.createMany({
+        data: roleIds.map((roleId) => ({ userId: id, roleId })),
+        skipDuplicates: true,
+      }),
+    ]);
+
+    return this.prisma.userRole.findMany({
+      where: { userId: id },
+      include: { role: true },
+    });
   }
 
   private async ensureUnique(
