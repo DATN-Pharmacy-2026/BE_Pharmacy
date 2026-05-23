@@ -1,15 +1,30 @@
+export {};
 const BASE_URL = process.env.DEMO_API_BASE_URL ?? 'http://localhost:3000';
 const USERNAME = process.env.DEMO_ADMIN_USERNAME ?? 'admin';
 const PASSWORD = process.env.DEMO_ADMIN_PASSWORD ?? 'admin123';
+let cachedToken: string | null = null;
+
+async function sleep(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function loginToken(): Promise<string> {
-  const response = await fetch(`${BASE_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: USERNAME, password: PASSWORD }),
-  });
-  const json: any = await response.json();
-  return json?.data?.accessToken ?? json?.accessToken;
+  if (cachedToken) return cachedToken;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const response = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: USERNAME, password: PASSWORD }),
+    });
+    const json: any = await response.json();
+    if (response.status === 201) {
+      cachedToken = json?.data?.accessToken ?? json?.accessToken;
+      return cachedToken as string;
+    }
+    if (response.status !== 429) break;
+    await sleep(300);
+  }
+  throw new Error('login failed');
 }
 
 describe('Reporting / Notification Demo API', () => {
@@ -47,3 +62,6 @@ describe('Reporting / Notification Demo API', () => {
     expect(response.status).toBe(200);
   });
 });
+
+
+

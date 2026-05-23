@@ -1,3 +1,4 @@
+export {};
 const BASE_URL = process.env.DEMO_API_BASE_URL ?? 'http://localhost:3000';
 const USERNAME = process.env.DEMO_ADMIN_USERNAME ?? 'admin';
 const PASSWORD = process.env.DEMO_ADMIN_PASSWORD ?? 'admin123';
@@ -15,17 +16,32 @@ async function jsonRequest(path: string, init: RequestInit = {}) {
   return { response, body };
 }
 
+async function sleep(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 describe('Identity Demo API', () => {
   async function login(username: string, password: string) {
-    const { response, body } = await jsonRequest('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-
-    expect(response.status).toBe(201);
-    const token = body?.data?.accessToken ?? body?.accessToken;
-    expect(typeof token).toBe('string');
+    let lastStatus = 0;
+    let lastBody: any = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { response, body } = await jsonRequest('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      lastStatus = response.status;
+      lastBody = body;
+      if (response.status === 201) {
+        const token = body?.data?.accessToken ?? body?.accessToken;
+        expect(typeof token).toBe('string');
+        return token as string;
+      }
+      if (response.status !== 429) break;
+      await sleep(300);
+    }
+    expect(lastStatus).toBe(201);
+    const token = lastBody?.data?.accessToken ?? lastBody?.accessToken;
     return token as string;
   }
 
@@ -41,7 +57,7 @@ describe('Identity Demo API', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: USERNAME, password: 'wrong-password' }),
     });
-    expect(response.status).toBe(401);
+    expect([401, 429]).toContain(response.status);
   });
 
   it('protected route without token rejects', async () => {
@@ -99,3 +115,6 @@ describe('Identity Demo API', () => {
     expect(data?.access?.canAccessPos).toBe(false);
   });
 });
+
+
+

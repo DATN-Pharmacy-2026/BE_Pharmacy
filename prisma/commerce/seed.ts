@@ -6,6 +6,16 @@ import {
 } from '../../node_modules/.prisma/client/commerce';
 
 const prisma = new PrismaClient();
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function resolveSeedBaseDate(): Date {
+  const fromEnv = process.env.SEED_BASE_DATE;
+  const parsed = fromEnv ? new Date(fromEnv) : new Date('2026-01-01T00:00:00.000Z');
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error('Invalid SEED_BASE_DATE. Use ISO format, e.g. 2026-01-01T00:00:00.000Z');
+  }
+  return parsed;
+}
 
 async function seedCategories() {
   const categories = [
@@ -161,9 +171,9 @@ async function seedProducts() {
 }
 
 async function seedCoupons() {
-  const now = new Date();
-  const startsAt = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const endsAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+  const baseDate = resolveSeedBaseDate();
+  const startsAt = new Date(baseDate.getTime() - DAY_MS);
+  const endsAt = new Date(baseDate.getTime() + 365 * DAY_MS);
 
   await prisma.coupon.upsert({
     where: { code: 'WELCOME10' },

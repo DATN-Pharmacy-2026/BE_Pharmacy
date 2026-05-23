@@ -2,6 +2,16 @@ import { PrismaClient, ReportJobStatus, SettingScope } from '../../node_modules/
 
 const prisma = new PrismaClient();
 
+function resolveSeedBaseDate(): Date {
+  const fromEnv = process.env.SEED_BASE_DATE;
+  const parsed = fromEnv ? new Date(fromEnv) : new Date('2026-01-01T00:00:00.000Z');
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error('Invalid SEED_BASE_DATE. Use ISO format, e.g. 2026-01-01T00:00:00.000Z');
+  }
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+}
+
 async function main(): Promise<void> {
   const settings = [
     { key: 'system.language.default', value: 'vi' },
@@ -40,8 +50,7 @@ async function main(): Promise<void> {
     });
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = resolveSeedBaseDate();
   const metricSeeds = [
     { metricCode: 'todayRevenue', metricValue: 0 },
     { metricCode: 'onlineOrders', metricValue: 0 },

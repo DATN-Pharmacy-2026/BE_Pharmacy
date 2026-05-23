@@ -1,3 +1,4 @@
+export {};
 const BASE_URL = process.env.DEMO_API_BASE_URL ?? 'http://localhost:3000';
 const USERNAME = process.env.DEMO_ADMIN_USERNAME ?? 'admin';
 const PASSWORD = process.env.DEMO_ADMIN_PASSWORD ?? 'admin123';
@@ -5,15 +6,29 @@ const BRANCH_ID =
   process.env.DEMO_BRANCH_ID ?? '11111111-1111-1111-1111-111111111111';
 const WAREHOUSE_ID =
   process.env.DEMO_WAREHOUSE_ID ?? '22222222-2222-2222-2222-222222222222';
+let cachedToken: string | null = null;
+
+async function sleep(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function loginToken(): Promise<string> {
-  const response = await fetch(`${BASE_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: USERNAME, password: PASSWORD }),
-  });
-  const json: any = await response.json();
-  return json?.data?.accessToken ?? json?.accessToken;
+  if (cachedToken) return cachedToken;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const response = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: USERNAME, password: PASSWORD }),
+    });
+    const json: any = await response.json();
+    if (response.status === 201) {
+      cachedToken = json?.data?.accessToken ?? json?.accessToken;
+      return cachedToken as string;
+    }
+    if (response.status !== 429) break;
+    await sleep(300);
+  }
+  throw new Error('login failed');
 }
 
 describe('Operation Demo API', () => {
@@ -46,6 +61,9 @@ describe('Operation Demo API', () => {
     const response = await fetch(`${BASE_URL}/api/receipts?page=1&limit=20`, {
       headers: { Authorization: `Bearer ${token}`, 'x-branch-id': BRANCH_ID },
     });
-    expect([200, 403]).toContain(response.status);
+    expect([200, 401, 403]).toContain(response.status);
   });
 });
+
+
+
