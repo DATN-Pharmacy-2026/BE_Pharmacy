@@ -141,6 +141,7 @@ model Product {
   name                  String
   slug                  String          @unique
   description           String?
+  indication            String?
   activeIngredient      String?
   dosageForm            String?
   strength              String?
@@ -167,6 +168,7 @@ model Product {
   @@index([createdAt])
   @@index([categoryId, status])
   @@index([brandId, status])
+  @@index([indication])
 }
 
 model ProductImage {

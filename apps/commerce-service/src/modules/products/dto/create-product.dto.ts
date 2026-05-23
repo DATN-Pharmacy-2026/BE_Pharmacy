@@ -51,6 +51,11 @@ export class CreateProductDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  indication?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   activeIngredient?: string;
 
   @ApiPropertyOptional()

@@ -35,11 +35,15 @@ export class ProductsService {
       activeIngredient,
       barcode,
       sku,
+      useCase,
+      minPrice,
+      maxPrice,
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = query;
-    const allowedSortFields = ['createdAt', 'updatedAt', 'name', 'status'];
-    if (!allowedSortFields.includes(sortBy)) {
+    const normalizedSortBy = sortBy === 'price' ? 'basePrice' : sortBy;
+    const allowedSortFields = ['createdAt', 'updatedAt', 'name', 'status', 'basePrice'];
+    if (!allowedSortFields.includes(normalizedSortBy)) {
       throw new BadRequestException('Invalid sort field');
     }
     const normalizedSearch = search?.trim();
@@ -61,6 +65,22 @@ export class ProductsService {
         : {}),
       ...(barcode ? { barcode } : {}),
       ...(sku ? { sku } : {}),
+      ...(useCase
+        ? {
+            indication: {
+              contains: useCase,
+              mode: 'insensitive',
+            },
+          }
+        : {}),
+      ...(typeof minPrice === 'number' || typeof maxPrice === 'number'
+        ? {
+            basePrice: {
+              ...(typeof minPrice === 'number' ? { gte: minPrice } : {}),
+              ...(typeof maxPrice === 'number' ? { lte: maxPrice } : {}),
+            },
+          }
+        : {}),
       ...(normalizedSearch
         ? {
             OR: [
@@ -68,6 +88,7 @@ export class ProductsService {
               { sku: { contains: normalizedSearch, mode: 'insensitive' } },
               { barcode: { contains: normalizedSearch, mode: 'insensitive' } },
               { activeIngredient: { contains: normalizedSearch, mode: 'insensitive' } },
+              { indication: { contains: normalizedSearch, mode: 'insensitive' } },
               { registrationNumber: { contains: normalizedSearch, mode: 'insensitive' } },
             ],
           }
@@ -79,7 +100,7 @@ export class ProductsService {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: { [normalizedSortBy]: sortOrder },
         select: {
           id: true,
           categoryId: true,
@@ -88,6 +109,7 @@ export class ProductsService {
           barcode: true,
           name: true,
           slug: true,
+          indication: true,
           status: true,
           requiresPrescription: true,
           unit: true,
