@@ -5,7 +5,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   Min,
 } from 'class-validator';
@@ -33,7 +32,6 @@ export class QueryCategoriesDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   parentId?: string;
 
   @ApiPropertyOptional()

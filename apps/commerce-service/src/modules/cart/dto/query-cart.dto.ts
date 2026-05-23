@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class QueryCartDto {
   @ApiPropertyOptional()
@@ -9,6 +9,5 @@ export class QueryCartDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 }

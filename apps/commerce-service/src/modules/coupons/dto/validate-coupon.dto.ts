@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class ValidateCouponDto {
   @ApiProperty()
@@ -15,11 +15,9 @@ export class ValidateCouponDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   userId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   onlineOrderId?: string;
 }

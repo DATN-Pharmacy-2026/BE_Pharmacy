@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod, PaymentStatus } from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class QueryPosPaymentsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -21,7 +21,6 @@ export class QueryPosPaymentsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   posOrderId?: string;
 
   @ApiPropertyOptional({ enum: PaymentMethod })

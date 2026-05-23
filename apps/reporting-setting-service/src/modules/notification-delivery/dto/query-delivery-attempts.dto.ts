@@ -4,7 +4,7 @@ import {
   NotificationDeliveryStatus,
 } from '.prisma/client/reporting';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryDeliveryAttemptsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -24,7 +24,6 @@ export class QueryDeliveryAttemptsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   notificationEventId?: string;
 
   @ApiPropertyOptional({ enum: NotificationChannel })

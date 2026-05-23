@@ -1,10 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayMinSize, IsArray, IsDateString, IsInt, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
+import { ArrayMinSize, IsArray, IsDateString, IsInt, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 
 export class CreatePurchaseOrderItemDto {
   @ApiProperty()
-  @IsUUID()
+  @IsString()
   productId!: string;
 
   @ApiPropertyOptional()
@@ -31,17 +31,17 @@ export class CreatePurchaseOrderItemDto {
 
 export class CreatePurchaseOrderDto {
   @ApiProperty()
-  @IsUUID()
+  @IsString()
   supplierId!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
+  @IsString()
   warehouseId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
+  @IsString()
   branchId?: string;
 
   @ApiPropertyOptional()

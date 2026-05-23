@@ -4,7 +4,7 @@ import {
   NotificationEventType,
 } from '.prisma/client/reporting';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class QueryNotificationPreferencesDto {
   @ApiPropertyOptional({ default: 1 })
@@ -24,17 +24,14 @@ export class QueryNotificationPreferencesDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   userId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional({ enum: NotificationEventType })

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class CreateReportJobDto {
   @ApiProperty()
@@ -8,17 +8,14 @@ export class CreateReportJobDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   requestedByUserId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional({

@@ -136,8 +136,24 @@ export class PosOrdersService {
               warehouseId: resolved.warehouseId,
             },
           });
-          if (!inventory) throw new NotFoundException('inventory item not found');
-          if (inventory.quantityAvailable < inputItem.quantity) throw new ConflictException('insufficient inventory');
+          if (!inventory) {
+            throw new ConflictException(
+              this.buildInsufficientInventoryMessage(
+                inputItem.productNameSnapshot ?? inputItem.sku ?? inputItem.productId,
+                inputItem.quantity,
+                0,
+              ),
+            );
+          }
+          if (inventory.quantityAvailable < inputItem.quantity) {
+            throw new ConflictException(
+              this.buildInsufficientInventoryMessage(
+                inputItem.productNameSnapshot ?? inputItem.sku ?? inputItem.productId,
+                inputItem.quantity,
+                inventory.quantityAvailable,
+              ),
+            );
+          }
 
           const beforeQty = inventory.quantityOnHand;
           const afterQty = beforeQty - inputItem.quantity;
@@ -274,7 +290,16 @@ export class PosOrdersService {
           remaining -= deductedQty;
         }
 
-        if (remaining > 0) throw new ConflictException('insufficient inventory');
+        if (remaining > 0) {
+          const available = inputItem.quantity - remaining;
+          throw new ConflictException(
+            this.buildInsufficientInventoryMessage(
+              inputItem.productNameSnapshot ?? inputItem.sku ?? inputItem.productId,
+              inputItem.quantity,
+              available,
+            ),
+          );
+        }
       }
 
       await tx.pOSPayment.create({
@@ -334,8 +359,22 @@ export class PosOrdersService {
         where: { branchId, storeId, posTerminalId, status: POSSessionStatus.OPEN },
         orderBy: { openedAt: 'desc' },
       });
-      if (!session) throw new NotFoundException('POS session not found');
-      posSessionId = session.id;
+      if (!session) {
+        const createdSession = await this.prisma.pOSSession.create({
+          data: {
+            branchId,
+            storeId,
+            posTerminalId,
+            cashierUserId: req.user?.id ?? '00000000-0000-0000-0000-000000000000',
+            openingCash: 0,
+            openedAt: new Date(),
+            status: POSSessionStatus.OPEN,
+          },
+        });
+        posSessionId = createdSession.id;
+      } else {
+        posSessionId = session.id;
+      }
     }
 
     dto.items = dto.items.map((item) => ({
@@ -453,5 +492,9 @@ export class PosOrdersService {
       if (!existing) return orderNo;
     }
     throw new BadRequestException('Failed to generate POS order number');
+  }
+
+  private buildInsufficientInventoryMessage(productLabel: string, requestedQty: number, availableQty: number) {
+    return `Khong du ton kho cho san pham ${productLabel}: yeu cau ${requestedQty}, con ${availableQty}.`;
   }
 }

@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { POSSessionStatus } from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class QueryPosSessionsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -21,22 +21,18 @@ export class QueryPosSessionsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   storeId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   posTerminalId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   cashierUserId?: string;
 
   @ApiPropertyOptional({ enum: POSSessionStatus })

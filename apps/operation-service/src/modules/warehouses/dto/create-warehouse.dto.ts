@@ -5,13 +5,11 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  IsUUID,
-} from 'class-validator';
+  } from 'class-validator';
 
 export class CreateWarehouseDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiProperty()

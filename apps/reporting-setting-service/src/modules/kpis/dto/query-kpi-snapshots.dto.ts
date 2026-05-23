@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryKpiSnapshotsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -20,12 +20,10 @@ export class QueryKpiSnapshotsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional()

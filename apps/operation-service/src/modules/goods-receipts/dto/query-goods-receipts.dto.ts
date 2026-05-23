@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { GoodsReceiptStatus } from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryGoodsReceiptsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -31,22 +31,18 @@ export class QueryGoodsReceiptsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   purchaseOrderId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   supplierId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional({ enum: GoodsReceiptStatus })
@@ -56,7 +52,6 @@ export class QueryGoodsReceiptsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   receivedByUserId?: string;
 
   @ApiPropertyOptional()

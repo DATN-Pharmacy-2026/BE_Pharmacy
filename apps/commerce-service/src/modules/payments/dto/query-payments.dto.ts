@@ -7,7 +7,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   Min,
 } from 'class-validator';
@@ -30,7 +29,6 @@ export class QueryPaymentsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   onlineOrderId?: string;
 
   @ApiPropertyOptional({ enum: PaymentMethod })

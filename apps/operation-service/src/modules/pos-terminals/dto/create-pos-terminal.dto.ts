@@ -1,14 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { POSTerminalStatus } from '.prisma/client/operation';
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class CreatePosTerminalDto {
   @ApiProperty()
-  @IsUUID()
   branchId!: string;
 
   @ApiProperty()
-  @IsUUID()
   storeId!: string;
 
   @ApiProperty()

@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { StockTransferStatus } from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryStockTransfersDto {
   @ApiPropertyOptional({ default: 1 })
@@ -31,22 +31,18 @@ export class QueryStockTransfersDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   fromWarehouseId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   toWarehouseId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   fromBranchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   toBranchId?: string;
 
   @ApiPropertyOptional({ enum: StockTransferStatus })
@@ -56,12 +52,10 @@ export class QueryStockTransfersDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   requestedByUserId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   approvedByUserId?: string;
 
   @ApiPropertyOptional()

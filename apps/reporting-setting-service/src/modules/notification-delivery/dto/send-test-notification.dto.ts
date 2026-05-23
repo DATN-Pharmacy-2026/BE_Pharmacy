@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { NotificationChannel } from '.prisma/client/reporting';
-import { IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class SendTestNotificationDto {
   @ApiProperty({ enum: NotificationChannel })
@@ -17,7 +17,6 @@ export class SendTestNotificationDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   recipientUserId?: string;
 
   @ApiPropertyOptional()
@@ -27,12 +26,10 @@ export class SendTestNotificationDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional({

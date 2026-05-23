@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { SettingScope } from '.prisma/client/reporting';
-import { IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional } from 'class-validator';
 
 export class UpdateSettingDto {
   @ApiPropertyOptional({
@@ -22,6 +22,5 @@ export class UpdateSettingDto {
 
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 }

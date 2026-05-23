@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ReportJobStatus } from '.prisma/client/reporting';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryReportJobsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -26,17 +26,14 @@ export class QueryReportJobsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   requestedByUserId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional({ enum: ReportJobStatus })

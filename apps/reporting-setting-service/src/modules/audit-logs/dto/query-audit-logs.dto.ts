@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class QueryAuditLogsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -20,17 +20,14 @@ export class QueryAuditLogsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   actorUserId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional()
@@ -59,7 +56,6 @@ export class QueryAuditLogsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   entityId?: string;
 
   @ApiPropertyOptional()

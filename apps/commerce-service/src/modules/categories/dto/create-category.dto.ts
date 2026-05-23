@@ -3,14 +3,12 @@ import {
   IsBoolean,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
 } from 'class-validator';
 
 export class CreateCategoryDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   parentId?: string;
 
   @ApiProperty()

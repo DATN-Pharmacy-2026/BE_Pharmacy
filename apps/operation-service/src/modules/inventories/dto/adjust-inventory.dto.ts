@@ -4,7 +4,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -16,16 +15,13 @@ export enum InventoryAdjustmentType {
 
 export class AdjustInventoryDto {
   @ApiProperty()
-  @IsUUID()
   warehouseId!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   locationId?: string;
 
   @ApiProperty()
-  @IsUUID()
   productId!: string;
 
   @ApiProperty({ enum: InventoryAdjustmentType })

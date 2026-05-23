@@ -1,12 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayMinSize, IsArray, IsInt, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
+import { ArrayMinSize, IsArray, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 
 export class CreateStockAdjustmentItemDto {
-  @ApiProperty() @IsUUID()
+  @ApiProperty()
   productId!: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   batchId?: string;
 
   @ApiProperty() @Type(() => Number) @IsInt() @Min(0)
@@ -14,10 +14,10 @@ export class CreateStockAdjustmentItemDto {
 }
 
 export class CreateStockAdjustmentDto {
-  @ApiProperty() @IsUUID()
+  @ApiProperty()
   warehouseId!: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   branchId?: string;
 
   @ApiProperty() @IsString()

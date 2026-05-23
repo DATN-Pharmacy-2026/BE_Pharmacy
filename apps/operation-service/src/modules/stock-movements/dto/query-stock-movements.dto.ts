@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { InventoryMovementType } from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryStockMovementsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -12,16 +12,16 @@ export class QueryStockMovementsDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
   limit: number = 20;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   productId?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   batchId?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   warehouseId?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   branchId?: string;
 
   @ApiPropertyOptional({ enum: InventoryMovementType })
@@ -34,7 +34,7 @@ export class QueryStockMovementsDto {
   @ApiPropertyOptional() @IsOptional() @IsString()
   referenceId?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   createdByUserId?: string;
 
   @ApiPropertyOptional() @IsOptional() @IsDateString()

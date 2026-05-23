@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { StockAdjustmentStatus } from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryStockAdjustmentsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -12,20 +12,20 @@ export class QueryStockAdjustmentsDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
   limit: number = 20;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   warehouseId?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   branchId?: string;
 
   @ApiPropertyOptional({ enum: StockAdjustmentStatus })
   @IsOptional() @IsEnum(StockAdjustmentStatus)
   status?: StockAdjustmentStatus;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   createdByUserId?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsUUID()
+  @ApiPropertyOptional() @IsOptional()
   approvedByUserId?: string;
 
   @ApiPropertyOptional() @IsOptional() @IsDateString()

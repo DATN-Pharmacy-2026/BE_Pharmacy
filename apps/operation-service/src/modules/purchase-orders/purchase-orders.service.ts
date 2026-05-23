@@ -164,7 +164,15 @@ export class PurchaseOrdersService {
         })),
       });
 
-      return this.findOne(po.id);
+      const created = await tx.purchaseOrder.findUnique({
+        where: { id: po.id },
+        include: {
+          supplier: { select: { id: true, code: true, name: true } },
+          items: true,
+        },
+      });
+      if (!created) throw new NotFoundException('Purchase order not found');
+      return created;
     });
   }
 

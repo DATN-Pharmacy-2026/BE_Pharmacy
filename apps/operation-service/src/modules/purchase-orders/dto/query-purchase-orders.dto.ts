@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PurchaseOrderStatus } from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryPurchaseOrdersDto {
   @ApiPropertyOptional({ default: 1 })
@@ -26,17 +26,14 @@ export class QueryPurchaseOrdersDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   supplierId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional({ enum: PurchaseOrderStatus })
@@ -46,12 +43,10 @@ export class QueryPurchaseOrdersDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   orderedByUserId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   approvedByUserId?: string;
 
   @ApiPropertyOptional()

@@ -6,7 +6,6 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   MinLength,
   ValidateIf,
@@ -68,17 +67,14 @@ export class CreateUserDto {
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
-  @IsUUID('4', { each: true })
   roleIds?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID('4')
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID('4')
   warehouseId?: string;
 
   @ApiPropertyOptional()

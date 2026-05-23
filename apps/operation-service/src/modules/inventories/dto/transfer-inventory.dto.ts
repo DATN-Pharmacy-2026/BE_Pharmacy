@@ -6,7 +6,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   Min,
   ValidateNested,
@@ -14,7 +13,6 @@ import {
 
 export class TransferInventoryItemDto {
   @ApiProperty()
-  @IsUUID()
   productId!: string;
 
   @ApiProperty()
@@ -25,11 +23,9 @@ export class TransferInventoryItemDto {
 
 export class TransferInventoryDto {
   @ApiProperty()
-  @IsUUID()
   sourceWarehouseId!: string;
 
   @ApiProperty()
-  @IsUUID()
   destinationWarehouseId!: string;
 
   @ApiProperty({ type: [TransferInventoryItemDto] })

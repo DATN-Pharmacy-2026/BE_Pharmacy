@@ -1,10 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CheckoutDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   cartId?: string;
 
   @ApiPropertyOptional()
@@ -14,12 +13,10 @@ export class CheckoutDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   assignedWarehouseId?: string;
 
   @ApiProperty()

@@ -5,7 +5,7 @@ import {
   NotificationEventType,
   NotificationSeverity,
 } from '.prisma/client/reporting';
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class CreateNotificationEventDto {
   @ApiProperty({ enum: NotificationEventType })
@@ -32,22 +32,18 @@ export class CreateNotificationEventDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   recipientUserId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   actorUserId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiProperty()

@@ -1,10 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StoreStatus } from '.prisma/client/operation';
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class CreateStoreDto {
   @ApiProperty()
-  @IsUUID()
   branchId!: string;
 
   @ApiProperty()

@@ -3,23 +3,19 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   Min,
 } from 'class-validator';
 
 export class InitialStockDto {
   @ApiProperty()
-  @IsUUID()
   warehouseId!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   locationId?: string;
 
   @ApiProperty()
-  @IsUUID()
   productId!: string;
 
   @ApiProperty()

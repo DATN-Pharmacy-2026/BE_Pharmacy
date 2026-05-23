@@ -1,17 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentGatewayProvider } from '.prisma/client/commerce';
 import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString, IsUUID, IsUrl, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, IsUrl, Min } from 'class-validator';
 
 export class InitiatePaymentGatewayDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   paymentId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   orderId?: string;
 
   @ApiProperty({ enum: PaymentGatewayProvider })
@@ -47,17 +45,14 @@ export class InitiatePaymentGatewayDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   customerUserId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional()

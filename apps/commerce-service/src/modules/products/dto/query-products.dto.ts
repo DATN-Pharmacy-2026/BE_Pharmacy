@@ -8,7 +8,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -48,12 +47,10 @@ export class QueryProductsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   categoryId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   brandId?: string;
 
   @ApiPropertyOptional({ enum: ProductStatus })

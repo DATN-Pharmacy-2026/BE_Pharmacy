@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ReviewStatus } from '.prisma/client/commerce';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class QueryReviewsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -21,12 +21,10 @@ export class QueryReviewsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   productId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   userId?: string;
 
   @ApiPropertyOptional({ enum: ReviewStatus })

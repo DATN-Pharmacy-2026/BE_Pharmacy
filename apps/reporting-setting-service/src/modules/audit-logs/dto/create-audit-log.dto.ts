@@ -1,20 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class CreateAuditLogDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   actorUserId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiProperty()
@@ -35,7 +32,6 @@ export class CreateAuditLogDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   entityId?: string;
 
   @ApiPropertyOptional({ oneOf: [{ type: 'object' }, { type: 'array', items: {} }, { type: 'string' }, { type: 'number' }, { type: 'boolean' }] })

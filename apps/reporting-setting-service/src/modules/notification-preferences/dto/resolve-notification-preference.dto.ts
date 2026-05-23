@@ -1,22 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { NotificationChannel, NotificationEventType, NotificationSeverity } from '.prisma/client/reporting';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional } from 'class-validator';
 
 export class ResolveNotificationPreferenceDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   userId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiProperty({ enum: NotificationEventType })

@@ -1,10 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BatchStatus } from '.prisma/client/operation';
-import { IsDateString, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class CreateBatchDto {
   @ApiProperty()
-  @IsUUID()
   productId!: string;
 
   @ApiProperty()
@@ -22,7 +21,6 @@ export class CreateBatchDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   supplierId?: string;
 
   @ApiPropertyOptional({ enum: BatchStatus })

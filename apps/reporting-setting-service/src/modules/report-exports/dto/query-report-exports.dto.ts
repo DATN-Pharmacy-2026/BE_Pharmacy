@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryReportExportsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -20,7 +20,6 @@ export class QueryReportExportsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   reportJobId?: string;
 
   @ApiPropertyOptional()

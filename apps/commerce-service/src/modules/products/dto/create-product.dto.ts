@@ -7,19 +7,16 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   Min,
 } from 'class-validator';
 
 export class CreateProductDto {
   @ApiProperty()
-  @IsUUID()
   categoryId!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   brandId?: string;
 
   @ApiProperty()

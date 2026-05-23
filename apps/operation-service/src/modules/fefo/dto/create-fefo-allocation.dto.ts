@@ -1,11 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AllocationOrderType } from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsUUID, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 
 export class CreateFefoAllocationDto {
   @ApiProperty()
-  @IsUUID()
   productId!: string;
 
   @ApiProperty({ enum: AllocationOrderType })
@@ -13,21 +12,17 @@ export class CreateFefoAllocationDto {
   orderType!: AllocationOrderType;
 
   @ApiProperty()
-  @IsUUID()
   orderId!: string;
 
   @ApiProperty()
-  @IsUUID()
   orderItemId!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiProperty()

@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { VerificationResult } from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryBarcodeVerificationsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -26,27 +26,22 @@ export class QueryBarcodeVerificationsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   productId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   batchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   warehouseId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   scannedByUserId?: string;
 
   @ApiPropertyOptional({ enum: VerificationResult })

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AllocationOrderType } from '.prisma/client/operation';
-import { IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class ReleaseFefoByOrderDto {
   @ApiProperty({ enum: AllocationOrderType })
@@ -8,7 +8,6 @@ export class ReleaseFefoByOrderDto {
   orderType!: AllocationOrderType;
 
   @ApiProperty()
-  @IsUUID()
   orderId!: string;
 
   @ApiPropertyOptional()

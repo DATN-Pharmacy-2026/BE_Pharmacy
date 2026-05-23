@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class QueryReceiptsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -30,27 +30,22 @@ export class QueryReceiptsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   posOrderId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   onlineOrderId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   branchId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   storeId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   issuedByUserId?: string;
 
   @ApiPropertyOptional()

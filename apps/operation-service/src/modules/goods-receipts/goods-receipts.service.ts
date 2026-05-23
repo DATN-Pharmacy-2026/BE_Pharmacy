@@ -188,8 +188,17 @@ export class GoodsReceiptsService {
         });
       }
 
-      // TODO: Post inventory and stock movements after receipt confirmation in inventory task.
-      return this.findOne(receipt.id);
+      // Read back inside same transaction to avoid rare read-after-write 404.
+      const created = await tx.goodsReceipt.findUnique({
+        where: { id: receipt.id },
+        include: {
+          supplier: { select: { id: true, code: true, name: true } },
+          purchaseOrder: { select: { id: true, poNo: true, status: true } },
+          items: { include: { batch: true } },
+        },
+      });
+      if (!created) throw new NotFoundException('Goods receipt not found');
+      return created;
     });
   }
 

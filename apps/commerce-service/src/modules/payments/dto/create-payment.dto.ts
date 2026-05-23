@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod, PaymentStatus } from '.prisma/client/commerce';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class CreatePaymentDto {
   @ApiPropertyOptional({ default: 1 })
@@ -21,7 +21,6 @@ export class CreatePaymentDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
   onlineOrderId?: string;
 
   @ApiPropertyOptional({ enum: PaymentMethod })
