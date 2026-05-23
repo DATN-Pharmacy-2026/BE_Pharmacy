@@ -1,4 +1,13 @@
-import { PrismaClient, ReportJobStatus, SettingScope } from '../../node_modules/.prisma/client/reporting';
+import {
+  NotificationChannel,
+  NotificationEventStatus,
+  NotificationEventType,
+  NotificationSeverity,
+  Prisma,
+  PrismaClient,
+  ReportJobStatus,
+  SettingScope,
+} from '../../node_modules/.prisma/client/reporting';
 
 const prisma = new PrismaClient();
 
@@ -123,6 +132,109 @@ async function main(): Promise<void> {
       },
     });
   }
+
+  const reportJob = await prisma.reportJob.findFirst({
+    where: { reportType: 'SALES_SUMMARY' },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (reportJob) {
+    const exportExists = await prisma.reportExport.findFirst({
+      where: {
+        reportJobId: reportJob.id,
+        fileName: 'sales-summary-2026-01-01.csv',
+      },
+      select: { id: true },
+    });
+
+    if (!exportExists) {
+      await prisma.reportExport.create({
+        data: {
+          reportJobId: reportJob.id,
+          fileName: 'sales-summary-2026-01-01.csv',
+          fileUrl: '/exports/sales-summary-2026-01-01.csv',
+          fileType: 'csv',
+        },
+      });
+    }
+  }
+
+  const notificationSeedDate = new Date(today.getTime() + 8 * 60 * 60 * 1000);
+  await prisma.notificationEvent.upsert({
+    where: { id: '91000000-0000-0000-0000-000000000001' },
+    update: {
+      type: NotificationEventType.REPORT_JOB_CREATED,
+      channel: NotificationChannel.IN_APP,
+      severity: NotificationSeverity.INFO,
+      title: 'Bao cao da duoc tao',
+      message: 'Yeu cau tao bao cao doanh so da duoc tiep nhan.',
+      recipientUserId: '60000000-0000-0000-0000-000000000001',
+      actorUserId: '60000000-0000-0000-0000-000000000001',
+      branchId: null,
+      warehouseId: null,
+      sourceService: 'reporting-setting-service',
+      sourceModule: 'reports',
+      sourceEntityType: 'report_job',
+      sourceEntityId: reportJob?.id ?? null,
+      payload: { reportType: 'SALES_SUMMARY' },
+      status: NotificationEventStatus.DELIVERED,
+      deliveredAt: notificationSeedDate,
+    },
+    create: {
+      id: '91000000-0000-0000-0000-000000000001',
+      type: NotificationEventType.REPORT_JOB_CREATED,
+      channel: NotificationChannel.IN_APP,
+      severity: NotificationSeverity.INFO,
+      title: 'Bao cao da duoc tao',
+      message: 'Yeu cau tao bao cao doanh so da duoc tiep nhan.',
+      recipientUserId: '60000000-0000-0000-0000-000000000001',
+      actorUserId: '60000000-0000-0000-0000-000000000001',
+      branchId: null,
+      warehouseId: null,
+      sourceService: 'reporting-setting-service',
+      sourceModule: 'reports',
+      sourceEntityType: 'report_job',
+      sourceEntityId: reportJob?.id ?? null,
+      payload: { reportType: 'SALES_SUMMARY' },
+      status: NotificationEventStatus.DELIVERED,
+      deliveredAt: notificationSeedDate,
+      createdAt: notificationSeedDate,
+    },
+  });
+
+  await prisma.auditLog.upsert({
+    where: { id: '92000000-0000-0000-0000-000000000001' },
+    update: {
+      actorUserId: '60000000-0000-0000-0000-000000000001',
+      branchId: '11111111-1111-1111-1111-111111111111',
+      warehouseId: '22222222-2222-2222-2222-222222222222',
+      serviceName: 'operation-service',
+      module: 'goods-receipt',
+      action: 'receive',
+      entityType: 'goods_receipt',
+      entityId: null,
+      beforeData: Prisma.JsonNull,
+      afterData: { receiptNo: 'GR-2026-0001', status: 'RECEIVED' },
+      ipAddress: '127.0.0.1',
+      userAgent: 'seed-script',
+    },
+    create: {
+      id: '92000000-0000-0000-0000-000000000001',
+      actorUserId: '60000000-0000-0000-0000-000000000001',
+      branchId: '11111111-1111-1111-1111-111111111111',
+      warehouseId: '22222222-2222-2222-2222-222222222222',
+      serviceName: 'operation-service',
+      module: 'goods-receipt',
+      action: 'receive',
+      entityType: 'goods_receipt',
+      entityId: null,
+      beforeData: Prisma.JsonNull,
+      afterData: { receiptNo: 'GR-2026-0001', status: 'RECEIVED' },
+      ipAddress: '127.0.0.1',
+      userAgent: 'seed-script',
+      createdAt: notificationSeedDate,
+    },
+  });
 }
 
 main()

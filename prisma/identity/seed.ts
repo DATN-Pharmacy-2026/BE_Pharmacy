@@ -246,6 +246,7 @@ async function upsertDemoUsers(passwordHash: string, adminPasswordHash: string) 
   const roleIdByCode = new Map((await prisma.role.findMany({ select: { id: true, code: true } })).map((r) => [r.code, r.id]));
 
   const demoUsers: Array<{
+    id: string;
     username: string;
     email: string;
     fullName: string;
@@ -256,15 +257,16 @@ async function upsertDemoUsers(passwordHash: string, adminPasswordHash: string) 
     branchIds: string[];
     warehouseIds: string[];
   }> = [
-    { username: 'admin', email: 'admin@pharmplus.local', fullName: 'Super Admin Demo', phone: '0900000000', roleCode: 'SUPER_ADMIN', isSystemAdmin: true, passwordHash: adminPasswordHash, branchIds: [BRANCH_1_ID, BRANCH_2_ID], warehouseIds: [WAREHOUSE_1_ID, WAREHOUSE_2_ID] },
-    { username: 'companyadmin', email: 'company.admin@pharmplus.local', fullName: 'Company Admin Demo', phone: '0900000001', roleCode: 'COMPANY_ADMIN', branchIds: [BRANCH_1_ID, BRANCH_2_ID], warehouseIds: [WAREHOUSE_1_ID, WAREHOUSE_2_ID] },
-    { username: 'manager.branch1', email: 'manager.branch1@pharmplus.local', fullName: 'Branch Manager Demo', phone: '0900000002', roleCode: 'BRANCH_MANAGER', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
-    { username: 'cashier.branch1', email: 'cashier.branch1@pharmplus.local', fullName: 'Cashier Branch 1 Demo', phone: '0900000003', roleCode: 'CASHIER', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
-    { username: 'inventory.branch1', email: 'inventory.branch1@pharmplus.local', fullName: 'Inventory Manager Branch 1 Demo', phone: '0900000004', roleCode: 'INVENTORY_MANAGER', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID, WAREHOUSE_2_ID] },
-    { username: 'report.viewer', email: 'report.viewer@pharmplus.local', fullName: 'Report Viewer Demo', phone: '0900000005', roleCode: 'REPORT_VIEWER', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
-    { username: 'cs.branch1', email: 'cs.branch1@pharmplus.local', fullName: 'Customer Service Branch 1 Demo', phone: '0900000006', roleCode: 'CUSTOMER_SERVICE', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
-    { username: 'customer1', email: 'customer1@pharmplus.local', fullName: 'Customer Demo 1', phone: '0900000007', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
-    { username: 'pharmacist.branch1', email: 'pharmacist.branch1@pharmplus.local', fullName: 'Pharmacist Branch 1 Demo', phone: '0900000008', roleCode: 'PHARMACIST', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
+    { id: '60000000-0000-0000-0000-000000000001', username: 'admin', email: 'admin@pharmplus.local', fullName: 'Super Admin Demo', phone: '0900000000', roleCode: 'SUPER_ADMIN', isSystemAdmin: true, passwordHash: adminPasswordHash, branchIds: [BRANCH_1_ID, BRANCH_2_ID], warehouseIds: [WAREHOUSE_1_ID, WAREHOUSE_2_ID] },
+    { id: '60000000-0000-0000-0000-000000000009', username: 'companyadmin', email: 'company.admin@pharmplus.local', fullName: 'Company Admin Demo', phone: '0900000001', roleCode: 'COMPANY_ADMIN', branchIds: [BRANCH_1_ID, BRANCH_2_ID], warehouseIds: [WAREHOUSE_1_ID, WAREHOUSE_2_ID] },
+    { id: '60000000-0000-0000-0000-000000000003', username: 'manager.branch1', email: 'manager.branch1@pharmplus.local', fullName: 'Branch Manager Demo', phone: '0900000002', roleCode: 'BRANCH_MANAGER', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
+    { id: '60000000-0000-0000-0000-000000000002', username: 'cashier.branch1', email: 'cashier.branch1@pharmplus.local', fullName: 'Cashier Branch 1 Demo', phone: '0900000003', roleCode: 'CASHIER', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
+    { id: '60000000-0000-0000-0000-000000000004', username: 'inventory.branch1', email: 'inventory.branch1@pharmplus.local', fullName: 'Inventory Manager Branch 1 Demo', phone: '0900000004', roleCode: 'INVENTORY_MANAGER', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID, WAREHOUSE_2_ID] },
+    { id: '60000000-0000-0000-0000-000000000005', username: 'report.viewer', email: 'report.viewer@pharmplus.local', fullName: 'Report Viewer Demo', phone: '0900000005', roleCode: 'REPORT_VIEWER', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
+    { id: '60000000-0000-0000-0000-000000000006', username: 'cs.branch1', email: 'cs.branch1@pharmplus.local', fullName: 'Customer Service Branch 1 Demo', phone: '0900000006', roleCode: 'CUSTOMER_SERVICE', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
+    { id: '70000000-0000-0000-0000-000000000001', username: 'customer1', email: 'customer1@pharmplus.local', fullName: 'Customer Demo 1', phone: '0900000007', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
+    { id: '70000000-0000-0000-0000-000000000002', username: 'customer2', email: 'customer2@pharmplus.local', fullName: 'Customer Demo 2', phone: '0900000018', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
+    { id: '60000000-0000-0000-0000-000000000008', username: 'pharmacist.branch1', email: 'pharmacist.branch1@pharmplus.local', fullName: 'Pharmacist Branch 1 Demo', phone: '0900000008', roleCode: 'PHARMACIST', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
   ];
 
   let usersUpdated = 0;
@@ -289,7 +291,7 @@ async function upsertDemoUsers(passwordHash: string, adminPasswordHash: string) 
 
     const user = existing
       ? await prisma.user.update({ where: { id: existing.id }, data: payload })
-      : await prisma.user.create({ data: payload });
+      : await prisma.user.create({ data: { id: demoUser.id, ...payload } });
     usersUpdated++;
 
     await prisma.userRole.deleteMany({ where: { userId: user.id } });
