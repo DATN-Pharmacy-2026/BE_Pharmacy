@@ -46,8 +46,10 @@ export class OrdersService {
     const normalizedSearch = search?.trim();
 
     const branchIdFilter = branchId ?? this.getHeader(req, 'x-branch-id');
-    const warehouseFilter =
-      assignedWarehouseId ?? this.getHeader(req, 'x-warehouse-id');
+    // Do not implicitly scope orders by warehouse header.
+    // Orders are often created before warehouse assignment, so header-scoping
+    // can hide valid records unexpectedly in admin list.
+    const warehouseFilter = assignedWarehouseId;
 
     const where: Prisma.OnlineOrderWhereInput = {
       ...(userId ? { userId } : {}),
