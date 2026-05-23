@@ -7,6 +7,7 @@ import {
   LocationStatus,
   Prisma,
   WarehouseStatus,
+  WarehouseType,
 } from '.prisma/client/operation';
 import { BranchesService } from '../branches/branches.service';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
@@ -86,11 +87,20 @@ export class WarehousesService {
 
   async create(dto: CreateWarehouseDto) {
     if (dto.branchId) await this.branchesService.findOne(dto.branchId);
+    const resolvedType =
+      dto.type ??
+      (dto.isCentral ? WarehouseType.CENTRAL : dto.branchId ? WarehouseType.BRANCH : WarehouseType.CENTRAL);
     try {
       return await this.prisma.warehouse.create({
         data: {
           ...dto,
-          status: dto.status ?? WarehouseStatus.ACTIVE,
+          type: resolvedType,
+          address: dto.address ?? dto.location,
+          status:
+            dto.status ??
+            (dto.isActive === false
+              ? WarehouseStatus.INACTIVE
+              : WarehouseStatus.ACTIVE),
           isCentral: dto.isCentral ?? false,
         },
       });
@@ -103,8 +113,23 @@ export class WarehousesService {
   async update(id: string, dto: UpdateWarehouseDto) {
     await this.findOne(id);
     if (dto.branchId) await this.branchesService.findOne(dto.branchId);
+    const status =
+      dto.status ??
+      (dto.isActive === undefined
+        ? undefined
+        : dto.isActive
+          ? WarehouseStatus.ACTIVE
+          : WarehouseStatus.INACTIVE);
     try {
-      return await this.prisma.warehouse.update({ where: { id }, data: dto });
+      return await this.prisma.warehouse.update({
+        where: { id },
+        data: {
+          ...dto,
+          type: dto.type ?? undefined,
+          address: dto.address ?? dto.location ?? undefined,
+          status,
+        },
+      });
     } catch (error) {
       this.handleUniqueError(error, 'Duplicate warehouse code');
       throw error;

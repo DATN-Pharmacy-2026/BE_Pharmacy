@@ -30,6 +30,7 @@ export const OPERATION_ROUTES = [
   '/api/warehouses/*',
   '/api/suppliers/*',
   '/api/purchase-orders/*',
+  '/api/purchase-requests/*',
   '/api/goods-receipts/*',
   '/api/batches/*',
   '/api/inventories/*',

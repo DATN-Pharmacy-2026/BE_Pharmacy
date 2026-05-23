@@ -68,8 +68,17 @@ export class CheckoutService {
     const shippingFee = 0;
     const grandTotal = subtotal - discountTotal + shippingFee;
 
-    const isMock = dto.paymentMethod === 'MOCK';
+    const paymentFlow = dto.paymentMethod;
+    const isMock = paymentFlow === 'MOCK';
     const paymentStatus = isMock ? PaymentStatus.PAID : PaymentStatus.PENDING;
+    const paymentMethod =
+      paymentFlow === 'COD' ? PaymentMethod.COD : PaymentMethod.E_WALLET;
+    const provider =
+      paymentFlow === 'VNPAY' || paymentFlow === 'MOMO'
+        ? paymentFlow
+        : isMock
+          ? 'MOCK'
+          : null;
 
     const result = await this.prisma.$transaction(async (tx) => {
       const orderNo = await this.generateOrderNo(tx);
@@ -111,8 +120,8 @@ export class CheckoutService {
       await tx.payment.create({
         data: {
           onlineOrderId: order.id,
-          method: PaymentMethod.COD,
-          provider: isMock ? 'MOCK' : null,
+          method: paymentMethod,
+          provider,
           transactionNo: isMock ? `MOCK-${Date.now()}` : null,
           amount: grandTotal,
           status: paymentStatus,

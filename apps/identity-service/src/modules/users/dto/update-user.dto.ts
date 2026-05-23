@@ -38,4 +38,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   isSystemAdmin?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

@@ -23,8 +23,9 @@ export class CreateWarehouseDto {
   name!: string;
 
   @ApiProperty({ enum: WarehouseType })
+  @IsOptional()
   @IsEnum(WarehouseType)
-  type!: WarehouseType;
+  type?: WarehouseType;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -33,8 +34,18 @@ export class CreateWarehouseDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsBoolean()
   isCentral?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 
   @ApiPropertyOptional({ enum: WarehouseStatus })
   @IsOptional()

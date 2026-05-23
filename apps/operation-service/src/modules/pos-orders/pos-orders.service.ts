@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { AllocationOrderType, AllocationStatus, InventoryMovementType, PaymentStatus, POSOrderStatus, POSSessionStatus, Prisma } from '.prisma/client/operation';
+import { AllocationOrderType, AllocationStatus, InventoryMovementType, PaymentStatus, POSOrderStatus, POSSessionStatus, POSTerminalStatus, Prisma, StoreStatus } from '.prisma/client/operation';
 import { Request } from 'express';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { CreatePosOrderDto } from './dto/create-pos-order.dto';
@@ -81,10 +81,11 @@ export class PosOrdersService {
   }
 
   async create(req: Request & { user?: { id?: string } }, dto: CreatePosOrderDto) {
-    await this.validateContext(dto.branchId, dto.storeId, dto.posTerminalId, dto.posSessionId, dto.warehouseId);
+    const resolved = await this.resolvePosContext(req, dto);
+    await this.validateContext(resolved.branchId, resolved.storeId, resolved.posTerminalId, resolved.posSessionId, resolved.warehouseId);
     if (!dto.items.length) throw new BadRequestException('Empty POS order items');
 
-    const session = await this.prisma.pOSSession.findUnique({ where: { id: dto.posSessionId } });
+    const session = await this.prisma.pOSSession.findUnique({ where: { id: resolved.posSessionId } });
     if (!session) throw new NotFoundException('POS session not found');
     if (session.status !== POSSessionStatus.OPEN) throw new ConflictException('POS session already closed');
 
@@ -107,10 +108,10 @@ export class PosOrdersService {
       const order = await tx.pOSOrder.create({
         data: {
           orderNo,
-          branchId: dto.branchId,
-          storeId: dto.storeId,
-          posTerminalId: dto.posTerminalId,
-          posSessionId: dto.posSessionId,
+          branchId: resolved.branchId,
+          storeId: resolved.storeId,
+          posTerminalId: resolved.posTerminalId,
+          posSessionId: resolved.posSessionId,
           cashierUserId,
           customerUserId: dto.customerUserId,
           status: amountPaid >= grandTotal ? POSOrderStatus.COMPLETED : POSOrderStatus.CREATED,
@@ -132,7 +133,7 @@ export class PosOrdersService {
             where: {
               productId: inputItem.productId,
               batchId: inputItem.batchId,
-              warehouseId: dto.warehouseId,
+              warehouseId: resolved.warehouseId,
             },
           });
           if (!inventory) throw new NotFoundException('inventory item not found');
@@ -154,7 +155,7 @@ export class PosOrdersService {
               productId: inputItem.productId,
               batchId: inputItem.batchId,
               sku: inputItem.sku,
-              productNameSnapshot: inputItem.productNameSnapshot,
+              productNameSnapshot: inputItem.productNameSnapshot ?? inputItem.sku ?? inputItem.productId,
               quantity: inputItem.quantity,
               unitPrice: inputItem.unitPrice,
               discountAmount: itemDiscount,
@@ -166,7 +167,7 @@ export class PosOrdersService {
             data: {
               tenantId: '00000000-0000-0000-0000-000000000000',
               productId: inputItem.productId,
-              warehouseId: dto.warehouseId,
+              warehouseId: resolved.warehouseId,
               movementType: InventoryMovementType.SALE_DECREASE,
               quantity: inputItem.quantity,
               beforeQuantity: beforeQty,
@@ -183,8 +184,8 @@ export class PosOrdersService {
               orderType: AllocationOrderType.POS_ORDER,
               orderId: order.id,
               orderItemId: item.id,
-              warehouseId: dto.warehouseId,
-              branchId: dto.branchId,
+              warehouseId: resolved.warehouseId,
+              branchId: resolved.branchId,
               batchId: inputItem.batchId,
               expiryDate: inventory.expiryDate,
               allocatedQty: inputItem.quantity,
@@ -199,7 +200,7 @@ export class PosOrdersService {
         const fefoInventories = await tx.inventoryItem.findMany({
           where: {
             productId: inputItem.productId,
-            warehouseId: dto.warehouseId,
+            warehouseId: resolved.warehouseId,
             quantityAvailable: { gt: 0 },
             expiryDate: { gte: new Date() },
           },
@@ -232,7 +233,7 @@ export class PosOrdersService {
               productId: inputItem.productId,
               batchId: inventory.batchId,
               sku: inputItem.sku,
-              productNameSnapshot: inputItem.productNameSnapshot,
+              productNameSnapshot: inputItem.productNameSnapshot ?? inputItem.sku ?? inputItem.productId,
               quantity: deductedQty,
               unitPrice: inputItem.unitPrice,
               discountAmount: ratioDiscount,
@@ -244,7 +245,7 @@ export class PosOrdersService {
             data: {
               tenantId: '00000000-0000-0000-0000-000000000000',
               productId: inputItem.productId,
-              warehouseId: dto.warehouseId,
+              warehouseId: resolved.warehouseId,
               movementType: InventoryMovementType.SALE_DECREASE,
               quantity: deductedQty,
               beforeQuantity: beforeQty,
@@ -261,8 +262,8 @@ export class PosOrdersService {
               orderType: AllocationOrderType.POS_ORDER,
               orderId: order.id,
               orderItemId: item.id,
-              warehouseId: dto.warehouseId,
-              branchId: dto.branchId,
+              warehouseId: resolved.warehouseId,
+              branchId: resolved.branchId,
               batchId: inventory.batchId,
               expiryDate: inventory.expiryDate,
               allocatedQty: deductedQty,
@@ -288,6 +289,67 @@ export class PosOrdersService {
 
       return this.findOne(order.id);
     });
+  }
+
+  private async resolvePosContext(
+    req: Request,
+    dto: CreatePosOrderDto,
+  ): Promise<{
+    branchId: string;
+    warehouseId: string;
+    storeId: string;
+    posTerminalId: string;
+    posSessionId: string;
+  }> {
+    const headerBranchId = this.header(req, 'x-branch-id');
+    const headerWarehouseId = this.header(req, 'x-warehouse-id');
+    const branchId = dto.branchId ?? headerBranchId;
+    const warehouseId = dto.warehouseId ?? headerWarehouseId;
+    if (!branchId) throw new BadRequestException('branchId is required');
+    if (!warehouseId) throw new BadRequestException('warehouseId is required');
+
+    let storeId = dto.storeId;
+    if (!storeId) {
+      const store = await this.prisma.store.findFirst({
+        where: { branchId, status: StoreStatus.ACTIVE },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (!store) throw new NotFoundException('Store not found');
+      storeId = store.id;
+    }
+
+    let posTerminalId = dto.posTerminalId;
+    if (!posTerminalId) {
+      const terminal = await this.prisma.pOSTerminal.findFirst({
+        where: { branchId, storeId, status: POSTerminalStatus.ACTIVE },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (!terminal) throw new NotFoundException('POS terminal not found');
+      posTerminalId = terminal.id;
+    }
+
+    let posSessionId = dto.posSessionId;
+    if (!posSessionId) {
+      const session = await this.prisma.pOSSession.findFirst({
+        where: { branchId, storeId, posTerminalId, status: POSSessionStatus.OPEN },
+        orderBy: { openedAt: 'desc' },
+      });
+      if (!session) throw new NotFoundException('POS session not found');
+      posSessionId = session.id;
+    }
+
+    dto.items = dto.items.map((item) => ({
+      ...item,
+      sku: item.sku ?? item.productId,
+      productNameSnapshot: item.productNameSnapshot ?? item.sku ?? item.productId,
+    }));
+
+    return { branchId, warehouseId, storeId, posTerminalId, posSessionId };
+  }
+
+  private header(req: Request, key: string): string | undefined {
+    const value = req.headers[key];
+    return typeof value === 'string' && value.trim() ? value : undefined;
   }
 
   async updateStatus(id: string, dto: UpdatePosOrderStatusDto) {

@@ -42,8 +42,8 @@ export class CheckoutDto {
   @IsString()
   note?: string;
 
-  @ApiProperty({ enum: ['COD', 'MOCK'] })
+  @ApiProperty({ enum: ['COD', 'MOCK', 'VNPAY', 'MOMO'] })
   @IsString()
-  @IsIn(['COD', 'MOCK'])
-  paymentMethod!: 'COD' | 'MOCK';
+  @IsIn(['COD', 'MOCK', 'VNPAY', 'MOMO'])
+  paymentMethod!: 'COD' | 'MOCK' | 'VNPAY' | 'MOMO';
 }

@@ -13,7 +13,7 @@ import { PurchaseOrdersService } from './purchase-orders.service';
 @ApiHeader({ name: 'x-branch-id', required: false })
 @ApiHeader({ name: 'x-warehouse-id', required: false })
 @UseGuards(JwtAuthGuard)
-@Controller('api/purchase-orders')
+@Controller(['api/purchase-orders', 'api/purchase-requests'])
 export class PurchaseOrdersController {
   constructor(private readonly purchaseOrdersService: PurchaseOrdersService) {}
 

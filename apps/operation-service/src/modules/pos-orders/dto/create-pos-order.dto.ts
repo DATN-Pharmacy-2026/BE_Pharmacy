@@ -13,13 +13,15 @@ export class CreatePosOrderItemDto {
   @IsUUID()
   batchId?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  sku!: string;
+  sku?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  productNameSnapshot!: string;
+  productNameSnapshot?: string;
 
   @ApiProperty()
   @Type(() => Number)
@@ -42,30 +44,35 @@ export class CreatePosOrderItemDto {
 }
 
 export class CreatePosOrderDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  branchId!: string;
+  branchId?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  storeId!: string;
+  storeId?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  posTerminalId!: string;
+  posTerminalId?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  posSessionId!: string;
+  posSessionId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
   customerUserId?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  warehouseId!: string;
+  warehouseId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

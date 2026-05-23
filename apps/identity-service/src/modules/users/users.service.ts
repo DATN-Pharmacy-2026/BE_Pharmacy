@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { Prisma, UserStatus } from '.prisma/client/identity';
+import { AccessStatus, Prisma, UserStatus } from '.prisma/client/identity';
 import { IdentityPrismaService } from '../../prisma/identity-prisma.service';
 import { AssignUserRolesDto } from './dto/assign-user-roles.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -67,19 +67,47 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto) {
-    await this.ensureUnique(dto.username, dto.email);
+    const username = dto.username?.trim() || dto.email;
+    const passwordRaw = dto.passwordHash || dto.password;
+    if (!passwordRaw) {
+      throw new BadRequestException('passwordHash or password is required');
+    }
+
+    await this.ensureUnique(username, dto.email);
     const user = await this.prisma.user.create({
       data: {
-        username: dto.username,
+        username,
         email: dto.email,
         phone: dto.phone ?? '',
-        passwordHash: await this.normalizePasswordHash(dto.passwordHash),
+        passwordHash: await this.normalizePasswordHash(passwordRaw),
         fullName: dto.fullName,
         avatarUrl: dto.avatarUrl,
-        status: dto.status ?? UserStatus.ACTIVE,
+        status:
+          dto.status ??
+          (dto.isActive === false ? UserStatus.INACTIVE : UserStatus.ACTIVE),
         isSystemAdmin: dto.isSystemAdmin ?? false,
       },
     });
+
+    if (dto.roleCode || dto.roleIds?.length) {
+      await this.assignRoles(user.id, { roleCode: dto.roleCode, roleIds: dto.roleIds });
+    }
+
+    if (dto.branchId) {
+      await this.prisma.userBranchAccess.upsert({
+        where: { userId_branchId: { userId: user.id, branchId: dto.branchId } },
+        create: { userId: user.id, branchId: dto.branchId, status: AccessStatus.ACTIVE, isDefaultBranch: true },
+        update: { status: AccessStatus.ACTIVE, isDefaultBranch: true },
+      });
+    }
+
+    if (dto.warehouseId) {
+      await this.prisma.userWarehouseAccess.upsert({
+        where: { userId_warehouseId: { userId: user.id, warehouseId: dto.warehouseId } },
+        create: { userId: user.id, warehouseId: dto.warehouseId, status: AccessStatus.ACTIVE },
+        update: { status: AccessStatus.ACTIVE },
+      });
+    }
 
     return this.toSafeUser(user);
   }
@@ -106,7 +134,20 @@ export class UsersService {
 
     const user = await this.prisma.user.update({
       where: { id },
-      data: dto,
+      data: {
+        email: dto.email,
+        phone: dto.phone,
+        fullName: dto.fullName,
+        avatarUrl: dto.avatarUrl,
+        status:
+          dto.status ??
+          (dto.isActive === undefined
+            ? undefined
+            : dto.isActive
+              ? UserStatus.ACTIVE
+              : UserStatus.INACTIVE),
+        isSystemAdmin: dto.isSystemAdmin,
+      },
     });
 
     return this.toSafeUser(user);

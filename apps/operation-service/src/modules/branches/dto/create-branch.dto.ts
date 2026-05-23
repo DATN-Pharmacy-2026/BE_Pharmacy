@@ -1,11 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BranchStatus } from '.prisma/client/operation';
-import { IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateBranchDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  companyId!: string;
+  companyId?: string;
 
   @ApiProperty()
   @IsString()
@@ -25,9 +26,10 @@ export class CreateBranchDto {
   @IsEmail()
   email?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  address!: string;
+  address?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -48,4 +50,9 @@ export class CreateBranchDto {
   @IsOptional()
   @IsEnum(BranchStatus)
   status?: BranchStatus;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

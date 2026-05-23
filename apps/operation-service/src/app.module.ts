@@ -30,6 +30,7 @@ import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { WarehousesModule } from './modules/warehouses/warehouses.module';
 import { OperationPrismaModule } from './prisma/operation-prisma.module';
+import { JwtStrategy } from './auth/jwt.strategy';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { OperationPrismaModule } from './prisma/operation-prisma.module';
     VerificationModule,
   ],
   providers: [
+    JwtStrategy,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

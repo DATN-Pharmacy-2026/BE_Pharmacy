@@ -1,21 +1,25 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsArray,
   IsBoolean,
   IsEmail,
   IsEnum,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { UserStatus } from '.prisma/client/identity';
 
 export class CreateUserDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
   @MinLength(3)
   @MaxLength(50)
-  username!: string;
+  username?: string;
 
   @ApiProperty()
   @IsEmail()
@@ -26,9 +30,16 @@ export class CreateUserDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @ValidateIf((o: CreateUserDto) => !o.password)
   @IsString()
-  passwordHash!: string;
+  passwordHash?: string;
+
+  @ApiPropertyOptional()
+  @ValidateIf((o: CreateUserDto) => !o.passwordHash)
+  @IsString()
+  @MinLength(6)
+  password?: string;
 
   @ApiProperty()
   @IsString()
@@ -48,4 +59,30 @@ export class CreateUserDto {
   @IsOptional()
   @IsBoolean()
   isSystemAdmin?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  roleCode?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  roleIds?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID('4')
+  branchId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID('4')
+  warehouseId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
