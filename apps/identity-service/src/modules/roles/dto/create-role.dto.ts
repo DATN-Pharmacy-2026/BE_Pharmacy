@@ -3,9 +3,10 @@ import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { RoleScope } from '.prisma/client/identity';
 
 export class CreateRoleDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  code!: string;
+  code?: string;
 
   @ApiProperty()
   @IsString()

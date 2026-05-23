@@ -1,5 +1,9 @@
 export const REPORT_TYPES = [
   'SALES_SUMMARY',
+  'SALES_DETAIL',
+  'MARGIN_ANALYSIS',
+  'PROFIT_AND_LOSS',
+  'PAYMENT_RECONCILIATION',
   'ONLINE_ORDER_SUMMARY',
   'POS_SALES_SUMMARY',
   'INVENTORY_SUMMARY',
@@ -16,6 +20,10 @@ export type SupportedReportType = (typeof REPORT_TYPES)[number];
 
 export const REPORT_TYPE_DESCRIPTIONS: Record<SupportedReportType, string> = {
   SALES_SUMMARY: 'Sales summary report',
+  SALES_DETAIL: 'Sales detail report',
+  MARGIN_ANALYSIS: 'Margin analysis report',
+  PROFIT_AND_LOSS: 'Profit and loss report',
+  PAYMENT_RECONCILIATION: 'Payment reconciliation report',
   ONLINE_ORDER_SUMMARY: 'Online order summary report',
   POS_SALES_SUMMARY: 'POS sales summary report',
   INVENTORY_SUMMARY: 'Inventory summary report',

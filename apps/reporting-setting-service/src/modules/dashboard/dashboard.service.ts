@@ -47,6 +47,11 @@ export class DashboardService {
         metrics[item.metricCode as keyof typeof metrics] = Number(item.metricValue);
       }
     }
+    const kpiList = Object.entries(metrics).map(([key, value]) => ({
+      key,
+      label: key,
+      value,
+    }));
 
     return {
       scope: {
@@ -55,6 +60,8 @@ export class DashboardService {
       },
       date: this.formatLocalDate(dateStart),
       metrics,
+      kpis: kpiList,
+      items: kpiList,
       snapshot: snapshot?.data ?? {},
       generatedAt: new Date().toISOString(),
     };

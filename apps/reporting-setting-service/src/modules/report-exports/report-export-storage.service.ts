@@ -53,8 +53,9 @@ export class ReportExportStorageService {
 
   sanitizeFileName(fileName: string): string {
     const base = basename(fileName).replace(/[^a-zA-Z0-9._-]/g, '_');
-    const normalized = base.endsWith('.xlsx') ? base : `${base}.xlsx`;
-    if (normalized.length === 0 || normalized === '.xlsx') {
+    const hasKnownExt = base.endsWith('.xlsx') || base.endsWith('.csv');
+    const normalized = hasKnownExt ? base : `${base}.xlsx`;
+    if (normalized.length === 0 || normalized === '.xlsx' || normalized === '.csv') {
       return `report_${Date.now()}.xlsx`;
     }
     return normalized;

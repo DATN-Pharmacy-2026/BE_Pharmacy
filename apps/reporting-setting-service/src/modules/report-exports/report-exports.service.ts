@@ -21,10 +21,11 @@ export class ReportExportsService {
   ) {}
 
   async findAll(query: QueryReportExportsDto) {
-    const { page = 1, limit = 20, reportJobId, fileType, dateFrom, dateTo, search } = query;
+    const { page = 1, limit = 20, reportJobId, fileType, reportType, dateFrom, dateTo, search } = query;
     const where: Prisma.ReportExportWhereInput = {
       ...(reportJobId ? { reportJobId } : {}),
       ...(fileType ? { fileType } : {}),
+      ...(reportType ? { reportJob: { reportType } } : {}),
       ...((dateFrom || dateTo)
         ? {
             createdAt: {
@@ -138,8 +139,10 @@ export class ReportExportsService {
     });
 
     try {
-      const buffer = await this.excelExportService.generateWorkbookBuffer(reportJob);
-      const fileName = this.resolveFileName(reportJob.reportType, payload.fileName);
+      const buffer = fileType === 'CSV'
+        ? await this.excelExportService.generateCsvBuffer(reportJob)
+        : await this.excelExportService.generateWorkbookBuffer(reportJob);
+      const fileName = this.resolveFileName(reportJob.reportType, payload.fileName, fileType);
       await this.reportExportStorageService.writeFile(reportJob.id, fileName, buffer);
 
       const result = await this.prisma.$transaction(async (tx) => {
@@ -258,9 +261,11 @@ export class ReportExportsService {
     });
   }
 
-  private resolveFileName(reportType: string, inputFileName?: string): string {
+  private resolveFileName(reportType: string, inputFileName?: string, fileType: string = 'XLSX'): string {
+    const extension = fileType === 'CSV' ? 'csv' : 'xlsx';
     if (inputFileName) {
-      return this.reportExportStorageService.sanitizeFileName(inputFileName);
+      const named = /\.[a-z0-9]+$/i.test(inputFileName) ? inputFileName : `${inputFileName}.${extension}`;
+      return this.reportExportStorageService.sanitizeFileName(named);
     }
     const timestamp = new Date()
       .toISOString()
@@ -268,7 +273,7 @@ export class ReportExportsService {
       .replace('T', '_')
       .slice(0, 15);
     return this.reportExportStorageService.sanitizeFileName(
-      `${reportType}_${timestamp}.xlsx`,
+      `${reportType}_${timestamp}.${extension}`,
     );
   }
 }

@@ -12,12 +12,54 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 export class RolesService {
   constructor(private readonly prisma: IdentityPrismaService) {}
 
+  private normalizeRoleCode(value: string): string {
+    return value
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .replace(/_+/g, '_');
+  }
+
+  private async ensureUniqueRoleCode(baseCode: string): Promise<string> {
+    let candidate = baseCode;
+    let index = 1;
+    while (true) {
+      const existing = await this.prisma.role.findUnique({ where: { code: candidate }, select: { id: true } });
+      if (!existing) return candidate;
+      candidate = `${baseCode}_${index}`;
+      index += 1;
+    }
+  }
+
   findAll() {
-    return this.prisma.role.findMany({ orderBy: { createdAt: 'desc' } });
+    return this.prisma.role.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: {
+              select: { id: true, code: true, name: true, module: true, action: true },
+            },
+          },
+        },
+      },
+    });
   }
 
   async findOne(id: string) {
-    const role = await this.prisma.role.findUnique({ where: { id } });
+    const role = await this.prisma.role.findUnique({
+      where: { id },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: {
+              select: { id: true, code: true, name: true, module: true, action: true },
+            },
+          },
+        },
+      },
+    });
     if (!role) {
       throw new NotFoundException('Role not found');
     }
@@ -25,14 +67,17 @@ export class RolesService {
   }
 
   async create(dto: CreateRoleDto) {
-    const existing = await this.prisma.role.findUnique({
-      where: { code: dto.code },
-    });
-    if (existing) {
-      throw new BadRequestException('Role code already exists');
-    }
+    const normalizedFromInput = dto.code ? this.normalizeRoleCode(dto.code) : '';
+    const normalizedFromName = this.normalizeRoleCode(dto.name || '');
+    const baseCode = normalizedFromInput || normalizedFromName || 'ROLE';
+    const finalCode = await this.ensureUniqueRoleCode(baseCode);
 
-    return this.prisma.role.create({ data: dto });
+    return this.prisma.role.create({
+      data: {
+        ...dto,
+        code: finalCode,
+      },
+    });
   }
 
   async update(id: string, dto: UpdateRoleDto) {

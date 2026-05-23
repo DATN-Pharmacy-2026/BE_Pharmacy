@@ -272,25 +272,36 @@ export class GoodsReceiptsService {
   }
 
   async updateStatus(id: string, dto: UpdateGoodsReceiptStatusDto) {
-    const receipt = await this.findOne(id);
-    if (receipt.status === GoodsReceiptStatus.CANCELLED && dto.status !== GoodsReceiptStatus.CANCELLED) {
-      throw new ConflictException('Cancelled goods receipt cannot transition');
-    }
-    if (receipt.status === GoodsReceiptStatus.RECEIVED && dto.status !== GoodsReceiptStatus.RECEIVED) {
-      throw new ConflictException('Received goods receipt cannot transition backward');
-    }
+    return this.prisma.$transaction(async (tx) => {
+      const receipt = await tx.goodsReceipt.findUnique({ where: { id } });
+      if (!receipt) throw new NotFoundException('Goods receipt not found');
 
-    return this.prisma.goodsReceipt.update({
-      where: { id },
-      data: {
-        status: dto.status,
-        receivedAt:
-          dto.status === GoodsReceiptStatus.RECEIVED
-            ? dto.receivedAt
-              ? new Date(dto.receivedAt)
-              : receipt.receivedAt ?? new Date()
-            : receipt.receivedAt,
-      },
+      if (receipt.status === GoodsReceiptStatus.CANCELLED && dto.status !== GoodsReceiptStatus.CANCELLED) {
+        throw new ConflictException('Cancelled goods receipt cannot transition');
+      }
+      if (receipt.status === GoodsReceiptStatus.RECEIVED && dto.status !== GoodsReceiptStatus.RECEIVED) {
+        throw new ConflictException('Received goods receipt cannot transition backward');
+      }
+
+      const updated = await tx.goodsReceipt.update({
+        where: { id },
+        data: {
+          status: dto.status,
+          receivedAt:
+            dto.status === GoodsReceiptStatus.RECEIVED
+              ? dto.receivedAt
+                ? new Date(dto.receivedAt)
+                : receipt.receivedAt ?? new Date()
+              : receipt.receivedAt,
+        },
+      });
+
+      // Auto-post inventory when receipt is marked RECEIVED to keep inventory in sync.
+      if (dto.status === GoodsReceiptStatus.RECEIVED) {
+        await this.postInventoryTx(tx, updated, updated.receivedByUserId);
+      }
+
+      return this.findOne(id);
     });
   }
 
@@ -309,87 +320,97 @@ export class GoodsReceiptsService {
       throw new ConflictException('Goods receipt must be RECEIVED before posting inventory');
     }
 
-    const posted = await this.prisma.stockMovement.findFirst({
+    const createdByUserId = req.user?.id ?? receipt.receivedByUserId;
+
+    return this.prisma.$transaction(async (tx) => {
+      await this.postInventoryTx(tx, receipt, createdByUserId);
+
+      const items = await tx.goodsReceiptItem.findMany({ where: { goodsReceiptId: receipt.id } });
+      return { goodsReceiptId: receipt.id, posted: true, itemCount: items.length };
+    });
+  }
+
+  private async postInventoryTx(
+    tx: Prisma.TransactionClient,
+    receipt: { id: string; warehouseId: string; branchId: string | null; receivedByUserId: string; status: GoodsReceiptStatus },
+    createdByUserId: string,
+  ) {
+    const posted = await tx.stockMovement.findFirst({
       where: { referenceType: 'GOODS_RECEIPT', referenceId: receipt.id },
+      select: { id: true },
     });
     if (posted) {
       throw new ConflictException('Goods receipt already posted');
     }
 
-    const createdByUserId = req.user?.id ?? receipt.receivedByUserId;
+    const items = await tx.goodsReceiptItem.findMany({
+      where: { goodsReceiptId: receipt.id },
+    });
 
-    return this.prisma.$transaction(async (tx) => {
-      const items = await tx.goodsReceiptItem.findMany({
-        where: { goodsReceiptId: receipt.id },
+    for (const item of items) {
+      if (!item.batchId) throw new BadRequestException('Goods receipt item missing batchId');
+      const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
+      if (!batch) throw new NotFoundException('Batch not found');
+
+      const inventory = await tx.inventoryItem.findFirst({
+        where: {
+          productId: item.productId,
+          batchId: item.batchId,
+          warehouseId: receipt.warehouseId,
+          locationId: null,
+        },
       });
 
-      for (const item of items) {
-        if (!item.batchId) throw new BadRequestException('Goods receipt item missing batchId');
-        const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
-        if (!batch) throw new NotFoundException('Batch not found');
+      const beforeQty = inventory?.quantityOnHand ?? 0;
+      const afterQty = beforeQty + item.quantity;
 
-        const inventory = await tx.inventoryItem.findFirst({
-          where: {
+      if (inventory) {
+        if (afterQty < inventory.quantityReserved) {
+          throw new BadRequestException('quantityAvailable cannot be negative');
+        }
+
+        await tx.inventoryItem.update({
+          where: { id: inventory.id },
+          data: {
+            quantityOnHand: afterQty,
+            quantityAvailable: afterQty - inventory.quantityReserved,
+            unitCost: item.unitCost,
+            expiryDate: item.expiryDate,
+            branchId: receipt.branchId,
+          },
+        });
+      } else {
+        await tx.inventoryItem.create({
+          data: {
             productId: item.productId,
             batchId: item.batchId,
             warehouseId: receipt.warehouseId,
             locationId: null,
-          },
-        });
-
-        const beforeQty = inventory?.quantityOnHand ?? 0;
-        const afterQty = beforeQty + item.quantity;
-
-        if (inventory) {
-          if (afterQty < inventory.quantityReserved) {
-            throw new BadRequestException('quantityAvailable cannot be negative');
-          }
-
-          await tx.inventoryItem.update({
-            where: { id: inventory.id },
-            data: {
-              quantityOnHand: afterQty,
-              quantityAvailable: afterQty - inventory.quantityReserved,
-              unitCost: item.unitCost,
-              expiryDate: item.expiryDate,
-              branchId: receipt.branchId,
-            },
-          });
-        } else {
-          await tx.inventoryItem.create({
-            data: {
-              productId: item.productId,
-              batchId: item.batchId,
-              warehouseId: receipt.warehouseId,
-              locationId: null,
-              branchId: receipt.branchId,
-              quantityOnHand: item.quantity,
-              quantityReserved: 0,
-              quantityAvailable: item.quantity,
-              unitCost: item.unitCost,
-              expiryDate: item.expiryDate,
-            },
-          });
-        }
-
-        await tx.stockMovement.create({
-          data: {
-            tenantId: '00000000-0000-0000-0000-000000000000',
-            productId: item.productId,
-            warehouseId: receipt.warehouseId,
-            movementType: InventoryMovementType.INCREASE,
-            quantity: item.quantity,
-            beforeQuantity: beforeQty,
-            afterQuantity: afterQty,
-            referenceType: 'GOODS_RECEIPT',
-            referenceId: receipt.id,
-            createdByUserId,
+            branchId: receipt.branchId,
+            quantityOnHand: item.quantity,
+            quantityReserved: 0,
+            quantityAvailable: item.quantity,
+            unitCost: item.unitCost,
+            expiryDate: item.expiryDate,
           },
         });
       }
 
-      return { goodsReceiptId: receipt.id, posted: true, itemCount: items.length };
-    });
+      await tx.stockMovement.create({
+        data: {
+          tenantId: '00000000-0000-0000-0000-000000000000',
+          productId: item.productId,
+          warehouseId: receipt.warehouseId,
+          movementType: InventoryMovementType.INCREASE,
+          quantity: item.quantity,
+          beforeQuantity: beforeQty,
+          afterQuantity: afterQty,
+          referenceType: 'GOODS_RECEIPT',
+          referenceId: receipt.id,
+          createdByUserId,
+        },
+      });
+    }
   }
 
   private validateItemDates(manufactureDate: string | undefined, expiryDate: string) {

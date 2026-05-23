@@ -30,6 +30,11 @@ export class QueryReportExportsDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  reportType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsDateString()
   dateFrom?: string;
 

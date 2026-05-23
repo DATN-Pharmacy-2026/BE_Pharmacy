@@ -56,9 +56,12 @@ export class ReportExportsController {
     @Res() res: Response,
   ) {
     const { exportItem, filePath } = await this.reportExportsService.resolveDownloadByExportId(id);
+    const contentType = exportItem.fileType?.toUpperCase() === 'CSV'
+      ? 'text/csv; charset=utf-8'
+      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     res.setHeader(
       'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      contentType,
     );
     res.setHeader(
       'Content-Disposition',

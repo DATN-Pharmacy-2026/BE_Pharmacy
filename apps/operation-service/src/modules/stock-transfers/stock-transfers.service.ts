@@ -202,11 +202,13 @@ export class StockTransfersService {
       const inputMap = new Map((dto.items ?? []).map((i) => [i.stockTransferItemId, i.shippedQty]));
 
       const txItems = await tx.stockTransferItem.findMany({ where: { stockTransferId: transfer.id } });
+      let totalShipped = 0;
 
       for (const item of txItems) {
         const shippedQty = inputMap.has(item.id) ? (inputMap.get(item.id) as number) : item.requestedQty;
         if (shippedQty < 0) throw new BadRequestException('quantity cannot be negative');
         if (shippedQty > item.requestedQty) throw new BadRequestException('shippedQty cannot exceed requestedQty');
+        totalShipped += shippedQty;
 
         const sourceInventory = await tx.inventoryItem.findFirst({
           where: {
@@ -252,6 +254,10 @@ export class StockTransfersService {
         });
       }
 
+      if (totalShipped <= 0) {
+        throw new BadRequestException('At least one item must have shippedQty > 0');
+      }
+
       const shipmentNo = await this.generateShipmentNo(tx);
       await tx.shipment.create({
         data: {
@@ -289,6 +295,7 @@ export class StockTransfersService {
     return this.prisma.$transaction(async (tx) => {
       const inputMap = new Map((dto.items ?? []).map((i) => [i.stockTransferItemId, i.receivedQty]));
       const txItems = await tx.stockTransferItem.findMany({ where: { stockTransferId: transfer.id } });
+      let hasPartialReceipt = false;
 
       for (const item of txItems) {
         const shippedQty = item.shippedQty ?? 0;
@@ -296,6 +303,7 @@ export class StockTransfersService {
 
         if (receivedQty < 0) throw new BadRequestException('quantity cannot be negative');
         if (receivedQty > shippedQty) throw new BadRequestException('receivedQty cannot exceed shippedQty');
+        if (receivedQty < shippedQty) hasPartialReceipt = true;
 
         const batch = item.batchId ? await tx.batch.findUnique({ where: { id: item.batchId } }) : null;
         if (item.batchId && !batch) throw new NotFoundException('Batch not found');
@@ -320,6 +328,7 @@ export class StockTransfersService {
           const beforeQty = destinationInventory.quantityOnHand;
           const afterQty = beforeQty + receivedQty;
           const afterAvailable = afterQty - destinationInventory.quantityReserved;
+          if (afterAvailable < 0) throw new ConflictException('quantityAvailable cannot be negative');
 
           await tx.inventoryItem.update({
             where: { id: destinationInventory.id },
@@ -376,6 +385,10 @@ export class StockTransfersService {
         }
 
         await tx.stockTransferItem.update({ where: { id: item.id }, data: { receivedQty } });
+      }
+
+      if (hasPartialReceipt) {
+        throw new ConflictException('Partial receive is not supported. Receive full shipped quantity or create an adjustment flow.');
       }
 
       const latestShipment = await tx.shipment.findFirst({ where: { stockTransferId: transfer.id }, orderBy: { createdAt: 'desc' } });

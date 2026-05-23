@@ -13,6 +13,10 @@ export class ExcelExportService {
     return XLSX_CONTENT_TYPE;
   }
 
+  get csvContentType() {
+    return 'text/csv; charset=utf-8';
+  }
+
   async generateWorkbookBuffer(reportJob: ReportJob): Promise<Buffer> {
     const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
@@ -23,6 +27,14 @@ export class ExcelExportService {
 
     const data = await workbook.xlsx.writeBuffer();
     return Buffer.isBuffer(data) ? data : Buffer.from(data);
+  }
+
+  async generateCsvBuffer(reportJob: ReportJob): Promise<Buffer> {
+    const filters = (reportJob.filters ?? {}) as Record<string, unknown>;
+    const { columns, rows } = await this.getTabularData(reportJob, filters);
+    const header = columns.join(',');
+    const lines = rows.map((row) => columns.map((key) => this.escapeCsvCell(row[key])).join(','));
+    return Buffer.from([header, ...lines].join('\n'), 'utf-8');
   }
 
   private addMetadataSheet(
@@ -58,30 +70,30 @@ export class ExcelExportService {
     reportJob: ReportJob,
     filters: Record<string, unknown>,
   ) {
-    switch (reportJob.reportType) {
-      case 'SALES_SUMMARY':
-      case 'DASHBOARD_KPI':
-      case 'INVENTORY_SUMMARY':
-      case 'LOW_STOCK':
-      case 'EXPIRING_BATCHES':
-        await this.addKpiSnapshotSheet(workbook, reportJob, filters);
-        return;
-      case 'AUDIT_LOG':
-        await this.addAuditLogSheet(workbook, reportJob, filters);
-        return;
-      case 'SETTINGS':
-        await this.addSettingsSheet(workbook);
-        return;
-      default:
-        this.addLimitationSheet(workbook, reportJob.reportType);
+    const { columns, rows } = await this.getTabularData(reportJob, filters);
+    const sheet = workbook.addWorksheet('Data');
+    sheet.columns = columns.map((key) => ({
+      header: this.humanizeKey(key),
+      key,
+      width: Math.max(16, Math.min(60, key.length + 10)),
+    }));
+    sheet.getRow(1).font = { bold: true };
+    sheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    if (rows.length === 0) {
+      const fallback: Record<string, string> = {};
+      fallback[columns[0] ?? 'status'] = 'NO_DATA';
+      sheet.addRow(fallback);
+      return;
     }
+
+    rows.forEach((row) => sheet.addRow(row));
   }
 
-  private async addKpiSnapshotSheet(
-    workbook: import('exceljs').Workbook,
+  private async getKpiRows(
     reportJob: ReportJob,
     filters: Record<string, unknown>,
-  ) {
+  ): Promise<Array<Record<string, string | number>>> {
     const where: Record<string, unknown> = {};
     if (reportJob.branchId) where.branchId = reportJob.branchId;
     if (reportJob.warehouseId) where.warehouseId = reportJob.warehouseId;
@@ -102,44 +114,19 @@ export class ExcelExportService {
       take: 5000,
     });
 
-    const sheet = workbook.addWorksheet('Data');
-    sheet.columns = [
-      { header: 'Snapshot Date', key: 'snapshotDate', width: 18 },
-      { header: 'Metric Code', key: 'metricCode', width: 28 },
-      { header: 'Metric Value', key: 'metricValue', width: 18 },
-      { header: 'Branch ID', key: 'branchId', width: 40 },
-      { header: 'Warehouse ID', key: 'warehouseId', width: 40 },
-    ];
-    sheet.getRow(1).font = { bold: true };
-    sheet.views = [{ state: 'frozen', ySplit: 1 }];
-
-    if (rows.length === 0) {
-      sheet.addRow({
-        snapshotDate: '',
-        metricCode: 'NO_DATA',
-        metricValue: 0,
-        branchId: '',
-        warehouseId: '',
-      });
-      return;
-    }
-
-    rows.forEach((row) => {
-      sheet.addRow({
-        snapshotDate: row.snapshotDate.toISOString().slice(0, 10),
-        metricCode: row.metricCode,
-        metricValue: Number(row.metricValue),
-        branchId: row.branchId ?? '',
-        warehouseId: row.warehouseId ?? '',
-      });
-    });
+    return rows.map((row) => ({
+      snapshotDate: row.snapshotDate.toISOString().slice(0, 10),
+      metricCode: row.metricCode,
+      metricValue: Number(row.metricValue),
+      branchId: row.branchId ?? '',
+      warehouseId: row.warehouseId ?? '',
+    }));
   }
 
-  private async addAuditLogSheet(
-    workbook: import('exceljs').Workbook,
+  private async getAuditRows(
     reportJob: ReportJob,
     filters: Record<string, unknown>,
-  ) {
+  ): Promise<Array<Record<string, string>>> {
     const where: Record<string, unknown> = {};
     if (reportJob.branchId) where.branchId = reportJob.branchId;
     if (reportJob.warehouseId) where.warehouseId = reportJob.warehouseId;
@@ -163,90 +150,94 @@ export class ExcelExportService {
       orderBy: { createdAt: 'desc' },
       take: 5000,
     });
+    return rows.map((row) => ({
+      createdAt: row.createdAt.toISOString(),
+      serviceName: row.serviceName,
+      module: row.module,
+      action: row.action,
+      entityType: row.entityType,
+      entityId: row.entityId ?? '',
+      actorUserId: row.actorUserId ?? '',
+      branchId: row.branchId ?? '',
+      warehouseId: row.warehouseId ?? '',
+      beforeData: row.beforeData ? JSON.stringify(row.beforeData) : '',
+      afterData: row.afterData ? JSON.stringify(row.afterData) : '',
+    }));
+  }
 
-    const sheet = workbook.addWorksheet('Data');
-    sheet.columns = [
-      { header: 'Created At', key: 'createdAt', width: 24 },
-      { header: 'Service', key: 'serviceName', width: 24 },
-      { header: 'Module', key: 'module', width: 24 },
-      { header: 'Action', key: 'action', width: 22 },
-      { header: 'Entity Type', key: 'entityType', width: 22 },
-      { header: 'Entity ID', key: 'entityId', width: 40 },
-      { header: 'Actor User ID', key: 'actorUserId', width: 40 },
-      { header: 'Branch ID', key: 'branchId', width: 40 },
-      { header: 'Warehouse ID', key: 'warehouseId', width: 40 },
-      { header: 'Before Data', key: 'beforeData', width: 50 },
-      { header: 'After Data', key: 'afterData', width: 50 },
-    ];
-    sheet.getRow(1).font = { bold: true };
-    sheet.views = [{ state: 'frozen', ySplit: 1 }];
-
-    if (rows.length === 0) {
-      sheet.addRow({
-        createdAt: '',
-        serviceName: 'NO_DATA',
-      });
-      return;
+  private async getTabularData(
+    reportJob: ReportJob,
+    filters: Record<string, unknown>,
+  ): Promise<{ columns: string[]; rows: Array<Record<string, string | number>> }> {
+    switch (reportJob.reportType) {
+      case 'SALES_SUMMARY':
+      case 'SALES_DETAIL':
+      case 'MARGIN_ANALYSIS':
+      case 'PROFIT_AND_LOSS':
+      case 'PAYMENT_RECONCILIATION':
+      case 'ONLINE_ORDER_SUMMARY':
+      case 'POS_SALES_SUMMARY':
+      case 'INVENTORY_SUMMARY':
+      case 'LOW_STOCK':
+      case 'EXPIRING_BATCHES':
+      case 'STOCK_MOVEMENT':
+      case 'STOCK_TRANSFER':
+      case 'PURCHASE_ORDER':
+      case 'GOODS_RECEIPT': {
+        const rows = await this.getKpiRows(reportJob, filters);
+        return {
+          columns: ['snapshotDate', 'metricCode', 'metricValue', 'branchId', 'warehouseId'],
+          rows,
+        };
+      }
+      case 'AUDIT_LOG': {
+        const rows = await this.getAuditRows(reportJob, filters);
+        return {
+          columns: ['createdAt', 'serviceName', 'module', 'action', 'entityType', 'entityId', 'actorUserId', 'branchId', 'warehouseId', 'beforeData', 'afterData'],
+          rows,
+        };
+      }
+      case 'SETTINGS': {
+        const rows = await this.prisma.setting.findMany({
+          orderBy: [{ scope: 'asc' }, { key: 'asc' }],
+          take: 5000,
+        });
+        return {
+          columns: ['key', 'scope', 'branchId', 'value', 'updatedAt'],
+          rows: rows.map((s) => ({
+            key: s.key,
+            scope: s.scope,
+            branchId: s.branchId ?? '',
+            value: JSON.stringify(s.value),
+            updatedAt: s.updatedAt.toISOString(),
+          })),
+        };
+      }
+      default:
+        return {
+          columns: ['status', 'message'],
+          rows: [{
+            status: 'NOT_IMPLEMENTED',
+            message: `Report type ${reportJob.reportType} is not fully implemented for export in foundation phase. No cross-service query is performed.`,
+          }],
+        };
     }
-
-    rows.forEach((row) => {
-      sheet.addRow({
-        createdAt: row.createdAt.toISOString(),
-        serviceName: row.serviceName,
-        module: row.module,
-        action: row.action,
-        entityType: row.entityType,
-        entityId: row.entityId ?? '',
-        actorUserId: row.actorUserId ?? '',
-        branchId: row.branchId ?? '',
-        warehouseId: row.warehouseId ?? '',
-        beforeData: row.beforeData ? JSON.stringify(row.beforeData) : '',
-        afterData: row.afterData ? JSON.stringify(row.afterData) : '',
-      });
-    });
   }
 
-  private async addSettingsSheet(workbook: import('exceljs').Workbook) {
-    const settings = await this.prisma.setting.findMany({
-      orderBy: [{ scope: 'asc' }, { key: 'asc' }],
-      take: 5000,
-    });
-    const sheet = workbook.addWorksheet('Data');
-    sheet.columns = [
-      { header: 'Key', key: 'key', width: 40 },
-      { header: 'Scope', key: 'scope', width: 16 },
-      { header: 'Branch ID', key: 'branchId', width: 40 },
-      { header: 'Value', key: 'value', width: 60 },
-      { header: 'Updated At', key: 'updatedAt', width: 24 },
-    ];
-    sheet.getRow(1).font = { bold: true };
-    sheet.views = [{ state: 'frozen', ySplit: 1 }];
-    settings.forEach((s) =>
-      sheet.addRow({
-        key: s.key,
-        scope: s.scope,
-        branchId: s.branchId ?? '',
-        value: JSON.stringify(s.value),
-        updatedAt: s.updatedAt.toISOString(),
-      }),
-    );
+  private humanizeKey(key: string): string {
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/_/g, ' ')
+      .replace(/^./, (c) => c.toUpperCase())
+      .trim();
   }
 
-  private addLimitationSheet(
-    workbook: import('exceljs').Workbook,
-    reportType: string,
-  ) {
-    const sheet = workbook.addWorksheet('Data');
-    sheet.columns = [
-      { header: 'Status', key: 'status', width: 20 },
-      { header: 'Message', key: 'message', width: 100 },
-    ];
-    sheet.getRow(1).font = { bold: true };
-    sheet.views = [{ state: 'frozen', ySplit: 1 }];
-    sheet.addRow({
-      status: 'NOT_IMPLEMENTED',
-      message: `Report type ${reportType} is not fully implemented for export in foundation phase. No cross-service query is performed.`,
-    });
+  private escapeCsvCell(value: unknown): string {
+    const text = String(value ?? '');
+    if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
   }
 
   private parseDate(input: unknown): Date | undefined {
