@@ -52,7 +52,9 @@
     "demo:setup": "npm install",
     "demo:seed": "npm run prisma:seed:all",
     "demo:reset": "npm run prisma:migrate:all && npm run prisma:seed:all",
-    "demo:start": "npm run start:dev:all"
+    "demo:start": "npm run start:dev:all",
+    "demo:full:setup": "powershell -ExecutionPolicy Bypass -File scripts/full-demo-setup.ps1",
+    "demo:full:setup:test": "powershell -ExecutionPolicy Bypass -File scripts/full-demo-setup.ps1 -RunDemoTests"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
