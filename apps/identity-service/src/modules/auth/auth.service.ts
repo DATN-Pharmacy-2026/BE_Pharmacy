@@ -415,6 +415,7 @@ export class AuthService {
       email: user.email,
       isSystemAdmin: user.isSystemAdmin,
       roles: user.roles,
+      permissions: user.permissions,
       branchIds: user.branchIds,
       warehouseIds: user.warehouseIds,
       tokenType: 'access',

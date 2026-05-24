@@ -14,28 +14,28 @@ export class PosPaymentsController {
 
   @Get()
   @UseGuards(PermissionsGuard)
-  @Permissions('pos_payment.view')
+  @Permissions('pos.access', 'pos_payment.view')
   findAll(@Query() query: QueryPosPaymentsDto) {
     return this.posPaymentsService.findAll(query);
   }
 
   @Get('order/:posOrderId')
   @UseGuards(PermissionsGuard)
-  @Permissions('pos_payment.view')
+  @Permissions('pos.access', 'pos_payment.view')
   findByOrder(@Param('posOrderId', new ParseUUIDPipe()) posOrderId: string) {
     return this.posPaymentsService.findByOrder(posOrderId);
   }
 
   @Get(':id')
   @UseGuards(PermissionsGuard)
-  @Permissions('pos_payment.view')
+  @Permissions('pos.access', 'pos_payment.view')
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.posPaymentsService.findOne(id);
   }
 
   @Patch(':id/status')
   @UseGuards(PermissionsGuard)
-  @Permissions('pos_payment.update')
+  @Permissions('pos.access', 'pos_payment.create|pos_payment.update')
   updateStatus(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdatePosPaymentStatusDto) {
     return this.posPaymentsService.updateStatus(id, dto);
   }

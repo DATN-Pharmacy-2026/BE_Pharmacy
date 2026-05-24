@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
 import { PaymentGatewayProvider } from '.prisma/client/commerce';
 import { InitiatePaymentGatewayDto } from './dto/initiate-payment-gateway.dto';
@@ -20,16 +21,22 @@ export class PaymentGatewaysController {
   }
 
   @Get('transactions')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('payment.view')
   findTransactions(@Query() query: QueryPaymentGatewayTransactionsDto) {
     return this.service.findTransactions(query);
   }
 
   @Get('transactions/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('payment.view')
   findTransactionById(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.service.findTransactionById(id);
   }
 
   @Post('initiate')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('customer.payment.create')
   initiate(
     @Body() dto: InitiatePaymentGatewayDto,
     @Headers('x-branch-id') branchId?: string,
@@ -39,6 +46,8 @@ export class PaymentGatewaysController {
   }
 
   @Post('transactions/:id/sync')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('payment.update')
   sync(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: SyncPaymentGatewayTransactionDto,

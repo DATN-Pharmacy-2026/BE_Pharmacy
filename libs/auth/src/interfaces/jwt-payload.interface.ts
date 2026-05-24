@@ -4,6 +4,7 @@ export interface JwtPayload {
   email: string;
   isSystemAdmin: boolean;
   roles: string[];
+  permissions?: string[];
   branchIds: string[];
   warehouseIds: string[];
   tokenType: 'access' | 'refresh';

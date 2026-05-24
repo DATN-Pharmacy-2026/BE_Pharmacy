@@ -1,0 +1,214 @@
+{
+  "info": {
+    "name": "PharmPlus RBAC 3 Roles",
+    "_postman_id": "6c8de06b-a8e0-4c7e-9b47-2f7a0a3f57c6",
+    "description": "Flow setup RBAC: Admin, Pharmacist, Customer",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "accessToken", "value": "" },
+    { "key": "adminEmail", "value": "admin@pharmplus.local" },
+    { "key": "adminPassword", "value": "admin123" },
+    { "key": "roleAdminId", "value": "" },
+    { "key": "rolePharmacistId", "value": "" },
+    { "key": "roleCustomerId", "value": "" },
+    { "key": "targetUserId", "value": "" },
+    { "key": "pharmacistPermissionIdsCsv", "value": "" },
+    { "key": "customerPermissionIdsCsv", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1) Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "const token = json?.accessToken || json?.data?.accessToken;",
+              "if (token) pm.collectionVariables.set('accessToken', token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) Create Role ADMIN",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/roles",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Admin\",\n  \"code\": \"ADMIN\",\n  \"scope\": \"SYSTEM\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "const id = json?.id || json?.data?.id;",
+              "if (id) pm.collectionVariables.set('roleAdminId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3) Create Role PHARMACIST",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/roles",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Dược sĩ\",\n  \"code\": \"PHARMACIST\",\n  \"scope\": \"BRANCH\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "const id = json?.id || json?.data?.id;",
+              "if (id) pm.collectionVariables.set('rolePharmacistId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4) Create Role CUSTOMER",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/roles",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Khách hàng\",\n  \"code\": \"CUSTOMER\",\n  \"scope\": \"SYSTEM\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "const id = json?.id || json?.data?.id;",
+              "if (id) pm.collectionVariables.set('roleCustomerId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5) Get Permissions",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": "{{baseUrl}}/permissions?page=1&limit=500"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "const rows = json?.items || json?.data?.items || json?.data || [];",
+              "const byCode = new Map(rows.map(x => [x.code, x.id]));",
+              "const pharmacistCodes = [",
+              "  'pos.access','pos.sell','pos.refund','pos_order.view','pos_order.update',",
+              "  'pos_payment.view','pos_payment.update','pos.shift.open','pos.shift.close','pos.shift.view','inventory.lookup','report.view'",
+              "];",
+              "const customerCodes = ['customer.order.create','customer.order.view_self'];",
+              "const pharmacistIds = pharmacistCodes.map(c => byCode.get(c)).filter(Boolean);",
+              "const customerIds = customerCodes.map(c => byCode.get(c)).filter(Boolean);",
+              "pm.collectionVariables.set('pharmacistPermissionIdsCsv', pharmacistIds.map(id => `\"${id}\"`).join(','));",
+              "pm.collectionVariables.set('customerPermissionIdsCsv', customerIds.map(id => `\"${id}\"`).join(','));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6) Assign Permissions -> PHARMACIST",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/roles/{{rolePharmacistId}}/permissions",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"permissionIds\": [{{pharmacistPermissionIdsCsv}}]\n}"
+        }
+      }
+    },
+    {
+      "name": "7) Assign Permissions -> CUSTOMER",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/roles/{{roleCustomerId}}/permissions",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"permissionIds\": [{{customerPermissionIdsCsv}}]\n}"
+        }
+      }
+    },
+    {
+      "name": "8) Assign Role to User (set targetUserId first)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/users/{{targetUserId}}/roles",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"roleCode\": \"PHARMACIST\"\n}"
+        }
+      }
+    },
+    {
+      "name": "9) Verify /auth/me",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": "{{baseUrl}}/auth/me"
+      }
+    }
+  ]
+}

@@ -317,7 +317,7 @@ export class PosOrdersService {
   }
 
   private async resolvePosContext(
-    req: Request,
+    req: Request & { user?: { id?: string } },
     dto: CreatePosOrderDto,
   ): Promise<{
     branchId: string;

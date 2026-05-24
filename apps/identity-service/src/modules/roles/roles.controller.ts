@@ -24,11 +24,15 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Get()
+  @UseGuards(PermissionsGuard)
+  @Permissions('role.manage')
   findAll() {
     return this.rolesService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(PermissionsGuard)
+  @Permissions('role.manage')
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.rolesService.findOne(id);
   }

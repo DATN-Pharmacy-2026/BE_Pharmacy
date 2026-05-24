@@ -27,11 +27,15 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @UseGuards(PermissionsGuard)
+  @Permissions('user.view')
   findAll(@Query() query: QueryUsersDto) {
     return this.usersService.findAll(query);
   }
 
   @Get(':id')
+  @UseGuards(PermissionsGuard)
+  @Permissions('user.view')
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.usersService.findOne(id);
   }
@@ -74,6 +78,8 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionsGuard)
+  @Permissions('user.delete')
   remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.usersService.softDelete(id);
   }

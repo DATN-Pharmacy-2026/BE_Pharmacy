@@ -21,6 +21,16 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 export class OrdersService {
   constructor(private readonly prisma: CommercePrismaService) {}
 
+  private hasPermission(req: Request | undefined, permission: string): boolean {
+    const permissions = (req as Request & { user?: { permissions?: string[] } })?.user
+      ?.permissions;
+    return Array.isArray(permissions) && permissions.includes(permission);
+  }
+
+  private getUserId(req: Request | undefined): string | undefined {
+    return (req as Request & { user?: { id?: string } })?.user?.id;
+  }
+
   async findAll(query: QueryOrdersDto, req?: Request) {
     const {
       page = 1,
@@ -145,7 +155,7 @@ export class OrdersService {
     return this.findAll({ ...query, userId }, req);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, req?: Request) {
     const order = await this.prisma.onlineOrder.findUnique({
       where: { id },
       include: {
@@ -155,10 +165,19 @@ export class OrdersService {
     });
 
     if (!order) throw new NotFoundException('Order not found');
+    if (
+      this.hasPermission(req, 'customer.order.view_self') &&
+      !this.hasPermission(req, 'order.view')
+    ) {
+      const userId = this.getUserId(req);
+      if (!userId || order.userId !== userId) {
+        throw new NotFoundException('Order not found');
+      }
+    }
     return order;
   }
 
-  async findByOrderNo(orderNo: string) {
+  async findByOrderNo(orderNo: string, req?: Request) {
     const order = await this.prisma.onlineOrder.findFirst({
       where: { orderNo },
       include: {
@@ -168,6 +187,15 @@ export class OrdersService {
     });
 
     if (!order) throw new NotFoundException('Order not found');
+    if (
+      this.hasPermission(req, 'customer.order.view_self') &&
+      !this.hasPermission(req, 'order.view')
+    ) {
+      const userId = this.getUserId(req);
+      if (!userId || order.userId !== userId) {
+        throw new NotFoundException('Order not found');
+      }
+    }
     return order;
   }
 
@@ -199,8 +227,17 @@ export class OrdersService {
     return this.findOne(id);
   }
 
-  async cancelOrder(id: string, dto: CancelOrderDto) {
-    const order = await this.findOne(id);
+  async cancelOrder(id: string, dto: CancelOrderDto, req?: Request) {
+    const order = await this.findOne(id, req);
+    if (
+      this.hasPermission(req, 'customer.order.cancel_self') &&
+      !this.hasPermission(req, 'order.cancel')
+    ) {
+      const userId = this.getUserId(req);
+      if (!userId || order.userId !== userId) {
+        throw new NotFoundException('Order not found');
+      }
+    }
     if (order.status === OrderStatus.CANCELLED) {
       return order;
     }
@@ -228,7 +265,7 @@ export class OrdersService {
       },
     });
 
-    return this.findOne(id);
+    return this.findOne(id, req);
   }
 
   private getHeader(req: Request | undefined, key: string): string | undefined {

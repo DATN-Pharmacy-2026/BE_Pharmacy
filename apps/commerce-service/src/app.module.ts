@@ -22,6 +22,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { ProductsModule } from './modules/products/products.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { CommercePrismaModule } from './prisma/commerce-prisma.module';
+import { JwtStrategy } from './auth/jwt.strategy';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { CommercePrismaModule } from './prisma/commerce-prisma.module';
     ProductsModule,
   ],
   providers: [
+    JwtStrategy,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

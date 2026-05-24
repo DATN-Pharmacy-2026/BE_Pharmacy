@@ -22,6 +22,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { EventsModule } from './modules/events/events.module';
 import { ReportingPrismaModule } from './prisma/reporting-prisma.module';
+import { JwtStrategy } from './auth/jwt.strategy';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ReportingPrismaModule } from './prisma/reporting-prisma.module';
     EventsModule,
   ],
   providers: [
+    JwtStrategy,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
