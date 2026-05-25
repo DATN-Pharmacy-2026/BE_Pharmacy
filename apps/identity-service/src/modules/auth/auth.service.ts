@@ -11,6 +11,7 @@ import { AccessStatus, RefreshToken, UserStatus } from '.prisma/client/identity'
 import { AuthenticatedUser, JwtPayload } from '@app/auth';
 import { IdentityPrismaService } from '../../prisma/identity-prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { PERMISSION_CODES, ROLE_CODES } from './rbac.constants';
 
@@ -108,6 +109,69 @@ export class AuthService {
         permissions: authUser.permissions,
         branchAccess: user.branchAccesses,
         warehouseAccess: user.warehouseAccesses,
+      },
+    };
+  }
+
+  async register(dto: RegisterDto) {
+    const email = dto.email.trim().toLowerCase();
+    const fullName = dto.fullName.trim();
+    const phone = dto.phone?.trim() ?? '';
+    const usernameSeed = dto.username?.trim() || email.split('@')[0];
+    const username = await this.generateUniqueUsername(usernameSeed);
+
+    const existing = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ email }, { username }],
+      },
+      select: { id: true, email: true, username: true },
+    });
+    if (existing) {
+      throw new BadRequestException(
+        existing.email === email ? 'Email already exists' : 'Username already exists',
+      );
+    }
+
+    const customerRole = await this.prisma.role.findUnique({
+      where: { code: ROLE_CODES.CUSTOMER },
+      select: { id: true },
+    });
+    if (!customerRole) {
+      throw new BadRequestException('Customer role is not configured');
+    }
+
+    const passwordHash = await this.hashPassword(dto.password);
+    const user = await this.prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          username,
+          email,
+          phone,
+          fullName,
+          passwordHash,
+          status: UserStatus.ACTIVE,
+          isSystemAdmin: false,
+        },
+      });
+
+      await tx.userRole.create({
+        data: {
+          userId: createdUser.id,
+          roleId: customerRole.id,
+        },
+      });
+
+      return createdUser;
+    });
+
+    this.logger.log('Register success', { userId: user.id, email: user.email });
+    return {
+      message: 'Register successfully',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
       },
     };
   }
@@ -536,6 +600,36 @@ export class AuthService {
       default:
         return 900;
     }
+  }
+
+  private async generateUniqueUsername(seed: string): Promise<string> {
+    const cleaned = seed
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]/g, '')
+      .replace(/^\.+|\.+$/g, '')
+      .slice(0, 50);
+    const base = cleaned.length >= 3 ? cleaned : `user${Date.now().toString().slice(-6)}`;
+
+    const exact = await this.prisma.user.findFirst({
+      where: { username: base },
+      select: { id: true },
+    });
+    if (!exact) {
+      return base;
+    }
+
+    for (let i = 1; i <= 9999; i++) {
+      const candidate = `${base}${i}`;
+      const found = await this.prisma.user.findFirst({
+        where: { username: candidate },
+        select: { id: true },
+      });
+      if (!found) {
+        return candidate;
+      }
+    }
+
+    throw new BadRequestException('Cannot generate unique username');
   }
 
   private buildExpiryDate(seconds: number): Date {
