@@ -9,9 +9,11 @@ import {
   Post,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiHeader, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
+import { OptionalJwtAuthGuard } from '../../auth/optional-jwt-auth.guard';
 import { CartService } from './cart.service';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
 import { QueryCartDto } from './dto/query-cart.dto';
@@ -20,6 +22,7 @@ import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 @ApiTags('carts')
 @ApiHeader({ name: 'x-branch-id', required: false })
 @ApiHeader({ name: 'x-session-id', required: false })
+@UseGuards(OptionalJwtAuthGuard)
 @Controller('api/carts')
 export class CartController {
   constructor(private readonly cartService: CartService) {}
