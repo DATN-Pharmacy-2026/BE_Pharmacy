@@ -11,6 +11,7 @@ import {
 } from '@app/logger';
 import { HealthController } from './health/health.controller';
 import { BrandsModule } from './modules/brands/brands.module';
+import { ChatbotModule } from './modules/chatbot/chatbot.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CategoriesModule } from './modules/categories/categories.module';
@@ -50,6 +51,7 @@ import { JwtStrategy } from './auth/jwt.strategy';
     ReviewsModule,
     CategoriesModule,
     BrandsModule,
+    ChatbotModule,
     ProductsModule,
   ],
   providers: [

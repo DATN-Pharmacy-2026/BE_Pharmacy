@@ -20,6 +20,7 @@ export const COMMERCE_ROUTES = [
   '/api/payment-gateways/*',
   '/api/reviews/*',
   '/api/coupons/*',
+  '/api/chatbot/*',
   '/api/commerce-events/*',
 ] as const;
 
