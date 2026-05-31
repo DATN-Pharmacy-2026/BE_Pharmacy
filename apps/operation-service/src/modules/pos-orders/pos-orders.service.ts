@@ -355,26 +355,13 @@ export class PosOrdersService {
 
     let posSessionId = dto.posSessionId;
     if (!posSessionId) {
+      const cashierUserId = req.user?.id ?? '00000000-0000-0000-0000-000000000000';
       const session = await this.prisma.pOSSession.findFirst({
-        where: { branchId, storeId, posTerminalId, status: POSSessionStatus.OPEN },
+        where: { branchId, storeId, posTerminalId, cashierUserId, status: POSSessionStatus.OPEN },
         orderBy: { openedAt: 'desc' },
       });
-      if (!session) {
-        const createdSession = await this.prisma.pOSSession.create({
-          data: {
-            branchId,
-            storeId,
-            posTerminalId,
-            cashierUserId: req.user?.id ?? '00000000-0000-0000-0000-000000000000',
-            openingCash: 0,
-            openedAt: new Date(),
-            status: POSSessionStatus.OPEN,
-          },
-        });
-        posSessionId = createdSession.id;
-      } else {
-        posSessionId = session.id;
-      }
+      if (!session) throw new ConflictException('No open POS session. Please open shift before selling.');
+      posSessionId = session.id;
     }
 
     dto.items = dto.items.map((item) => ({

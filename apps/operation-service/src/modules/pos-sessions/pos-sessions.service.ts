@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { POSSessionStatus, Prisma } from '.prisma/client/operation';
+import { PaymentMethod, PaymentStatus, POSSessionStatus, Prisma } from '.prisma/client/operation';
 import { Request } from 'express';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { ClosePosSessionDto } from './dto/close-pos-session.dto';
@@ -114,7 +114,51 @@ export class PosSessionsService {
       },
     });
 
-    return this.findOne(id);
+    const [allPaid, cashPaid, cashRefunded] = await this.prisma.$transaction([
+      this.prisma.pOSPayment.aggregate({
+        where: {
+          status: PaymentStatus.PAID,
+          posOrder: { posSessionId: id },
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.pOSPayment.aggregate({
+        where: {
+          status: PaymentStatus.PAID,
+          method: PaymentMethod.CASH,
+          posOrder: { posSessionId: id },
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.pOSPayment.aggregate({
+        where: {
+          status: PaymentStatus.REFUNDED,
+          method: PaymentMethod.CASH,
+          posOrder: { posSessionId: id },
+        },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const totalSales = Number(allPaid._sum.amount ?? 0);
+    const cashSales = Number(cashPaid._sum.amount ?? 0);
+    const cashRefund = Number(cashRefunded._sum.amount ?? 0);
+    const expectedCash = Number(session.openingCash) + cashSales - cashRefund;
+    const actualCash = dto.closingCash;
+    const difference = actualCash - expectedCash;
+
+    const closedSession = await this.findOne(id);
+    return {
+      ...closedSession,
+      reconciliation: {
+        totalSales,
+        expectedCash,
+        actualCash,
+        difference,
+        cashSales,
+        cashRefund,
+      },
+    };
   }
 
   private async validateContext(branchId: string, storeId: string, posTerminalId: string) {
