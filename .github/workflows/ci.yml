@@ -8,44 +8,24 @@ on:
 
 jobs:
   test:
-    if: false
     runs-on: ubuntu-latest
-    env:
-      JWT_ACCESS_SECRET: ${{ vars.JWT_ACCESS_SECRET || 'replace_with_min_16_chars_access_secret' }}
-      JWT_REFRESH_SECRET: ${{ vars.JWT_REFRESH_SECRET || 'replace_with_min_16_chars_refresh_secret' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check required variables
+      - name: Basic file check
         run: |
-          missing=0
-          for key in JWT_ACCESS_SECRET JWT_REFRESH_SECRET; do
-            if [ -z "${!key}" ]; then
-              echo "Missing required variable: $key"
-              missing=1
-            fi
-          done
-          if [ "$missing" -ne 0 ]; then
-            exit 1
-          fi
+          test -f package.json
+          test -f Dockerfile
 
-      - name: Code quality
-        run: npm run lint
+      - name: Compose syntax check
+        run: docker compose -f docker-compose.yml config
 
-      - name: Unit tests
-        run: npm test -- --passWithNoTests
+      - name: Docker build smoke test (gateway)
+        run: docker build --target runtime --build-arg APP_NAME=gateway -t pharmaplus-be-gateway:ci-smoke .
 
   build:
+    needs: test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     strategy:
