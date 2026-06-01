@@ -1,3 +1,5 @@
+name: pharmaplus-be
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -19,7 +21,7 @@ services:
       retries: 10
       start_period: 10s
     networks:
-      - pharmacy_network
+      - pharmacy-network
 
   pgadmin:
     image: dpage/pgadmin4:8
@@ -36,7 +38,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - pharmacy_network
+      - pharmacy-network
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -54,7 +56,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - pharmacy_network
+      - pharmacy-network
 
   qdrant:
     image: qdrant/qdrant:v1.11.3
@@ -72,7 +74,7 @@ services:
       retries: 10
       start_period: 10s
     networks:
-      - pharmacy_network
+      - pharmacy-network
 
 volumes:
   postgres_data:
@@ -80,5 +82,5 @@ volumes:
   qdrant_data:
 
 networks:
-  pharmacy_network:
+  pharmacy-network:
     driver: bridge
