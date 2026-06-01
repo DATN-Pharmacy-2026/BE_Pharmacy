@@ -1,0 +1,226 @@
+[
+  {
+    "id": "readme_001",
+    "title": "Knowledge Base Chatbot RAG",
+    "category": "general",
+    "source": "knowledge-base/README.md",
+    "chunkIndex": 1,
+    "content": "Knowledge Base Chatbot RAG\n\nKho tri thức này dùng cho chatbot nhà thuốc trong giai đoạn RAG baseline.\n\nCấu trúc\nfaq/: câu hỏi thường gặp về đặt hàng, giao hàng, thanh toán, đổi trả, tài khoản.\npolicies/: chính sách vận hành và hỗ trợ khách hàng.\nmedicines/: thông tin sản phẩm mức cơ bản và lưu ý bảo quản.\nsafety/: quy tắc an toàn y khoa, handoff dược sĩ.\n\nNguyên tắc nội dung\nNgắn gọn, rõ nghĩa, dễ chia chunk.\nKhông chứa hướng dẫn kê đơn/chẩn đoán.\nKhông thay thế tư vấn chuyên môn y tế.",
+    "metadata": {
+      "title": "Knowledge Base Chatbot RAG",
+      "category": "general",
+      "source": "knowledge-base/README.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "faq_dat_hang_giao_hang_001",
+    "title": "FAQ Đặt Hàng Và Giao Hàng",
+    "category": "faq",
+    "source": "knowledge-base/faq/faq-dat-hang-giao-hang.md",
+    "chunkIndex": 1,
+    "content": "FAQ Đặt Hàng Và Giao Hàng\n\n1) Tôi đặt hàng như thế nào?\nBạn chọn sản phẩm, thêm vào giỏ hàng, điền thông tin nhận hàng và xác nhận thanh toán.\n\n2) Tôi có cần tạo tài khoản trước khi mua không?\nKhông bắt buộc. Bạn có thể mua nhanh bằng số điện thoại.\n\n3) Tôi có thể đặt hàng qua điện thoại không?\nCó. Bạn có thể gọi tổng đài hỗ trợ mua hàng trong khung giờ phục vụ.\n\n4) Đơn hàng của tôi đang ở trạng thái nào?\nBạn vào mục đơn hàng để xem các trạng thái: chờ xác nhận, đang xử lý, đang giao, đã giao, đã hủy.\n\n5) Tôi có thể sửa địa chỉ sau khi đặt đơn không?\nBạn có thể yêu cầu chỉnh sửa khi đơn chưa chuyển sang trạng thái đang giao.",
+    "metadata": {
+      "title": "FAQ Đặt Hàng Và Giao Hàng",
+      "category": "faq",
+      "source": "knowledge-base/faq/faq-dat-hang-giao-hang.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "faq_dat_hang_giao_hang_002",
+    "title": "FAQ Đặt Hàng Và Giao Hàng",
+    "category": "faq",
+    "source": "knowledge-base/faq/faq-dat-hang-giao-hang.md",
+    "chunkIndex": 2,
+    "content": "đặt đơn không?\nBạn có thể yêu cầu chỉnh sửa khi đơn chưa chuyển sang trạng thái đang giao.\n\n6) Thời gian giao hàng nội thành là bao lâu?\nThời gian giao hàng nội thành phụ thuộc khu vực và thường được hiển thị khi đặt đơn.\n\n7) Tôi có được giao hàng ngoại thành không?\nCó. Thời gian giao ngoại thành thường lâu hơn nội thành.\n\n8) Phí vận chuyển được tính như thế nào?\nPhí vận chuyển được tính theo khu vực, giá trị đơn hàng và chương trình ưu đãi hiện hành.\n\n9) Đơn hàng của tôi giao thất bại thì sao?\nHệ thống sẽ liên hệ lại để xác nhận giao lại hoặc hỗ trợ hủy đơn theo yêu cầu.",
+    "metadata": {
+      "title": "FAQ Đặt Hàng Và Giao Hàng",
+      "category": "faq",
+      "source": "knowledge-base/faq/faq-dat-hang-giao-hang.md",
+      "chunkIndex": 2
+    }
+  },
+  {
+    "id": "faq_dat_hang_giao_hang_003",
+    "title": "FAQ Đặt Hàng Và Giao Hàng",
+    "category": "faq",
+    "source": "knowledge-base/faq/faq-dat-hang-giao-hang.md",
+    "chunkIndex": 3,
+    "content": "ại thì sao?\nHệ thống sẽ liên hệ lại để xác nhận giao lại hoặc hỗ trợ hủy đơn theo yêu cầu.\n\n10) Tôi có thể kiểm tra hàng trước khi nhận không?\nBạn có thể kiểm tra thông tin cơ bản của kiện hàng trước khi thanh toán/nhận hàng theo quy định.",
+    "metadata": {
+      "title": "FAQ Đặt Hàng Và Giao Hàng",
+      "category": "faq",
+      "source": "knowledge-base/faq/faq-dat-hang-giao-hang.md",
+      "chunkIndex": 3
+    }
+  },
+  {
+    "id": "faq_thanh_toan_doi_tra_tai_khoan_001",
+    "title": "FAQ Thanh Toán Đổi Trả Và Tài Khoản",
+    "category": "faq",
+    "source": "knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
+    "chunkIndex": 1,
+    "content": "FAQ Thanh Toán Đổi Trả Và Tài Khoản\n\n1) Nhà thuốc hỗ trợ những phương thức thanh toán nào?\nHệ thống hỗ trợ COD, chuyển khoản, thẻ ngân hàng và ví điện tử tùy thời điểm.\n\n2) Tôi thanh toán online nhưng đơn chưa cập nhật?\nBạn chờ vài phút để hệ thống đồng bộ. Nếu vẫn chưa cập nhật, liên hệ hỗ trợ và cung cấp mã đơn.\n\n3) Tôi có thể xuất hóa đơn không?\nCó. Bạn có thể yêu cầu hóa đơn theo hướng dẫn tại mục hỗ trợ đơn hàng.\n\n4) Tôi có thể hủy đơn khi nào?\nBạn có thể hủy khi đơn chưa bàn giao cho đơn vị vận chuyển.\n\n5) Điều kiện đổi trả sản phẩm là gì?\nSản phẩm cần còn nguyên trạng, còn hóa đơn/chứng từ và đáp ứng chính sách đổi trả hiện hành.",
+    "metadata": {
+      "title": "FAQ Thanh Toán Đổi Trả Và Tài Khoản",
+      "category": "faq",
+      "source": "knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "faq_thanh_toan_doi_tra_tai_khoan_002",
+    "title": "FAQ Thanh Toán Đổi Trả Và Tài Khoản",
+    "category": "faq",
+    "source": "knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
+    "chunkIndex": 2,
+    "content": "n phẩm cần còn nguyên trạng, còn hóa đơn/chứng từ và đáp ứng chính sách đổi trả hiện hành.\n\n6) Thuốc đã mua có đổi trả được không?\nTùy loại sản phẩm và điều kiện cụ thể theo chính sách đổi trả thuốc.\n\n7) Tôi bị quên mật khẩu tài khoản thì làm sao?\nBạn dùng chức năng quên mật khẩu và xác thực qua số điện thoại/email đăng ký.\n\n8) Tôi có thể đổi số điện thoại tài khoản không?\nCó. Bạn cập nhật trong hồ sơ tài khoản hoặc liên hệ hỗ trợ.\n\n9) Điểm tích lũy được dùng thế nào?\nĐiểm tích lũy được áp dụng theo chương trình khách hàng thân thiết và điều kiện tại từng thời điểm.\n\n10) Mã khuyến mãi không dùng được vì sao?\nMã có thể hết hạn, sai điều kiện đơn hàng hoặc đã vượt giới hạn sử dụng.",
+    "metadata": {
+      "title": "FAQ Thanh Toán Đổi Trả Và Tài Khoản",
+      "category": "faq",
+      "source": "knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
+      "chunkIndex": 2
+    }
+  },
+  {
+    "id": "thong_tin_thuoc_otc_co_ban_001",
+    "title": "Thông Tin Thuốc OTC Cơ Bản",
+    "category": "medicine",
+    "source": "knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
+    "chunkIndex": 1,
+    "content": "Thông Tin Thuốc OTC Cơ Bản\n\nNguyên tắc cung cấp thông tin\nChatbot chỉ cung cấp thông tin tham khảo từ nguồn nội bộ đã kiểm duyệt.\nKhông thay thế chẩn đoán hoặc chỉ định của bác sĩ/dược sĩ.\n\nNội dung chatbot có thể trả lời\nTên sản phẩm, dạng bào chế, quy cách đóng gói.\nHoạt chất chính (nếu có trong dữ liệu).\nCông dụng ở mức tổng quát.\nCảnh báo chung đã được chuẩn hóa trong kho tri thức.\n\nNội dung chatbot không được trả lời chi tiết\nPhác đồ điều trị cho từng bệnh cụ thể.\nChỉ định cá nhân hóa theo bệnh nền của người dùng.\nTư vấn phối hợp nhiều thuốc khi chưa có chuyên môn xác nhận.",
+    "metadata": {
+      "title": "Thông Tin Thuốc OTC Cơ Bản",
+      "category": "medicine",
+      "source": "knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "thong_tin_thuoc_otc_co_ban_002",
+    "title": "Thông Tin Thuốc OTC Cơ Bản",
+    "category": "medicine",
+    "source": "knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
+    "chunkIndex": 2,
+    "content": "theo bệnh nền của người dùng.\nTư vấn phối hợp nhiều thuốc khi chưa có chuyên môn xác nhận.\n\nLưu ý hiển thị cho người dùng\nThông tin sản phẩm chỉ mang tính tham khảo. Người dùng nên đọc kỹ hướng dẫn sử dụng và hỏi dược sĩ/bác sĩ khi cần.",
+    "metadata": {
+      "title": "Thông Tin Thuốc OTC Cơ Bản",
+      "category": "medicine",
+      "source": "knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
+      "chunkIndex": 2
+    }
+  },
+  {
+    "id": "vitamin_tpcn_va_bao_quan_001",
+    "title": "Vitamin TPCN Và Bảo Quản",
+    "category": "medicine",
+    "source": "knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md",
+    "chunkIndex": 1,
+    "content": "Vitamin TPCN Và Bảo Quản\n\nVitamin và thực phẩm chức năng\nLà sản phẩm hỗ trợ sức khỏe, không thay thế thuốc chữa bệnh.\nCần dùng đúng đối tượng và theo hướng dẫn từ nhà sản xuất hoặc nhân viên y tế.\n\nCảnh báo sử dụng chung\nKhông dùng quá khuyến nghị ghi trên nhãn.\nNgười có bệnh nền, đang dùng thuốc khác, phụ nữ mang thai/cho con bú cần hỏi dược sĩ trước khi dùng.\nNgưng sử dụng và liên hệ cơ sở y tế nếu có dấu hiệu bất thường.\n\nHướng dẫn bảo quản\nBảo quản nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp.\nĐể xa tầm tay trẻ em.\nKiểm tra hạn sử dụng trước khi dùng.\nKhông dùng sản phẩm có dấu hiệu biến đổi màu, mùi, hoặc bao bì hư hỏng.",
+    "metadata": {
+      "title": "Vitamin TPCN Và Bảo Quản",
+      "category": "medicine",
+      "source": "knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "chinh_sach_doi_tra_001",
+    "title": "Chính Sách Đổi Trả",
+    "category": "policy",
+    "source": "knowledge-base/policies/chinh-sach-doi-tra.md",
+    "chunkIndex": 1,
+    "content": "Chính Sách Đổi Trả\n\nĐiều kiện chung\nSản phẩm còn nguyên tem/nhãn (nếu có), chưa bị can thiệp.\nCó hóa đơn/chứng từ liên quan.\nYêu cầu đổi trả trong thời gian cho phép theo từng loại sản phẩm.\n\nTrường hợp được hỗ trợ\nGiao sai sản phẩm.\nSản phẩm lỗi do sản xuất.\nSản phẩm hư hỏng trong quá trình vận chuyển.\n\nTrường hợp không hỗ trợ\nSản phẩm đã qua sử dụng.\nThiếu chứng từ cơ bản.\nKhông đáp ứng điều kiện bảo quản theo hướng dẫn.\n\nQuy trình xử lý\nKhách hàng gửi yêu cầu đổi trả, nhà thuốc tiếp nhận kiểm tra và phản hồi kết quả theo quy định.",
+    "metadata": {
+      "title": "Chính Sách Đổi Trả",
+      "category": "policy",
+      "source": "knowledge-base/policies/chinh-sach-doi-tra.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "chinh_sach_giao_hang_001",
+    "title": "Chính Sách Giao Hàng",
+    "category": "policy",
+    "source": "knowledge-base/policies/chinh-sach-giao-hang.md",
+    "chunkIndex": 1,
+    "content": "Chính Sách Giao Hàng\n\nPhạm vi giao hàng\nHệ thống hỗ trợ giao hàng theo khu vực phục vụ của nhà thuốc.\n\nThời gian giao hàng\nNội thành: thời gian dự kiến hiển thị khi đặt đơn.\nNgoại thành: thời gian có thể dài hơn do khoảng cách và điều kiện vận chuyển.\n\nPhí giao hàng\nPhí được tính theo khu vực, trọng lượng/đặc tính đơn hàng và các chương trình miễn phí vận chuyển.\n\nTrách nhiệm khi giao hàng\nĐơn vị giao hàng liên hệ người nhận theo thông tin đơn.\nNgười nhận kiểm tra thông tin kiện hàng khi nhận.\n\nĐơn giao không thành công\nNếu giao không thành công, hệ thống sẽ liên hệ để giao lại hoặc hủy đơn theo yêu cầu khách hàng.",
+    "metadata": {
+      "title": "Chính Sách Giao Hàng",
+      "category": "policy",
+      "source": "knowledge-base/policies/chinh-sach-giao-hang.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "chinh_sach_thanh_toan_001",
+    "title": "Chính Sách Thanh Toán",
+    "category": "policy",
+    "source": "knowledge-base/policies/chinh-sach-thanh-toan.md",
+    "chunkIndex": 1,
+    "content": "Chính Sách Thanh Toán\n\nPhương thức thanh toán\nThanh toán khi nhận hàng (COD)\nChuyển khoản\nThẻ ngân hàng\nVí điện tử (nếu khả dụng)\n\nXác nhận thanh toán\nĐơn hàng chỉ được coi là hoàn tất khi hệ thống ghi nhận trạng thái thanh toán thành công.\n\nHoàn tiền\nKhi phát sinh hoàn tiền, thời gian xử lý phụ thuộc phương thức thanh toán và quy trình đối soát.\n\nLưu ý bảo mật\nKhông chia sẻ mã OTP, mật khẩu, hoặc thông tin thẻ cho bất kỳ ai.",
+    "metadata": {
+      "title": "Chính Sách Thanh Toán",
+      "category": "policy",
+      "source": "knowledge-base/policies/chinh-sach-thanh-toan.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "quy_tac_an_toan_y_khoa_001",
+    "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
+    "category": "safety",
+    "source": "knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
+    "chunkIndex": 1,
+    "content": "Quy Tắc An Toàn Y Khoa Cho Chatbot\n\nQuy tắc bắt buộc\nKhông chẩn đoán bệnh.\nKhông kê đơn thuốc.\nKhông tư vấn liều dùng chi tiết cho từng cá nhân.\nKhông xác nhận tương tác thuốc phức tạp khi chưa có chuyên môn.\nKhông khẳng định hiệu quả điều trị tuyệt đối.\n\nKhi nào cần chuyển dược sĩ\nNgười dùng hỏi liều dùng cho trẻ em, phụ nữ mang thai, người cao tuổi có bệnh nền.\nNgười dùng hỏi phối hợp nhiều thuốc cùng lúc.\nNgười dùng mô tả triệu chứng kéo dài hoặc nặng lên.\nNgười dùng yêu cầu thay thế đơn thuốc bác sĩ đã kê.\n\nKhi nào cần khuyến nghị khám bác sĩ\nKhó thở, đau ngực, sốt cao kéo dài, co giật.\nPhản ứng dị ứng nghiêm trọng.\nTriệu chứng cấp tính ảnh hưởng ý thức hoặc vận động.",
+    "metadata": {
+      "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
+      "category": "safety",
+      "source": "knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "quy_tac_an_toan_y_khoa_002",
+    "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
+    "category": "safety",
+    "source": "knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
+    "chunkIndex": 2,
+    "content": "o giật.\nPhản ứng dị ứng nghiêm trọng.\nTriệu chứng cấp tính ảnh hưởng ý thức hoặc vận động.\n\nMẫu cảnh báo chuẩn\nThông tin chatbot cung cấp chỉ mang tính tham khảo, không thay thế tư vấn y tế chuyên môn. Vui lòng liên hệ dược sĩ hoặc bác sĩ để được hướng dẫn phù hợp.",
+    "metadata": {
+      "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
+      "category": "safety",
+      "source": "knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
+      "chunkIndex": 2
+    }
+  },
+  {
+    "id": "tinh_huong_handoff_duoc_si_001",
+    "title": "Tình Huống Handoff Dược Sĩ",
+    "category": "safety",
+    "source": "knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
+    "chunkIndex": 1,
+    "content": "Tình Huống Handoff Dược Sĩ\n\nDanh sách intent cần handoff\nHỏi kê đơn theo triệu chứng cá nhân.\nHỏi tăng/giảm liều cụ thể cho bản thân hoặc người thân.\nHỏi dùng thuốc khi có bệnh gan, thận, tim mạch, tăng huyết áp, tiểu đường.\nHỏi dùng thuốc cho phụ nữ mang thai/cho con bú.\nHỏi dùng thuốc cho trẻ nhỏ dưới ngưỡng an toàn do hệ thống quy định.\nHỏi phối hợp thuốc có nguy cơ tương tác cao.\n\nMẫu phản hồi khi handoff\nMình chưa thể tư vấn an toàn cho trường hợp này qua chatbot. Bạn vui lòng chọn kết nối với dược sĩ để được hỗ trợ chính xác hơn.",
+    "metadata": {
+      "title": "Tình Huống Handoff Dược Sĩ",
+      "category": "safety",
+      "source": "knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
+      "chunkIndex": 1
+    }
+  },
+  {
+    "id": "tinh_huong_handoff_duoc_si_002",
+    "title": "Tình Huống Handoff Dược Sĩ",
+    "category": "safety",
+    "source": "knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
+    "chunkIndex": 2,
+    "content": "g hợp này qua chatbot. Bạn vui lòng chọn kết nối với dược sĩ để được hỗ trợ chính xác hơn.\n\nThông tin cần thu thập trước handoff\nTên sản phẩm/thuốc đang quan tâm.\nĐộ tuổi người dùng thuốc.\nMục tiêu sử dụng (tham khảo chung hay đang có triệu chứng).\nSố điện thoại hoặc kênh liên hệ để dược sĩ hỗ trợ.",
+    "metadata": {
+      "title": "Tình Huống Handoff Dược Sĩ",
+      "category": "safety",
+      "source": "knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
+      "chunkIndex": 2
+    }
+  }
+]
