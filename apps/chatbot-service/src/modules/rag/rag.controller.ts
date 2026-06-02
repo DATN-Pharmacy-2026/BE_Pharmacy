@@ -2,7 +2,7 @@ import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
 import { RagSearchDto } from './dto/rag-search.dto';
 import { RagService } from './rag.service';
 
-@Controller('rag')
+@Controller(['rag', 'api/rag'])
 export class RagController {
   constructor(private readonly ragService: RagService) {}
 

@@ -1,3 +1,4 @@
+import './load-chatbot-env';
 import { EmbeddingService } from '../apps/chatbot-service/src/modules/rag/embedding.service';
 import { VectorStoreService } from '../apps/chatbot-service/src/modules/rag/vector-store.service';
 
@@ -13,10 +14,12 @@ async function main(): Promise<void> {
 
   const embeddingService = new EmbeddingService();
   if (!embeddingService.hasApiKey()) {
-    throw new Error('OPENAI_API_KEY is missing. Cannot embed search query.');
+    throw new Error(
+      `${embeddingService.getProviderName().toUpperCase()} API key is missing. Cannot embed search query.`,
+    );
   }
 
-  const queryEmbedding = await embeddingService.createEmbedding(query);
+  const queryEmbedding = await embeddingService.createEmbedding(query, 'RETRIEVAL_QUERY');
   const vectorStore = new VectorStoreService();
   const results = await vectorStore.searchSimilar(queryEmbedding, topK);
 

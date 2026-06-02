@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import './load-chatbot-env';
 import { IngestChunk } from '../apps/chatbot-service/src/modules/ingest/ingest.types';
 import { VectorStoreService } from '../apps/chatbot-service/src/modules/rag/vector-store.service';
 

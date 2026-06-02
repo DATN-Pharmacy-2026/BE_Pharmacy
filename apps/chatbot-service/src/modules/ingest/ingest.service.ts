@@ -63,7 +63,9 @@ export class IngestService {
     outputFile: string,
   ): Promise<IngestResult> {
     if (!this.embeddingService.hasApiKey()) {
-      throw new Error('OPENAI_API_KEY is missing. Cannot create embeddings.');
+      throw new Error(
+        `${this.embeddingService.getProviderName().toUpperCase()} API key is missing. Cannot create embeddings.`,
+      );
     }
 
     const base = this.ingestKnowledgeBase(baseDir, outputFile);
@@ -72,7 +74,10 @@ export class IngestService {
     let vectorDimensions = 0;
     for (let i = 0; i < chunks.length; i += 1) {
       const chunk = chunks[i];
-      const vector = await this.embeddingService.createEmbedding(chunk.content);
+      const vector = await this.embeddingService.createEmbedding(
+        chunk.content,
+        'RETRIEVAL_DOCUMENT',
+      );
       chunk.embedding = vector;
       if (!vectorDimensions) {
         vectorDimensions = vector.length;

@@ -70,3 +70,10 @@ export const IDENTITY_EVENT_ROUTES = ['/api/identity-events/*'] as const;
 export const NOTIFICATION_ROUTES = [
   '/api/notifications/*',
 ] as const;
+
+export const CHATBOT_ROUTES = [
+  '/api/chat/*',
+  '/api/rag/*',
+  '/api/handoff/*',
+  '/api/health/*',
+] as const;

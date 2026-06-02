@@ -4,13 +4,15 @@ export interface ServiceTargetContract {
     | 'commerce-service'
     | 'operation-service'
     | 'reporting-setting-service'
-    | 'notification-service';
+    | 'notification-service'
+    | 'chatbot-service';
   envKey:
     | 'IDENTITY_SERVICE_URL'
     | 'COMMERCE_SERVICE_URL'
     | 'OPERATION_SERVICE_URL'
     | 'REPORTING_SETTING_SERVICE_URL'
-    | 'NOTIFICATION_SERVICE_URL';
+    | 'NOTIFICATION_SERVICE_URL'
+    | 'CHATBOT_SERVICE_URL';
   defaultUrl: string;
   healthPath: '/api/health';
 }
@@ -44,6 +46,12 @@ export const SERVICE_TARGETS: ServiceTargetContract[] = [
     serviceName: 'notification-service',
     envKey: 'NOTIFICATION_SERVICE_URL',
     defaultUrl: 'http://localhost:3005',
+    healthPath: '/api/health',
+  },
+  {
+    serviceName: 'chatbot-service',
+    envKey: 'CHATBOT_SERVICE_URL',
+    defaultUrl: 'http://localhost:3006',
     healthPath: '/api/health',
   },
 ];

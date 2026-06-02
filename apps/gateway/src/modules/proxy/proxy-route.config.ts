@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { ProxyRouteTarget } from './interfaces/proxy-target.interface';
 import {
   AUTH_ROUTES,
+  CHATBOT_ROUTES,
   COMMERCE_ROUTES,
   IDENTITY_ROUTES,
   IDENTITY_EVENT_ROUTES,
@@ -41,5 +42,10 @@ export const buildProxyRouteConfig = (
     service: 'notification-service',
     baseUrl: configService.getOrThrow<string>('gateway.services.notification'),
     prefixes: NOTIFICATION_ROUTES.map((route) => route.replace('/*', '')),
+  },
+  {
+    service: 'chatbot-service',
+    baseUrl: configService.getOrThrow<string>('gateway.services.chatbot'),
+    prefixes: CHATBOT_ROUTES.map((route) => route.replace('/*', '')),
   },
 ];

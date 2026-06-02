@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+import './load-chatbot-env';
 import { IngestService } from '../apps/chatbot-service/src/modules/ingest/ingest.service';
 
 function parseArg(flag: string): string | undefined {

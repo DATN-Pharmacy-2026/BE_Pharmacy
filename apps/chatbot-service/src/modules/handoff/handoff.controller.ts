@@ -11,7 +11,7 @@ import {
 import { HandoffListQueryDto, UpdateHandoffTicketDto } from './dto/handoff.dto';
 import { HandoffService } from './handoff.service';
 
-@Controller('handoff')
+@Controller(['handoff', 'api/handoff'])
 export class HandoffController {
   constructor(private readonly handoffService: HandoffService) {}
 

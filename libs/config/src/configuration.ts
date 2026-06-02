@@ -51,6 +51,7 @@ export const configuration = () => ({
         process.env.REPORTING_SETTING_SERVICE_URL ?? 'http://localhost:3004',
       notification:
         process.env.NOTIFICATION_SERVICE_URL ?? 'http://localhost:3005',
+      chatbot: process.env.CHATBOT_SERVICE_URL ?? 'http://localhost:3006',
     },
   },
   logging: {

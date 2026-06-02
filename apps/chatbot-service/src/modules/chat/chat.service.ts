@@ -68,7 +68,7 @@ Quy tac:
       return response;
     }
 
-    const queryEmbedding = await this.embeddingService.createEmbedding(message);
+    const queryEmbedding = await this.embeddingService.createEmbedding(message, 'RETRIEVAL_QUERY');
     const contexts = await this.vectorStoreService.searchSimilar(queryEmbedding, topK);
 
     if (!contexts.length || contexts[0].score < 0.35) {

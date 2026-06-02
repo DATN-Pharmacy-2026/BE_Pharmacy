@@ -3,7 +3,8 @@ export type ProxyServiceName =
   | 'commerce-service'
   | 'operation-service'
   | 'reporting-setting-service'
-  | 'notification-service';
+  | 'notification-service'
+  | 'chatbot-service';
 
 export interface ProxyRouteTarget {
   service: ProxyServiceName;

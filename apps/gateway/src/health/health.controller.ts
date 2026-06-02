@@ -51,6 +51,10 @@ export class HealthController {
           'gateway.services.notification',
         ),
       },
+      {
+        name: 'chatbot-service',
+        url: this.configService.getOrThrow<string>('gateway.services.chatbot'),
+      },
     ];
 
     const checks = await Promise.all(

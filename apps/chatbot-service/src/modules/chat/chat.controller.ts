@@ -6,7 +6,7 @@ import { ChatService } from './chat.service';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  @Post('chat')
+  @Post(['chat', 'api/chat'])
   async chat(
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     dto: ChatRequestDto,
