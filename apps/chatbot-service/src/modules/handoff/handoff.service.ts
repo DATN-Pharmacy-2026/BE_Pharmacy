@@ -23,6 +23,14 @@ export class HandoffService implements OnModuleInit {
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
       );
     `);
+    await this.prisma.$executeRawUnsafe(`
+      ALTER TABLE chatbot_handoff_ticket
+      ADD COLUMN IF NOT EXISTS assigned_user_id UUID NULL,
+      ADD COLUMN IF NOT EXISTS assigned_by_user_id UUID NULL,
+      ADD COLUMN IF NOT EXISTS assignment_source VARCHAR(40) NULL,
+      ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP NULL,
+      ADD COLUMN IF NOT EXISTS contact_status VARCHAR(40) NOT NULL DEFAULT 'WAITING';
+    `);
   }
 
   private isUuid(value?: string | null): boolean {
@@ -71,7 +79,9 @@ export class HandoffService implements OnModuleInit {
   async getTickets(status?: HandoffStatus) {
     if (status) {
       return this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-        `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note, created_at, updated_at
+        `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note,
+                assigned_user_id, assigned_by_user_id, assignment_source, assigned_at, contact_status,
+                created_at, updated_at
          FROM chatbot_handoff_ticket
          WHERE status = $1
          ORDER BY created_at DESC`,
@@ -80,7 +90,9 @@ export class HandoffService implements OnModuleInit {
     }
 
     return this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-      `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note, created_at, updated_at
+      `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note,
+              assigned_user_id, assigned_by_user_id, assignment_source, assigned_at, contact_status,
+              created_at, updated_at
        FROM chatbot_handoff_ticket
        ORDER BY created_at DESC`,
     );
@@ -88,8 +100,12 @@ export class HandoffService implements OnModuleInit {
 
   async getTicketById(id: string) {
     if (!this.isUuid(id)) return null;
-    const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-      `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note, created_at, updated_at
+    const rows = await this.prisma.$queryRawUnsafe<
+      Array<Record<string, unknown>>
+    >(
+      `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note,
+              assigned_user_id, assigned_by_user_id, assignment_source, assigned_at, contact_status,
+              created_at, updated_at
        FROM chatbot_handoff_ticket
        WHERE id = $1::uuid
        LIMIT 1`,
@@ -115,5 +131,36 @@ export class HandoffService implements OnModuleInit {
       responseNote ?? null,
     );
     return this.getTicketById(id);
+  }
+
+  async assignTicket(input: {
+    id: string;
+    assignedUserId: string;
+    assignedByUserId?: string;
+    assignmentSource?: 'MANUAL' | 'ACTIVE_POS_SESSION';
+    responseNote?: string;
+  }): Promise<Record<string, unknown> | null> {
+    if (!this.isUuid(input.id) || !this.isUuid(input.assignedUserId))
+      return null;
+
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE chatbot_handoff_ticket
+       SET assigned_user_id = $2::uuid,
+           assigned_by_user_id = $3::uuid,
+           assignment_source = $4,
+           assigned_at = NOW(),
+           contact_status = 'ASSIGNED',
+           status = CASE WHEN status = 'PENDING' THEN 'IN_PROGRESS' ELSE status END,
+           response_note = COALESCE($5, response_note),
+           updated_at = NOW()
+       WHERE id = $1::uuid`,
+      input.id,
+      input.assignedUserId,
+      this.safeUuid(input.assignedByUserId),
+      input.assignmentSource ?? 'MANUAL',
+      input.responseNote ?? null,
+    );
+
+    return this.getTicketById(input.id);
   }
 }

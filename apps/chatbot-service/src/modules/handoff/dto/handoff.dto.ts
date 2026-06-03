@@ -16,3 +16,21 @@ export class UpdateHandoffTicketDto {
   @MaxLength(2000)
   responseNote?: string;
 }
+
+export class AssignHandoffTicketDto {
+  @IsString()
+  assignedUserId!: string;
+
+  @IsOptional()
+  @IsString()
+  assignedByUserId?: string;
+
+  @IsOptional()
+  @IsIn(['MANUAL', 'ACTIVE_POS_SESSION'])
+  assignmentSource?: 'MANUAL' | 'ACTIVE_POS_SESSION';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  responseNote?: string;
+}

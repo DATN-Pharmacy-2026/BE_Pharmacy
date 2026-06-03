@@ -15,7 +15,7 @@ function hasFlag(flag: string): boolean {
 }
 
 async function main(): Promise<void> {
-  const defaultKbDir = path.resolve(__dirname, '../../knowledge-base');
+  const defaultKbDir = path.resolve(__dirname, '../../fordel/knowledge-base');
   const defaultOutFile = path.resolve(
     __dirname,
     '../apps/chatbot-service/knowledge-base/chunks.json',

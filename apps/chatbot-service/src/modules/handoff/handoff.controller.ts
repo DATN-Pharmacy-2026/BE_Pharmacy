@@ -8,7 +8,11 @@ import {
   Query,
   ValidationPipe,
 } from '@nestjs/common';
-import { HandoffListQueryDto, UpdateHandoffTicketDto } from './dto/handoff.dto';
+import {
+  AssignHandoffTicketDto,
+  HandoffListQueryDto,
+  UpdateHandoffTicketDto,
+} from './dto/handoff.dto';
 import { HandoffService } from './handoff.service';
 
 @Controller(['handoff', 'api/handoff'])
@@ -44,6 +48,25 @@ export class HandoffController {
       dto.status,
       dto.responseNote?.trim(),
     );
+    if (!ticket) {
+      throw new NotFoundException('Ticket not found');
+    }
+    return ticket;
+  }
+
+  @Patch('tickets/:id/assign')
+  async assignTicket(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: AssignHandoffTicketDto,
+  ) {
+    const ticket = await this.handoffService.assignTicket({
+      id: id.trim(),
+      assignedUserId: dto.assignedUserId.trim(),
+      assignedByUserId: dto.assignedByUserId?.trim(),
+      assignmentSource: dto.assignmentSource ?? 'MANUAL',
+      responseNote: dto.responseNote?.trim(),
+    });
     if (!ticket) {
       throw new NotFoundException('Ticket not found');
     }

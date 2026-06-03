@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EmbeddingService } from '../rag/embedding.service';
 import { VectorStoreService } from '../rag/vector-store.service';
 import { SafetyService } from '../safety/safety.service';
@@ -9,6 +9,8 @@ import { LlmService } from './llm.service';
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
   private readonly systemPrompt = `Ban la chatbot ho tro khach hang cua he thong nha thuoc.
 
 Quy tac:
@@ -109,11 +111,19 @@ Quy tac:
 
     const userPrompt = `QUESTION:\n${message}\n\nCONTEXT:\n${contextText}\n\nHay tra loi dua tren CONTEXT. Neu thieu thong tin thi noi ro khong du du lieu.`;
 
-    const answer = await this.llmService.generateAnswer(this.systemPrompt, userPrompt);
     const sources = contexts.slice(0, topK).map((c) => ({
       title: c.title,
       source: c.source,
     }));
+
+    let answer: string;
+    try {
+      answer = await this.llmService.generateAnswer(this.systemPrompt, userPrompt);
+    } catch (error) {
+      const messageText = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`LLM unavailable, returning fallback answer: ${messageText}`);
+      answer = this.buildFallbackAnswer(contexts);
+    }
 
     const response: ChatResponseDto = {
       answer,
@@ -129,5 +139,20 @@ Quy tac:
     });
 
     return response;
+  }
+
+  private buildFallbackAnswer(
+    contexts: Array<{ title: string; category: string; source: string; content: string }>,
+  ): string {
+    const highlights = contexts
+      .slice(0, 3)
+      .map((contextItem, index) => {
+        const content = contextItem.content.replace(/\s+/g, ' ').trim();
+        const summary = content.length > 220 ? `${content.slice(0, 217)}...` : content;
+        return `${index + 1}. ${contextItem.title}: ${summary}`;
+      })
+      .join('\n');
+
+    return `Hien tai he thong AI dang qua tai tam thoi. Du lieu lien quan trong he thong:\n${highlights}\n\nNeu can tu van chuyen mon hoac thong tin chi tiet hon, ban vui long lien he duoc si.`;
   }
 }

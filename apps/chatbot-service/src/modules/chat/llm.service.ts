@@ -20,6 +20,8 @@ interface GeminiGenerateContentResponse {
 
 @Injectable()
 export class LlmService {
+  private readonly maxAttempts = 3;
+
   private readonly provider = (
     process.env.LLM_PROVIDER ||
     process.env.AI_PROVIDER ||
@@ -47,33 +49,42 @@ export class LlmService {
       throw new Error('OPENAI_API_KEY is missing.');
     }
 
-    const response = await fetch(`${this.openAiBaseUrl.replace(/\/+$/, '')}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.openAiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.openAiModel,
-        temperature: 0.2,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      }),
-    });
+    let lastError = '';
+    for (let attempt = 1; attempt <= this.maxAttempts; attempt += 1) {
+      const response = await fetch(`${this.openAiBaseUrl.replace(/\/+$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.openAiApiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.openAiModel,
+          temperature: 0.2,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        }),
+      });
 
-    if (!response.ok) {
+      if (response.ok) {
+        const payload = (await response.json()) as OpenAIChatCompletionResponse;
+        const answer = payload.choices?.[0]?.message?.content?.trim();
+        if (!answer) {
+          throw new Error('LLM API returned empty answer.');
+        }
+        return answer;
+      }
+
       const err = await response.text();
-      throw new Error(`LLM API failed (${response.status}): ${err}`);
+      lastError = `LLM API failed (${response.status}): ${err}`;
+      if (!this.isTransientStatus(response.status) || attempt === this.maxAttempts) {
+        throw new Error(lastError);
+      }
+      await this.sleep(attempt * 500);
     }
 
-    const payload = (await response.json()) as OpenAIChatCompletionResponse;
-    const answer = payload.choices?.[0]?.message?.content?.trim();
-    if (!answer) {
-      throw new Error('LLM API returned empty answer.');
-    }
-    return answer;
+    throw new Error(lastError || 'LLM API failed.');
   }
 
   private async generateWithGemini(systemPrompt: string, userPrompt: string): Promise<string> {
@@ -83,45 +94,64 @@ export class LlmService {
 
     const model = this.normalizeGeminiModelForPath(this.geminiModel);
     const url = `${this.geminiBaseUrl.replace(/\/+$/, '')}/models/${model}:generateContent?key=${encodeURIComponent(this.geminiApiKey)}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: systemPrompt }],
+    let lastError = '';
+    for (let attempt = 1; attempt <= this.maxAttempts; attempt += 1) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: userPrompt }],
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemPrompt }],
           },
-        ],
-        generationConfig: {
-          temperature: 0.2,
-        },
-      }),
-    });
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: userPrompt }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+          },
+        }),
+      });
 
-    if (!response.ok) {
+      if (response.ok) {
+        const payload = (await response.json()) as GeminiGenerateContentResponse;
+        const answer = payload.candidates?.[0]?.content?.parts
+          ?.map((part) => part.text)
+          .filter(Boolean)
+          .join('\n')
+          .trim();
+        if (!answer) {
+          throw new Error('Gemini API returned empty answer.');
+        }
+        return answer;
+      }
+
       const err = await response.text();
-      throw new Error(`Gemini API failed (${response.status}): ${err}`);
+      lastError = `Gemini API failed (${response.status}): ${err}`;
+      if (!this.isTransientStatus(response.status) || attempt === this.maxAttempts) {
+        throw new Error(lastError);
+      }
+      await this.sleep(attempt * 500);
     }
 
-    const payload = (await response.json()) as GeminiGenerateContentResponse;
-    const answer = payload.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text)
-      .filter(Boolean)
-      .join('\n')
-      .trim();
-    if (!answer) {
-      throw new Error('Gemini API returned empty answer.');
-    }
-    return answer;
+    throw new Error(lastError || 'Gemini API failed.');
   }
 
   private normalizeGeminiModelForPath(model: string): string {
     return model.replace(/^models\//, '');
+  }
+
+  private isTransientStatus(status: number): boolean {
+    return status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
   }
 }

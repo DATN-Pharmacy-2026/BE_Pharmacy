@@ -233,8 +233,7 @@ export class CartService {
     const userId = req.user?.id;
     const headerSessionId = this.getHeader(req, 'x-session-id');
     const sessionId = query.sessionId ?? headerSessionId;
-    const headerBranchId = this.getHeader(req, 'x-branch-id');
-    const branchId = query.branchId ?? headerBranchId;
+    const branchId = query.branchId;
 
     if (!userId && !sessionId) {
       // TODO: Enforce strict authenticated cart ownership when auth integration is finalized.
