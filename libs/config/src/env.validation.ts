@@ -52,6 +52,7 @@ export function validateEnv(
     JWT_ACCESS_EXPIRES_IN: Joi.string().default('15m'),
     JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
     BCRYPT_SALT_ROUNDS: Joi.number().integer().min(4).max(15).default(10),
+    PASSWORD_RESET_EXPIRES_MINUTES: Joi.number().integer().min(5).max(1440).default(30),
     LOG_LEVEL: Joi.string()
       .valid('error', 'warn', 'log', 'debug', 'verbose', 'info')
       .default('info'),

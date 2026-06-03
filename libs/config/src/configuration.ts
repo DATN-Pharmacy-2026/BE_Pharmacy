@@ -36,6 +36,7 @@ export const configuration = () => ({
     jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
     jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
     bcryptSaltRounds: parsePort(process.env.BCRYPT_SALT_ROUNDS, 10),
+    passwordResetExpiresMinutes: process.env.PASSWORD_RESET_EXPIRES_MINUTES ?? '30',
   },
   gateway: {
     frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:4008',

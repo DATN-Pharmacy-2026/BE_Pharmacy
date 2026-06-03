@@ -7,12 +7,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { createHash, randomBytes } from 'crypto';
 import { AccessStatus, RefreshToken, UserStatus } from '.prisma/client/identity';
 import { AuthenticatedUser, JwtPayload } from '@app/auth';
 import { IdentityPrismaService } from '../../prisma/identity-prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { PERMISSION_CODES, ROLE_CODES } from './rbac.constants';
 
 interface RequestMeta {
@@ -230,6 +233,94 @@ export class AuthService {
     };
   }
 
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const email = dto.email.trim().toLowerCase();
+    const user = await this.prisma.user.findFirst({
+      where: {
+        email,
+        deletedAt: null,
+        status: UserStatus.ACTIVE,
+      },
+      select: { id: true, email: true, fullName: true },
+    });
+
+    if (!user) {
+      return {
+        message: 'If the email exists, a password reset link has been created',
+        resetLink: null,
+      };
+    }
+
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = this.hashResetToken(token);
+    const expiresAt = new Date(Date.now() + this.getPasswordResetTtlMs());
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.passwordResetToken.updateMany({
+        where: { userId: user.id, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      await tx.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          expiresAt,
+        },
+      });
+    });
+
+    this.logger.log('Password reset token created', { userId: user.id, email: user.email });
+
+    return {
+      message: 'Password reset link created',
+      resetLink: this.buildPasswordResetLink(token),
+      user: {
+        email: user.email,
+        fullName: user.fullName,
+      },
+      expiresAt,
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const tokenHash = this.hashResetToken(dto.token);
+    const tokenRecord = await this.prisma.passwordResetToken.findFirst({
+      where: {
+        tokenHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        user: {
+          select: { id: true, status: true, deletedAt: true },
+        },
+      },
+    });
+
+    if (!tokenRecord || tokenRecord.user.deletedAt || tokenRecord.user.status !== UserStatus.ACTIVE) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const passwordHash = await this.hashPassword(dto.newPassword);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: tokenRecord.userId },
+        data: { passwordHash },
+      });
+      await tx.passwordResetToken.update({
+        where: { id: tokenRecord.id },
+        data: { usedAt: new Date() },
+      });
+      await tx.refreshToken.updateMany({
+        where: { userId: tokenRecord.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    });
+
+    this.logger.log('Password reset success', { userId: tokenRecord.userId });
+    return { message: 'Password reset successfully' };
+  }
+
   async logout(user: AuthenticatedUser) {
     await this.prisma.refreshToken.updateMany({
       where: { userId: user.id, revokedAt: null },
@@ -325,6 +416,24 @@ export class AuthService {
   async hashPassword(rawPassword: string): Promise<string> {
     const rounds = this.configService.get<number>('auth.bcryptSaltRounds', 10);
     return bcrypt.hash(rawPassword, rounds);
+  }
+
+  private hashResetToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private getPasswordResetTtlMs(): number {
+    const minutes = Number.parseInt(
+      this.configService.get<string>('auth.passwordResetExpiresMinutes', '30'),
+      10,
+    );
+    return (Number.isFinite(minutes) && minutes > 0 ? minutes : 30) * 60 * 1000;
+  }
+
+  private buildPasswordResetLink(token: string): string {
+    const frontendUrl = this.configService.get<string>('gateway.frontendUrl', 'http://localhost:5173');
+    const baseUrl = frontendUrl.replace(/\/+$/, '');
+    return `${baseUrl}/reset-password?token=${encodeURIComponent(token)}`;
   }
 
   private buildAuthenticatedUser(user: {
