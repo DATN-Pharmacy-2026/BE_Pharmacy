@@ -42,7 +42,7 @@ export const configuration = () => ({
     frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:4008',
     corsOrigins:
       process.env.CORS_ORIGINS ??
-      `${process.env.FRONTEND_URL ?? 'http://localhost:4008'},http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000`,
+      `${process.env.FRONTEND_URL ?? 'http://localhost:4000'},http://127.0.0.1:4000,http://localhost:4008,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000`,
     proxyTimeoutMs: parsePort(process.env.GATEWAY_PROXY_TIMEOUT_MS, 10000),
     services: {
       identity: process.env.IDENTITY_SERVICE_URL ?? 'http://localhost:3001',

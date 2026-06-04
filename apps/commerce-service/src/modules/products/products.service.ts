@@ -118,6 +118,18 @@ export class ProductsService {
           updatedAt: true,
           category: { select: { id: true, name: true, slug: true } },
           brand: { select: { id: true, name: true, slug: true } },
+          images: {
+            orderBy: { sortOrder: 'asc' },
+            take: 1,
+            select: {
+              id: true,
+              productId: true,
+              url: true,
+              alt: true,
+              sortOrder: true,
+              createdAt: true,
+            },
+          },
         },
       }),
       this.prisma.product.count({ where }),
@@ -164,12 +176,14 @@ export class ProductsService {
     if (dto.brandId) await this.brandsService.findOne(dto.brandId);
 
     try {
-      return await this.prisma.product.create({
+      const product = await this.prisma.product.create({
         data: {
           ...dto,
           status: dto.status ?? ProductStatus.DRAFT,
         },
       });
+      await this.ensurePrimaryImage(product.id, product.name);
+      return product;
     } catch (error) {
       this.handleProductUniqueError(error);
       throw error;
@@ -199,12 +213,28 @@ export class ProductsService {
 
   async addImage(productId: string, dto: CreateProductImageDto) {
     await this.findOne(productId);
+    const sortOrder = dto.sortOrder ?? 0;
+    const data = {
+      url: dto.url,
+      alt: dto.alt,
+      sortOrder,
+    };
+    const existingImage = await this.prisma.productImage.findFirst({
+      where: { productId, sortOrder },
+      select: { id: true },
+    });
+
+    if (existingImage) {
+      return this.prisma.productImage.update({
+        where: { id: existingImage.id },
+        data,
+      });
+    }
+
     return this.prisma.productImage.create({
       data: {
         productId,
-        url: dto.url,
-        alt: dto.alt,
-        sortOrder: dto.sortOrder ?? 0,
+        ...data,
       },
     });
   }
@@ -290,5 +320,28 @@ export class ProductsService {
     ) {
       throw new ConflictException('Product variant sku already exists');
     }
+  }
+
+  private buildProductImageUrl(productName: string): string {
+    const label = encodeURIComponent(productName.slice(0, 28));
+    return `https://placehold.co/600x600/eef7ff/0f766e/png?text=${label}`;
+  }
+
+  private async ensurePrimaryImage(productId: string, productName: string) {
+    const existingImage = await this.prisma.productImage.findFirst({
+      where: { productId, sortOrder: 0 },
+      select: { id: true },
+    });
+
+    if (existingImage) return;
+
+    await this.prisma.productImage.create({
+      data: {
+        productId,
+        url: this.buildProductImageUrl(productName),
+        alt: productName,
+        sortOrder: 0,
+      },
+    });
   }
 }

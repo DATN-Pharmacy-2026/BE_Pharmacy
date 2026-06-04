@@ -35,7 +35,7 @@ export function validateEnv(
     FRONTEND_URL: Joi.string()
       .uri({ scheme: ['http', 'https'] })
       .default('http://localhost:4008'),
-    CORS_ORIGINS: Joi.string().default('http://localhost:4008,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000'),
+    CORS_ORIGINS: Joi.string().default('http://localhost:4000,http://127.0.0.1:4000,http://localhost:4008,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000'),
     GATEWAY_PROXY_TIMEOUT_MS: Joi.number().integer().min(1000).default(10000),
     GATEWAY_THROTTLE_TTL_MS: Joi.number().integer().min(1000).default(60000),
     GATEWAY_THROTTLE_LIMIT: Joi.number().integer().min(1).default(1000),

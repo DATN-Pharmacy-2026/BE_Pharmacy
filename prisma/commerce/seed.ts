@@ -18,6 +18,49 @@ const WAREHOUSE_1_ID = '22222222-2222-2222-2222-222222222222';
 const CUSTOMER_1_ID = '70000000-0000-0000-0000-000000000001';
 const CUSTOMER_2_ID = '70000000-0000-0000-0000-000000000002';
 
+function buildProductImageUrl(product: { sku: string; name: string }): string {
+  const label = encodeURIComponent(product.name.slice(0, 28));
+  return `https://placehold.co/600x600/eef7ff/0f766e/png?text=${label}`;
+}
+
+async function ensureProductImage(product: { id: string; sku: string; name: string }) {
+  const existingImage = await prisma.productImage.findFirst({
+    where: { productId: product.id, sortOrder: 0 },
+    select: { id: true },
+  });
+  const data = {
+    url: buildProductImageUrl(product),
+    alt: product.name,
+    sortOrder: 0,
+  };
+
+  if (existingImage) {
+    await prisma.productImage.update({
+      where: { id: existingImage.id },
+      data,
+    });
+    return;
+  }
+
+  await prisma.productImage.create({
+    data: {
+      productId: product.id,
+      ...data,
+    },
+  });
+}
+
+async function seedProductImages() {
+  const products = await prisma.product.findMany({
+    where: { deletedAt: null },
+    select: { id: true, sku: true, name: true },
+  });
+
+  for (const product of products) {
+    await ensureProductImage(product);
+  }
+}
+
 function resolveSeedBaseDate(): Date {
   const fromEnv = process.env.SEED_BASE_DATE;
   const parsed = fromEnv ? new Date(fromEnv) : new Date('2026-01-01T00:00:00.000Z');
@@ -185,6 +228,7 @@ async function seedProducts() {
   }
 
   await seedBulkProducts(medicineCategory.id, functionalFoodCategory.id, equipmentCategory.id, internalBrand.id, defaultPharmaBrand.id);
+  await seedProductImages();
 }
 
 async function seedBulkProducts(

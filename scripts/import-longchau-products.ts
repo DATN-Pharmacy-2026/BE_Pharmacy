@@ -113,6 +113,11 @@ function mapCategorySlug(name: string): string {
   return slugify(name || 'misc');
 }
 
+function buildProductImageUrl(productName: string): string {
+  const label = encodeURIComponent(productName.slice(0, 28));
+  return `https://placehold.co/600x600/eef7ff/0f766e/png?text=${label}`;
+}
+
 async function ensureCategory(name: string) {
   const slug = mapCategorySlug(name);
   const normalizedName = normalizeWhitespace(name) || slug;
@@ -120,6 +125,33 @@ async function ensureCategory(name: string) {
     where: { slug },
     update: { name: normalizedName, isActive: true },
     create: { slug, name: normalizedName, isActive: true },
+  });
+}
+
+async function ensureProductImage(product: { id: string; name: string }) {
+  const existingImage = await prisma.productImage.findFirst({
+    where: { productId: product.id, sortOrder: 0 },
+    select: { id: true },
+  });
+  const data = {
+    url: buildProductImageUrl(product.name),
+    alt: product.name,
+    sortOrder: 0,
+  };
+
+  if (existingImage) {
+    await prisma.productImage.update({
+      where: { id: existingImage.id },
+      data,
+    });
+    return;
+  }
+
+  await prisma.productImage.create({
+    data: {
+      productId: product.id,
+      ...data,
+    },
   });
 }
 
@@ -173,7 +205,7 @@ async function main() {
     const basePriceNum = Number((r.base_price_vnd || '0').replace(/[^\d.-]/g, ''));
     const basePrice = Number.isFinite(basePriceNum) ? basePriceNum : 0;
 
-    await prisma.product.upsert({
+    const product = await prisma.product.upsert({
       where: { sku },
       update: {
         name,
@@ -212,6 +244,7 @@ async function main() {
         indication: normalizeWhitespace(r.description || '').slice(0, 160) || null,
       },
     });
+    await ensureProductImage(product);
 
     createdOrUpdated += 1;
   }

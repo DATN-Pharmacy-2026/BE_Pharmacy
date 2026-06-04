@@ -76,7 +76,7 @@ export class ChatbotService {
     const defaults: RagDocument[] = [
       {
         id: 'policy-shipping',
-        title: 'Chinh sach giao hang',
+        title: 'Ch?nh s?ch giao hang',
         content:
           'Don noi thanh duoc giao trong 2-4 gio. Don ngoai thanh du kien 2-3 ngay. Don tu 500000 VND duoc mien phi giao hang.',
         category: 'policy',
@@ -84,9 +84,9 @@ export class ChatbotService {
       },
       {
         id: 'policy-payment',
-        title: 'Phuong thuc thanh toan',
+        title: 'Ph??ng th?c thanh to?n',
         content:
-          'Nha thuoc ho tro COD, chuyen khoan ngan hang, vi dien tu va cong thanh toan truc tuyen.',
+          'Nh? thu?c ho tro COD, chuyen khoan ngan hang, vi dien tu va cong thanh toan truc tuyen.',
         category: 'policy',
         source: 'pharmacy-policy',
       },
@@ -124,7 +124,7 @@ export class ChatbotService {
 
     const productDocs: RagDocument[] = products.map((p) => ({
       id: `product-${p.id}`,
-      title: `San pham ${p.name}`,
+      title: `S?n ph?m ${p.name}`,
       category: 'product',
       source: `product:${p.sku ?? p.id}`,
       content: [
@@ -186,7 +186,7 @@ export class ChatbotService {
     const isHighRisk = this.shouldEscalateMedical(query);
     const safetyNote = isHighRisk
       ? 'Canh bao an toan: Trieu chung co dau hieu nghiem trong. Ban nen di kham bac si som nhat.'
-      : 'Luu y: Thong tin chi mang tinh tham khao. Vui long tham khao duoc si/bac si truoc khi dung thuoc.';
+      : 'L?u ?: Thong tin chi mang tinh tham khao. Vui long tham khao duoc si/bac si truoc khi dung thuoc.';
 
     return `${this.toSnippet(top.content)}. ${safetyNote}`;
   }
