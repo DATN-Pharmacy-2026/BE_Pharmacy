@@ -24,6 +24,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { CommercePrismaModule } from './prisma/commerce-prisma.module';
 import { JwtStrategy } from './auth/jwt.strategy';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { JwtStrategy } from './auth/jwt.strategy';
     BrandsModule,
     ChatbotModule,
     ProductsModule,
+    UploadsModule,
   ],
   providers: [
     JwtStrategy,

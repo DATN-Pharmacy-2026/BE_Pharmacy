@@ -276,7 +276,16 @@ export class GoodsReceiptsService {
         }
       }
 
-      return this.findOne(id);
+      const result = await tx.goodsReceipt.findUnique({
+        where: { id },
+        include: {
+          supplier: { select: { id: true, code: true, name: true } },
+          purchaseOrder: { select: { id: true, poNo: true, status: true } },
+          items: { include: { batch: true } },
+        },
+      });
+      if (!result) throw new NotFoundException('Goods receipt not found');
+      return result;
     });
   }
 
@@ -310,7 +319,16 @@ export class GoodsReceiptsService {
         await this.postInventoryTx(tx, updated, updated.receivedByUserId);
       }
 
-      return this.findOne(id);
+      const result = await tx.goodsReceipt.findUnique({
+        where: { id },
+        include: {
+          supplier: { select: { id: true, code: true, name: true } },
+          purchaseOrder: { select: { id: true, poNo: true, status: true } },
+          items: { include: { batch: true } },
+        },
+      });
+      if (!result) throw new NotFoundException('Goods receipt not found');
+      return result;
     });
   }
 

@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Permissions, PermissionsGuard } from '@app/auth';
+import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { CreateProductImageDto } from './dto/create-product-image.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateProductVariantDto } from './dto/create-product-variant.dto';
@@ -46,14 +46,14 @@ export class ProductsController {
   }
 
   @Post()
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('product.create')
   create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto);
   }
 
   @Patch(':id')
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('product.update')
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -63,14 +63,14 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('product.delete')
   remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.productsService.remove(id);
   }
 
   @Post(':productId/images')
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('product.update')
   addImage(
     @Param('productId', new ParseUUIDPipe()) productId: string,
@@ -80,7 +80,7 @@ export class ProductsController {
   }
 
   @Delete(':productId/images/:imageId')
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('product.update')
   removeImage(
     @Param('productId', new ParseUUIDPipe()) productId: string,
@@ -90,7 +90,7 @@ export class ProductsController {
   }
 
   @Post(':productId/variants')
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('product.update')
   addVariant(
     @Param('productId', new ParseUUIDPipe()) productId: string,
@@ -100,7 +100,7 @@ export class ProductsController {
   }
 
   @Patch(':productId/variants/:variantId')
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('product.update')
   updateVariant(
     @Param('productId', new ParseUUIDPipe()) productId: string,
@@ -111,7 +111,7 @@ export class ProductsController {
   }
 
   @Delete(':productId/variants/:variantId')
-  @UseGuards(PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('product.update')
   removeVariant(
     @Param('productId', new ParseUUIDPipe()) productId: string,

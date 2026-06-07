@@ -1,8 +1,11 @@
 import {
   BadRequestException,
+  BadGatewayException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import {
   CartStatus,
   FulfillmentStatus,
@@ -19,13 +22,17 @@ type RequestWithUser = Request & { user?: { id?: string } };
 
 @Injectable()
 export class CheckoutService {
-  constructor(private readonly prisma: CommercePrismaService) {}
+  constructor(
+    private readonly prisma: CommercePrismaService,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async checkout(req: RequestWithUser, dto: CheckoutDto) {
     const userId = req.user?.id;
     const sessionId = dto.sessionId ?? this.getHeader(req, 'x-session-id');
     const branchId = dto.branchId ?? this.getHeader(req, 'x-branch-id');
-    const assignedWarehouseId =
+    let assignedWarehouseId =
       dto.assignedWarehouseId ?? this.getHeader(req, 'x-warehouse-id');
 
     if (!userId && !sessionId) {
@@ -46,7 +53,7 @@ export class CheckoutService {
         items: {
           include: {
             product: {
-              select: { id: true, name: true, sku: true, deletedAt: true },
+              select: { id: true, name: true, sku: true, status: true, deletedAt: true },
             },
             variant: {
               select: { id: true, sku: true },
@@ -60,6 +67,37 @@ export class CheckoutService {
     if (cartWithItems.items.length === 0) {
       throw new BadRequestException('Cart is empty');
     }
+    const unavailableProduct = cartWithItems.items.find(
+      (item) => item.product.deletedAt || item.product.status !== 'ACTIVE',
+    );
+    if (unavailableProduct) {
+      throw new BadRequestException(
+        `Product is not available for sale: ${unavailableProduct.product.name}`,
+      );
+    }
+    if (!branchId) {
+      throw new BadRequestException('branchId is required to verify inventory');
+    }
+
+    const availability = await this.verifyOperationInventory(
+      branchId,
+      cartWithItems.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+    );
+    if (!availability.available || !availability.warehouseId) {
+      const shortage = availability.items?.find((item: any) => !item.available);
+      const shortageProduct = shortage
+        ? cartWithItems.items.find((item) => item.productId === shortage.productId)
+        : undefined;
+      throw new BadRequestException(
+        shortageProduct
+          ? `Insufficient inventory for ${shortageProduct.product.name}`
+          : 'Insufficient inventory for this order',
+      );
+    }
+    assignedWarehouseId = availability.warehouseId;
 
     const subtotal = cartWithItems.items.reduce((acc, item) => {
       return acc + Number(item.unitPrice) * item.quantity;
@@ -155,6 +193,32 @@ export class CheckoutService {
       return { order: orderWithRelations, newActiveCartId: newActiveCart.id };
     });
 
+    if (!result.order) {
+      throw new BadGatewayException('Order was created without inventory reservation data');
+    }
+    try {
+      await this.reserveOperationInventory({
+        orderId: result.order.id,
+        branchId,
+        warehouseId: assignedWarehouseId,
+        items: result.order.items.map((item) => ({
+          productId: item.productId,
+          orderItemId: item.id,
+          quantity: item.quantity,
+        })),
+      });
+    } catch (error) {
+      await this.prisma.onlineOrder.update({
+        where: { id: result.order.id },
+        data: {
+          status: OrderStatus.CANCELLED,
+          fulfillmentStatus: FulfillmentStatus.CANCELLED,
+          note: `${result.order.note ?? ''} Inventory reservation failed.`.trim(),
+        },
+      });
+      throw error;
+    }
+
     return result;
   }
 
@@ -207,5 +271,53 @@ export class CheckoutService {
     const value = req.headers[key];
     if (typeof value === 'string' && value.trim().length > 0) return value;
     return undefined;
+  }
+
+  private async verifyOperationInventory(
+    branchId: string,
+    items: Array<{ productId: string; quantity: number }>,
+  ): Promise<any> {
+    const operationServiceUrl = this.configService.get<string>(
+      'gateway.services.operation',
+      'http://localhost:3003',
+    );
+    try {
+      const response = await this.httpService.axiosRef.post(
+        `${operationServiceUrl.replace(/\/+$/, '')}/api/public-inventory/verify-cart`,
+        { branchId, items },
+        { timeout: 5000 },
+      );
+      return response.data;
+    } catch {
+      throw new BadGatewayException('Unable to verify inventory');
+    }
+  }
+
+  private async reserveOperationInventory(payload: {
+    orderId: string;
+    branchId: string;
+    warehouseId: string;
+    items: Array<{ productId: string; orderItemId: string; quantity: number }>;
+  }): Promise<void> {
+    const operationServiceUrl = this.configService.get<string>(
+      'gateway.services.operation',
+      'http://localhost:3003',
+    );
+    const serviceKey = this.configService.get<string>(
+      'internal.serviceKey',
+      'pharmplus-internal-dev',
+    );
+    try {
+      await this.httpService.axiosRef.post(
+        `${operationServiceUrl.replace(/\/+$/, '')}/api/internal-inventory/online-orders/reserve`,
+        payload,
+        {
+          timeout: 5000,
+          headers: { 'x-internal-service-key': serviceKey },
+        },
+      );
+    } catch {
+      throw new BadGatewayException('Unable to reserve inventory');
+    }
   }
 }

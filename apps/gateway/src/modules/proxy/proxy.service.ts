@@ -57,6 +57,10 @@ export class ProxyService {
       method: input.method,
       params: input.query,
       data: input.body,
+      ...(input.method.toUpperCase() === 'GET' &&
+      input.path.startsWith('/api/uploads/')
+        ? { responseType: 'arraybuffer' as const }
+        : {}),
       headers: this.buildForwardHeaders(
         input.headers,
         target.baseUrl,

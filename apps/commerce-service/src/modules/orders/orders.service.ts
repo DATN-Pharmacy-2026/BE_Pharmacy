@@ -5,6 +5,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import {
   FulfillmentStatus,
   OrderStatus,
@@ -19,7 +21,11 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: CommercePrismaService) {}
+  constructor(
+    private readonly prisma: CommercePrismaService,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {}
 
   private hasPermission(req: Request | undefined, permission: string): boolean {
     const permissions = (req as Request & { user?: { permissions?: string[] } })?.user
@@ -213,6 +219,13 @@ export class OrdersService {
       throw new ConflictException('Cancelled order status cannot be changed');
     }
 
+    if (dto.status === OrderStatus.COMPLETED && existing.status !== OrderStatus.COMPLETED) {
+      await this.updateOperationInventory('consume', id);
+    }
+    if (dto.status === OrderStatus.CANCELLED && existing.status !== OrderStatus.CANCELLED) {
+      await this.updateOperationInventory('release', id);
+    }
+
     await this.prisma.onlineOrder.update({
       where: { id },
       data: {
@@ -245,6 +258,8 @@ export class OrdersService {
       throw new ConflictException('Completed order cannot be cancelled');
     }
 
+    await this.updateOperationInventory('release', id);
+
     const paymentStatus =
       order.paymentStatus === PaymentStatus.PAID
         ? PaymentStatus.PAID
@@ -273,5 +288,31 @@ export class OrdersService {
     const value = req.headers[key];
     if (typeof value === 'string' && value.trim().length > 0) return value;
     return undefined;
+  }
+
+  private async updateOperationInventory(
+    action: 'release' | 'consume',
+    orderId: string,
+  ): Promise<void> {
+    const operationServiceUrl = this.configService.get<string>(
+      'gateway.services.operation',
+      'http://localhost:3003',
+    );
+    const serviceKey = this.configService.get<string>(
+      'internal.serviceKey',
+      'pharmplus-internal-dev',
+    );
+    try {
+      await this.httpService.axiosRef.post(
+        `${operationServiceUrl.replace(/\/+$/, '')}/api/internal-inventory/online-orders/${action}`,
+        { orderId },
+        {
+          timeout: 5000,
+          headers: { 'x-internal-service-key': serviceKey },
+        },
+      );
+    } catch {
+      throw new ConflictException(`Unable to ${action} order inventory`);
+    }
   }
 }

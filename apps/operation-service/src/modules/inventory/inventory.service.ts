@@ -2,6 +2,10 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Prisma } from '.prisma/client/operation';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { QueryInventoryDto } from './dto/query-inventory.dto';
+import {
+  PublicCartAvailabilityDto,
+  PublicProductAvailabilityQueryDto,
+} from './dto/public-inventory.dto';
 
 @Injectable()
 export class InventoryService {
@@ -51,6 +55,127 @@ export class InventoryService {
     ]);
 
     return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  }
+
+  async getPublicAvailability(query: PublicProductAvailabilityQueryDto) {
+    const warehouses = await this.prisma.warehouse.findMany({
+      where: {
+        branchId: query.branchId,
+        status: 'ACTIVE',
+      },
+      select: { id: true, code: true, name: true },
+    });
+
+    if (warehouses.length === 0) {
+      return {
+        productId: query.productId,
+        branchId: query.branchId,
+        requestedQty: query.quantity,
+        availableQty: 0,
+        available: false,
+        warehouses: [],
+      };
+    }
+
+    const rows = await this.prisma.inventoryItem.groupBy({
+      by: ['warehouseId'],
+      where: {
+        productId: query.productId,
+        warehouseId: { in: warehouses.map((warehouse) => warehouse.id) },
+        quantityAvailable: { gt: 0 },
+        expiryDate: { gte: new Date() },
+      },
+      _sum: { quantityAvailable: true },
+    });
+    const quantities = new Map(
+      rows.map((row) => [row.warehouseId, Number(row._sum.quantityAvailable ?? 0)]),
+    );
+    const warehouseAvailability = warehouses.map((warehouse) => ({
+      ...warehouse,
+      availableQty: quantities.get(warehouse.id) ?? 0,
+    }));
+    const availableQty = warehouseAvailability.reduce(
+      (total, warehouse) => total + warehouse.availableQty,
+      0,
+    );
+
+    return {
+      productId: query.productId,
+      branchId: query.branchId,
+      requestedQty: query.quantity,
+      availableQty,
+      available: warehouseAvailability.some(
+        (warehouse) => warehouse.availableQty >= query.quantity,
+      ),
+      warehouses: warehouseAvailability,
+    };
+  }
+
+  async verifyPublicCart(dto: PublicCartAvailabilityDto) {
+    const warehouses = await this.prisma.warehouse.findMany({
+      where: {
+        branchId: dto.branchId,
+        status: 'ACTIVE',
+      },
+      select: { id: true, code: true, name: true },
+    });
+
+    for (const warehouse of warehouses) {
+      const rows = await this.prisma.inventoryItem.groupBy({
+        by: ['productId'],
+        where: {
+          warehouseId: warehouse.id,
+          productId: { in: dto.items.map((item) => item.productId) },
+          quantityAvailable: { gt: 0 },
+          expiryDate: { gte: new Date() },
+        },
+        _sum: { quantityAvailable: true },
+      });
+      const quantities = new Map(
+        rows.map((row) => [row.productId, Number(row._sum.quantityAvailable ?? 0)]),
+      );
+      const items = dto.items.map((item) => {
+        const availableQty = quantities.get(item.productId) ?? 0;
+        return {
+          ...item,
+          availableQty,
+          available: availableQty >= item.quantity,
+        };
+      });
+
+      if (items.every((item) => item.available)) {
+        return {
+          available: true,
+          branchId: dto.branchId,
+          warehouseId: warehouse.id,
+          warehouseCode: warehouse.code,
+          warehouseName: warehouse.name,
+          items,
+        };
+      }
+    }
+
+    const itemChecks = await Promise.all(
+      dto.items.map((item) =>
+        this.getPublicAvailability({
+          productId: item.productId,
+          branchId: dto.branchId,
+          quantity: item.quantity,
+        }),
+      ),
+    );
+
+    return {
+      available: false,
+      branchId: dto.branchId,
+      warehouseId: null,
+      items: itemChecks.map((item) => ({
+        productId: item.productId,
+        requestedQty: item.requestedQty,
+        availableQty: item.availableQty,
+        available: item.available,
+      })),
+    };
   }
 
   async findOne(id: string) {

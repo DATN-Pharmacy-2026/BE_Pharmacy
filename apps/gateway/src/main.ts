@@ -5,10 +5,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { GlobalExceptionFilter, ResponseInterceptor } from '@app/common';
 import { LoggerService } from '@app/logger';
 import helmet from 'helmet';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
   const configService = app.get(ConfigService);
 
   app.setGlobalPrefix('api');
@@ -30,6 +31,8 @@ async function bootstrap(): Promise<void> {
           : { directives: { defaultSrc: ["'self'"] } },
     }),
   );
+  app.use(json({ limit: '8mb' }));
+  app.use(urlencoded({ extended: true, limit: '8mb' }));
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,

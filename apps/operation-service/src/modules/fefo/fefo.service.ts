@@ -1,5 +1,10 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { AllocationOrderType, AllocationStatus, Prisma } from '.prisma/client/operation';
+import {
+  AllocationOrderType,
+  AllocationStatus,
+  InventoryMovementType,
+  Prisma,
+} from '.prisma/client/operation';
 import { Request } from 'express';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { WarehousesService } from '../warehouses/warehouses.service';
@@ -8,6 +13,7 @@ import { FefoPreviewDto } from './dto/fefo-preview.dto';
 import { QueryFefoAllocationsDto } from './dto/query-fefo-allocations.dto';
 import { ReleaseFefoAllocationDto } from './dto/release-fefo-allocation.dto';
 import { ReleaseFefoByOrderDto } from './dto/release-fefo-by-order.dto';
+import { InternalReserveOnlineOrderDto } from './dto/internal-online-order-inventory.dto';
 
 type AllocationPlanLine = {
   inventoryItemId: string;
@@ -322,6 +328,136 @@ export class FefoService {
         releasedQty,
         reason: dto.reason,
       };
+    });
+  }
+
+  async reserveOnlineOrder(dto: InternalReserveOnlineOrderDto) {
+    const duplicate = await this.prisma.fEFOAllocation.findFirst({
+      where: {
+        orderType: AllocationOrderType.ONLINE_ORDER,
+        orderId: dto.orderId,
+        status: { in: [AllocationStatus.RESERVED, AllocationStatus.PICKED] },
+      },
+    });
+    if (duplicate) {
+      return { orderId: dto.orderId, reserved: true, duplicate: true };
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      let reservedQty = 0;
+      for (const item of dto.items) {
+        const plan = await this.calculatePlan(
+          {
+            productId: item.productId,
+            warehouseId: dto.warehouseId,
+            branchId: dto.branchId,
+            quantity: item.quantity,
+            excludeExpired: true,
+          },
+          tx,
+        );
+        if (plan.shortageQty > 0) {
+          throw new ConflictException('Insufficient inventory');
+        }
+
+        for (const line of plan.items) {
+          const inventory = await tx.inventoryItem.findUnique({ where: { id: line.inventoryItemId } });
+          if (!inventory) throw new NotFoundException('Inventory item not found');
+          const nextReserved = inventory.quantityReserved + line.allocatedQty;
+          const nextAvailable = inventory.quantityOnHand - nextReserved;
+          if (nextAvailable < 0) throw new ConflictException('Insufficient inventory');
+
+          await tx.inventoryItem.update({
+            where: { id: inventory.id },
+            data: {
+              quantityReserved: nextReserved,
+              quantityAvailable: nextAvailable,
+            },
+          });
+          await tx.fEFOAllocation.create({
+            data: {
+              productId: item.productId,
+              orderType: AllocationOrderType.ONLINE_ORDER,
+              orderId: dto.orderId,
+              orderItemId: item.orderItemId,
+              warehouseId: dto.warehouseId,
+              branchId: dto.branchId,
+              batchId: line.batchId,
+              expiryDate: line.expiryDate,
+              allocatedQty: line.allocatedQty,
+              status: AllocationStatus.RESERVED,
+            },
+          });
+          reservedQty += line.allocatedQty;
+        }
+      }
+      return { orderId: dto.orderId, reserved: true, reservedQty };
+    });
+  }
+
+  async releaseOnlineOrder(orderId: string) {
+    return this.releaseByOrder({
+      orderType: AllocationOrderType.ONLINE_ORDER,
+      orderId,
+      reason: 'Online order cancelled',
+    });
+  }
+
+  async consumeOnlineOrder(orderId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const allocations = await tx.fEFOAllocation.findMany({
+        where: {
+          orderType: AllocationOrderType.ONLINE_ORDER,
+          orderId,
+          status: { in: [AllocationStatus.RESERVED, AllocationStatus.PICKED] },
+        },
+      });
+      let consumedQty = 0;
+      for (const allocation of allocations) {
+        const inventory = await tx.inventoryItem.findFirst({
+          where: {
+            productId: allocation.productId,
+            batchId: allocation.batchId,
+            warehouseId: allocation.warehouseId,
+          },
+        });
+        if (!inventory) throw new NotFoundException('Inventory item not found');
+        const nextOnHand = inventory.quantityOnHand - allocation.allocatedQty;
+        const nextReserved = inventory.quantityReserved - allocation.allocatedQty;
+        if (nextOnHand < 0 || nextReserved < 0) {
+          throw new BadRequestException('Inventory quantity cannot be negative');
+        }
+
+        await tx.inventoryItem.update({
+          where: { id: inventory.id },
+          data: {
+            quantityOnHand: nextOnHand,
+            quantityReserved: nextReserved,
+            quantityAvailable: nextOnHand - nextReserved,
+          },
+        });
+        await tx.stockMovement.create({
+          data: {
+            tenantId: '00000000-0000-0000-0000-000000000000',
+            productId: allocation.productId,
+            warehouseId: allocation.warehouseId,
+            locationId: inventory.locationId,
+            movementType: InventoryMovementType.SALE_DECREASE,
+            quantity: allocation.allocatedQty,
+            beforeQuantity: inventory.quantityOnHand,
+            afterQuantity: nextOnHand,
+            referenceType: 'ONLINE_ORDER',
+            referenceId: orderId,
+            createdByUserId: '00000000-0000-0000-0000-000000000000',
+          },
+        });
+        await tx.fEFOAllocation.update({
+          where: { id: allocation.id },
+          data: { status: AllocationStatus.CONSUMED },
+        });
+        consumedQty += allocation.allocatedQty;
+      }
+      return { orderId, consumedCount: allocations.length, consumedQty };
     });
   }
 

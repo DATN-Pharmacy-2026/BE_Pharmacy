@@ -38,6 +38,9 @@ export const configuration = () => ({
     bcryptSaltRounds: parsePort(process.env.BCRYPT_SALT_ROUNDS, 10),
     passwordResetExpiresMinutes: process.env.PASSWORD_RESET_EXPIRES_MINUTES ?? '30',
   },
+  internal: {
+    serviceKey: process.env.INTERNAL_SERVICE_KEY ?? 'pharmplus-internal-dev',
+  },
   gateway: {
     frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:4008',
     corsOrigins:
