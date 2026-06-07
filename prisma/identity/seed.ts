@@ -67,6 +67,9 @@ const PERMISSIONS = [
 
   { code: 'goods_receipt.view', name: 'View Goods Receipts', module: 'goods_receipt', action: 'view' },
   { code: 'goods_receipt.create', name: 'Create Goods Receipts', module: 'goods_receipt', action: 'create' },
+  { code: 'goods_receipt.update', name: 'Update Goods Receipts', module: 'goods_receipt', action: 'update' },
+  { code: 'goods_receipt.receive', name: 'Receive Goods Receipts', module: 'goods_receipt', action: 'receive' },
+  { code: 'goods_receipt.cancel', name: 'Cancel Goods Receipts', module: 'goods_receipt', action: 'cancel' },
 
   { code: 'pos.sell', name: 'Sell POS Order', module: 'pos', action: 'sell' },
   { code: 'pos.refund', name: 'Refund POS Order', module: 'pos', action: 'refund' },
