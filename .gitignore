@@ -19,6 +19,7 @@ pnpm-debug.log*
 
 storage/report-exports/*
 !storage/report-exports/.gitkeep
+uploads/
 
 *.pid
 *.seed

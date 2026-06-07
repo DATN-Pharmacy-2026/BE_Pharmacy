@@ -40,6 +40,8 @@
     "prisma:seed:reporting": "npx ts-node prisma/reporting/seed.ts",
     "prisma:seed:notification": "npx ts-node prisma/notification/seed.ts",
     "import:longchau": "npx ts-node scripts/import-longchau-products.ts",
+    "sync:pos-inventory": "npx ts-node scripts/sync-pos-inventory.ts",
+    "import:longchau:with-inventory": "npm run import:longchau && npm run sync:pos-inventory",
     "products:backfill-images": "npx ts-node scripts/backfill-product-images.ts",
     "chatbot:ingest": "npx ts-node scripts/ingest-chatbot-kb.ts",
     "chatbot:ingest:embeddings": "npx ts-node scripts/ingest-chatbot-kb.ts --withEmbeddings",
