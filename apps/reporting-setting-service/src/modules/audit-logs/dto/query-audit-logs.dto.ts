@@ -1,6 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class QueryAuditLogsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -74,7 +83,10 @@ export class QueryAuditLogsDto {
   @MaxLength(100)
   search?: string;
 
-  @ApiPropertyOptional({ enum: ['createdAt', 'serviceName', 'module', 'action'], default: 'createdAt' })
+  @ApiPropertyOptional({
+    enum: ['createdAt', 'serviceName', 'module', 'action'],
+    default: 'createdAt',
+  })
   @IsOptional()
   @IsString()
   sortBy?: string;

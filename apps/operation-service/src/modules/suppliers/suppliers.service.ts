@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, SupplierStatus } from '.prisma/client/operation';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
@@ -14,7 +18,9 @@ export class SuppliersService {
     const where: Prisma.SupplierWhereInput = {
       ...(status ? { status } : {}),
       ...(code ? { code: { contains: code, mode: 'insensitive' } } : {}),
-      ...(taxCode ? { taxCode: { contains: taxCode, mode: 'insensitive' } } : {}),
+      ...(taxCode
+        ? { taxCode: { contains: taxCode, mode: 'insensitive' } }
+        : {}),
       ...(search
         ? {
             OR: [
@@ -38,7 +44,10 @@ export class SuppliersService {
       this.prisma.supplier.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
@@ -76,14 +85,24 @@ export class SuppliersService {
 
   async remove(id: string) {
     await this.findOne(id);
-    return this.prisma.supplier.update({ where: { id }, data: { status: SupplierStatus.INACTIVE } });
+    return this.prisma.supplier.update({
+      where: { id },
+      data: { status: SupplierStatus.INACTIVE },
+    });
   }
 
   private handleUniqueError(error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(',') : '';
-      if (target.includes('code')) throw new ConflictException('Duplicate supplier code');
-      if (target.includes('taxCode')) throw new ConflictException('Duplicate supplier taxCode');
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      const target = Array.isArray(error.meta?.target)
+        ? error.meta.target.join(',')
+        : '';
+      if (target.includes('code'))
+        throw new ConflictException('Duplicate supplier code');
+      if (target.includes('taxCode'))
+        throw new ConflictException('Duplicate supplier taxCode');
       throw new ConflictException('Duplicate supplier value');
     }
   }

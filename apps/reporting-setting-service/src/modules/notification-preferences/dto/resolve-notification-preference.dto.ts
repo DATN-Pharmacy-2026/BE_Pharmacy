@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { NotificationChannel, NotificationEventType, NotificationSeverity } from '.prisma/client/reporting';
+import {
+  NotificationChannel,
+  NotificationEventType,
+  NotificationSeverity,
+} from '.prisma/client/reporting';
 import { Transform } from 'class-transformer';
 import { IsBoolean, IsEnum, IsOptional } from 'class-validator';
 

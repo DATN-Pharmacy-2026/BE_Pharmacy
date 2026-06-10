@@ -53,7 +53,13 @@ export class CheckoutService {
         items: {
           include: {
             product: {
-              select: { id: true, name: true, sku: true, status: true, deletedAt: true },
+              select: {
+                id: true,
+                name: true,
+                sku: true,
+                status: true,
+                deletedAt: true,
+              },
             },
             variant: {
               select: { id: true, sku: true },
@@ -89,7 +95,9 @@ export class CheckoutService {
     if (!availability.available || !availability.warehouseId) {
       const shortage = availability.items?.find((item: any) => !item.available);
       const shortageProduct = shortage
-        ? cartWithItems.items.find((item) => item.productId === shortage.productId)
+        ? cartWithItems.items.find(
+            (item) => item.productId === shortage.productId,
+          )
         : undefined;
       throw new BadRequestException(
         shortageProduct
@@ -97,7 +105,7 @@ export class CheckoutService {
           : 'Insufficient inventory for this order',
       );
     }
-    assignedWarehouseId = availability.warehouseId;
+    assignedWarehouseId = String(availability.warehouseId);
 
     const subtotal = cartWithItems.items.reduce((acc, item) => {
       return acc + Number(item.unitPrice) * item.quantity;
@@ -194,7 +202,9 @@ export class CheckoutService {
     });
 
     if (!result.order) {
-      throw new BadGatewayException('Order was created without inventory reservation data');
+      throw new BadGatewayException(
+        'Order was created without inventory reservation data',
+      );
     }
     try {
       await this.reserveOperationInventory({

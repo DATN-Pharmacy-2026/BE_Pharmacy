@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateNotificationTemplateDto } from './dto/create-notification-template.dto';
 import { QueryNotificationTemplatesDto } from './dto/query-notification-templates.dto';
@@ -27,7 +37,10 @@ export class NotificationTemplatesController {
   }
 
   @Patch(':id')
-  update(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateNotificationTemplateDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateNotificationTemplateDto,
+  ) {
     return this.service.update(id, dto);
   }
 

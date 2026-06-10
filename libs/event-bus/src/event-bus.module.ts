@@ -39,6 +39,22 @@ import { MemoryRetryDlqService } from './brokers/memory-retry-dlq.service';
     KafkaRetryDlqService,
     MemoryRetryDlqService,
   ],
-  exports: [EventPublisherService, EventSubscriberService, EventIdempotencyService, CorrelationIdService, EventErrorClassifierService, EventRetryPolicyService, EventRetrySchedulerService, EventDlqService, EventReplayService, EventPoisonDetectorService, EventFailureVisibilityService, RabbitmqRetryTopologyService, RabbitmqDlqService, KafkaRetryDlqService, MemoryRetryDlqService],
+  exports: [
+    EventPublisherService,
+    EventSubscriberService,
+    EventIdempotencyService,
+    CorrelationIdService,
+    EventErrorClassifierService,
+    EventRetryPolicyService,
+    EventRetrySchedulerService,
+    EventDlqService,
+    EventReplayService,
+    EventPoisonDetectorService,
+    EventFailureVisibilityService,
+    RabbitmqRetryTopologyService,
+    RabbitmqDlqService,
+    KafkaRetryDlqService,
+    MemoryRetryDlqService,
+  ],
 })
 export class EventBusModule {}

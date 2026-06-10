@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
@@ -25,8 +35,17 @@ export class PosSessionsController {
   @Get('current')
   @UseGuards(PermissionsGuard)
   @Permissions('pos.access', 'pos.shift.view')
-  current(@Req() req: Request, @Query('branchId') branchId?: string, @Query('storeId') storeId?: string, @Query('posTerminalId') posTerminalId?: string) {
-    return this.posSessionsService.current(req, { branchId, storeId, posTerminalId });
+  current(
+    @Req() req: Request,
+    @Query('branchId') branchId?: string,
+    @Query('storeId') storeId?: string,
+    @Query('posTerminalId') posTerminalId?: string,
+  ) {
+    return this.posSessionsService.current(req, {
+      branchId,
+      storeId,
+      posTerminalId,
+    });
   }
 
   @Get(':id')
@@ -46,7 +65,10 @@ export class PosSessionsController {
   @Post(':id/close')
   @UseGuards(PermissionsGuard)
   @Permissions('pos.access', 'pos.shift.close')
-  close(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: ClosePosSessionDto) {
+  close(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ClosePosSessionDto,
+  ) {
     return this.posSessionsService.close(id, dto);
   }
 }

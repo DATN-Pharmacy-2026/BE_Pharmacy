@@ -23,8 +23,14 @@ import { ProxyModule } from './modules/proxy/proxy.module';
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: Number.parseInt(process.env.GATEWAY_THROTTLE_TTL_MS ?? '60000', 10),
-        limit: Number.parseInt(process.env.GATEWAY_THROTTLE_LIMIT ?? '1000', 10),
+        ttl: Number.parseInt(
+          process.env.GATEWAY_THROTTLE_TTL_MS ?? '60000',
+          10,
+        ),
+        limit: Number.parseInt(
+          process.env.GATEWAY_THROTTLE_LIMIT ?? '1000',
+          10,
+        ),
       },
     ]),
     LoggerModule,

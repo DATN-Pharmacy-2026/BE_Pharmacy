@@ -38,7 +38,8 @@ export const API_GROUPS: ApiGroupContract[] = [
   },
   {
     group: 'identity events proxy',
-    description: 'Event failure/replay admin routes proxied to identity-service.',
+    description:
+      'Event failure/replay admin routes proxied to identity-service.',
     routes: IDENTITY_EVENT_ROUTES,
     targetService: 'identity-service',
     authRequired: true,

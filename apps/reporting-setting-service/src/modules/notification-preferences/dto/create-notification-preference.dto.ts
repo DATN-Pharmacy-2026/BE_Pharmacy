@@ -4,7 +4,13 @@ import {
   NotificationEventType,
   NotificationSeverity,
 } from '.prisma/client/reporting';
-import { IsBoolean, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
 
 export class CreateNotificationPreferenceDto {
   @ApiPropertyOptional()

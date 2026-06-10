@@ -7,7 +7,13 @@ import { NotificationPreferencesService } from './notification-preferences.servi
 @Module({
   imports: [AuditLogsModule],
   controllers: [NotificationPreferencesController],
-  providers: [NotificationPreferencesService, NotificationPreferenceResolverService],
-  exports: [NotificationPreferencesService, NotificationPreferenceResolverService],
+  providers: [
+    NotificationPreferencesService,
+    NotificationPreferenceResolverService,
+  ],
+  exports: [
+    NotificationPreferencesService,
+    NotificationPreferenceResolverService,
+  ],
 })
 export class NotificationPreferencesModule {}

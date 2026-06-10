@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Headers, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiHeader, ApiTags } from '@nestjs/swagger';
 import { CreateNotificationEventDto } from './dto/create-notification-event.dto';
 import { MarkNotificationReadDto } from './dto/mark-notification-read.dto';
@@ -80,7 +91,13 @@ export class NotificationEventsController {
 
   @Patch('read-all')
   markAllRead(
-    @Body() dto: { recipientUserId?: string; branchId?: string; warehouseId?: string; readAt?: string },
+    @Body()
+    dto: {
+      recipientUserId?: string;
+      branchId?: string;
+      warehouseId?: string;
+      readAt?: string;
+    },
   ) {
     return this.notificationEventsService.markAllRead(dto);
   }

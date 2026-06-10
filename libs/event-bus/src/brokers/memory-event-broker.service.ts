@@ -6,6 +6,8 @@ import { EventBroker } from '../event-broker.interface';
 export class MemoryEventBrokerService implements EventBroker {
   private readonly logger = new Logger(MemoryEventBrokerService.name);
   async publish<T>(event: EventEnvelope<T>): Promise<void> {
-    this.logger.warn(`memory broker publish ${event.eventType} ${event.eventId}`);
+    this.logger.warn(
+      `memory broker publish ${event.eventType} ${event.eventId}`,
+    );
   }
 }

@@ -10,8 +10,8 @@ export class PaymentsService {
   constructor(private readonly prisma: CommercePrismaService) {}
 
   private hasPermission(req: Request | undefined, permission: string): boolean {
-    const permissions = (req as Request & { user?: { permissions?: string[] } })?.user
-      ?.permissions;
+    const permissions = (req as Request & { user?: { permissions?: string[] } })
+      ?.user?.permissions;
     return Array.isArray(permissions) && permissions.includes(permission);
   }
 
@@ -27,7 +27,16 @@ export class PaymentsService {
 
   private toPaymentResponse(
     payment: Prisma.PaymentGetPayload<{
-      include: { onlineOrder: { select: { orderNo: true } } };
+      include: {
+        onlineOrder: {
+          select: {
+            orderNo: true;
+            customerName: true;
+            customerPhone: true;
+            shippingAddress: true;
+          };
+        };
+      };
     }>,
   ) {
     return {
@@ -37,6 +46,11 @@ export class PaymentsService {
       // explicit alias for clients
       orderId: payment.onlineOrderId,
       orderCode: payment.onlineOrder?.orderNo ?? null,
+      paymentCode:
+        payment.transactionNo ?? payment.onlineOrder?.orderNo ?? null,
+      customerName: payment.onlineOrder?.customerName ?? null,
+      customerPhone: payment.onlineOrder?.customerPhone ?? null,
+      shippingAddress: payment.onlineOrder?.shippingAddress ?? null,
       method: payment.method,
       provider: payment.provider,
       transactionNo: payment.transactionNo,
@@ -64,7 +78,22 @@ export class PaymentsService {
     const orSearch: Prisma.PaymentWhereInput[] = [];
     if (search) {
       orSearch.push({
-        onlineOrder: { is: { orderNo: { contains: search, mode: 'insensitive' } } },
+        onlineOrder: {
+          is: { orderNo: { contains: search, mode: 'insensitive' } },
+        },
+      });
+      orSearch.push({
+        onlineOrder: {
+          is: { customerName: { contains: search, mode: 'insensitive' } },
+        },
+      });
+      orSearch.push({
+        onlineOrder: {
+          is: { customerPhone: { contains: search, mode: 'insensitive' } },
+        },
+      });
+      orSearch.push({
+        transactionNo: { contains: search, mode: 'insensitive' },
       });
       if (this.isUuid(search)) {
         orSearch.push({ id: search });
@@ -98,7 +127,12 @@ export class PaymentsService {
         orderBy: { createdAt: 'desc' },
         include: {
           onlineOrder: {
-            select: { orderNo: true },
+            select: {
+              orderNo: true,
+              customerName: true,
+              customerPhone: true,
+              shippingAddress: true,
+            },
           },
         },
       }),
@@ -121,7 +155,13 @@ export class PaymentsService {
       where: { id },
       include: {
         onlineOrder: {
-          select: { orderNo: true, userId: true },
+          select: {
+            orderNo: true,
+            userId: true,
+            customerName: true,
+            customerPhone: true,
+            shippingAddress: true,
+          },
         },
       },
     });
@@ -158,15 +198,24 @@ export class PaymentsService {
       orderBy: { createdAt: 'desc' },
       include: {
         onlineOrder: {
-          select: { orderNo: true },
+          select: {
+            orderNo: true,
+            customerName: true,
+            customerPhone: true,
+            shippingAddress: true,
+          },
         },
       },
     });
-    return { items: payments.map((payment) => this.toPaymentResponse(payment)) };
+    return {
+      items: payments.map((payment) => this.toPaymentResponse(payment)),
+    };
   }
 
   async updateStatus(id: string, dto: UpdatePaymentStatusDto) {
-    const existingPayment = await this.prisma.payment.findUnique({ where: { id } });
+    const existingPayment = await this.prisma.payment.findUnique({
+      where: { id },
+    });
     if (!existingPayment) throw new NotFoundException('Payment not found');
 
     const nextPaidAt =

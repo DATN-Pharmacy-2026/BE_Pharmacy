@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
@@ -39,7 +49,9 @@ export class ReceiptsController {
   @Get('online-order/:onlineOrderId')
   @UseGuards(PermissionsGuard)
   @Permissions('receipt.view')
-  findByOnlineOrder(@Param('onlineOrderId', new ParseUUIDPipe()) onlineOrderId: string) {
+  findByOnlineOrder(
+    @Param('onlineOrderId', new ParseUUIDPipe()) onlineOrderId: string,
+  ) {
     return this.receiptsService.findByOnlineOrder(onlineOrderId);
   }
 
@@ -67,14 +79,21 @@ export class ReceiptsController {
   @Post('from-pos-order/:posOrderId')
   @UseGuards(PermissionsGuard)
   @Permissions('receipt.create')
-  createFromPosOrder(@Req() req: Request, @Param('posOrderId', new ParseUUIDPipe()) posOrderId: string) {
+  createFromPosOrder(
+    @Req() req: Request,
+    @Param('posOrderId', new ParseUUIDPipe()) posOrderId: string,
+  ) {
     return this.receiptsService.createFromPosOrder(req, posOrderId);
   }
 
   @Post('from-online-order/:onlineOrderId')
   @UseGuards(PermissionsGuard)
   @Permissions('receipt.create')
-  createFromOnlineOrder(@Req() req: Request, @Param('onlineOrderId', new ParseUUIDPipe()) onlineOrderId: string, @Body() dto: CreateReceiptDto) {
+  createFromOnlineOrder(
+    @Req() req: Request,
+    @Param('onlineOrderId', new ParseUUIDPipe()) onlineOrderId: string,
+    @Body() dto: CreateReceiptDto,
+  ) {
     return this.receiptsService.createFromOnlineOrder(req, onlineOrderId, dto);
   }
 
@@ -88,7 +107,10 @@ export class ReceiptsController {
   @Post(':id/void')
   @UseGuards(PermissionsGuard)
   @Permissions('receipt.void')
-  voidReceipt(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: VoidReceiptDto) {
+  voidReceipt(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: VoidReceiptDto,
+  ) {
     return this.receiptsService.void(id, dto);
   }
 }

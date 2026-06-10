@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
@@ -44,7 +55,10 @@ export class SuppliersController {
   @Patch(':id')
   @UseGuards(PermissionsGuard)
   @Permissions('supplier.manage')
-  update(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateSupplierDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateSupplierDto,
+  ) {
     return this.suppliersService.update(id, dto);
   }
 

@@ -1,5 +1,14 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { InventoryMovementType, Prisma, StockAdjustmentStatus } from '.prisma/client/operation';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  InventoryMovementType,
+  Prisma,
+  StockAdjustmentStatus,
+} from '.prisma/client/operation';
 import { Request } from 'express';
 import { BranchesService } from '../branches/branches.service';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
@@ -17,14 +26,25 @@ export class StockAdjustmentsService {
   ) {}
 
   async findAll(query: QueryStockAdjustmentsDto) {
-    const { page = 1, limit = 20, warehouseId, branchId, status, createdByUserId, approvedByUserId, dateFrom, dateTo, search } = query;
+    const {
+      page = 1,
+      limit = 20,
+      warehouseId,
+      branchId,
+      status,
+      createdByUserId,
+      approvedByUserId,
+      dateFrom,
+      dateTo,
+      search,
+    } = query;
     const where: Prisma.StockAdjustmentWhereInput = {
       ...(warehouseId ? { warehouseId } : {}),
       ...(branchId ? { branchId } : {}),
       ...(status ? { status } : {}),
       ...(createdByUserId ? { createdByUserId } : {}),
       ...(approvedByUserId ? { approvedByUserId } : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -46,20 +66,30 @@ export class StockAdjustmentsService {
       this.prisma.stockAdjustment.count({ where }),
     ]);
 
-    return { items: items.map((i) => ({ ...i, itemCount: i._count.items })), meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items: items.map((i) => ({ ...i, itemCount: i._count.items })),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
-    const adjustment = await this.prisma.stockAdjustment.findUnique({ where: { id }, include: { items: true } });
+    const adjustment = await this.prisma.stockAdjustment.findUnique({
+      where: { id },
+      include: { items: true },
+    });
     if (!adjustment) throw new NotFoundException('Stock adjustment not found');
     return adjustment;
   }
 
-  async create(req: Request & { user?: { id?: string } }, dto: CreateStockAdjustmentDto) {
+  async create(
+    req: Request & { user?: { id?: string } },
+    dto: CreateStockAdjustmentDto,
+  ) {
     await this.warehousesService.findOne(dto.warehouseId);
     if (dto.branchId) await this.branchesService.findOne(dto.branchId);
 
-    const createdByUserId = req.user?.id ?? '00000000-0000-0000-0000-000000000000';
+    const createdByUserId =
+      req.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
     return this.prisma.$transaction(async (tx) => {
       const adjustment = await tx.stockAdjustment.create({
@@ -100,7 +130,11 @@ export class StockAdjustmentsService {
     });
   }
 
-  async updateStatus(id: string, req: Request & { user?: { id?: string } }, dto: UpdateStockAdjustmentStatusDto) {
+  async updateStatus(
+    id: string,
+    req: Request & { user?: { id?: string } },
+    dto: UpdateStockAdjustmentStatusDto,
+  ) {
     const adjustment = await this.findOne(id);
     if (
       adjustment.status === StockAdjustmentStatus.APPROVED ||
@@ -110,13 +144,20 @@ export class StockAdjustmentsService {
     }
 
     if (dto.status !== StockAdjustmentStatus.APPROVED) {
-      return this.prisma.stockAdjustment.update({ where: { id }, data: { status: dto.status } });
+      return this.prisma.stockAdjustment.update({
+        where: { id },
+        data: { status: dto.status },
+      });
     }
 
-    const approvedByUserId = req.user?.id ?? '00000000-0000-0000-0000-000000000000';
+    const approvedByUserId =
+      req.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
     return this.prisma.$transaction(async (tx) => {
-      const fresh = await tx.stockAdjustment.findUnique({ where: { id }, include: { items: true } });
+      const fresh = await tx.stockAdjustment.findUnique({
+        where: { id },
+        include: { items: true },
+      });
       if (!fresh) throw new NotFoundException('Stock adjustment not found');
       if (fresh.status === StockAdjustmentStatus.APPROVED) {
         throw new ConflictException('Stock adjustment already approved');
@@ -133,14 +174,19 @@ export class StockAdjustmentsService {
 
         const oldQty = inventory?.quantityOnHand ?? 0;
         const newQty = item.newQuantity;
-        if (newQty < 0) throw new BadRequestException('quantity cannot be negative');
+        if (newQty < 0)
+          throw new BadRequestException('quantity cannot be negative');
 
         if (!inventory) {
           // cannot create inventory without batchId in current schema
           if (!item.batchId) {
-            throw new BadRequestException('batchId is required to create new inventory item from adjustment');
+            throw new BadRequestException(
+              'batchId is required to create new inventory item from adjustment',
+            );
           }
-          const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
+          const batch = await tx.batch.findUnique({
+            where: { id: item.batchId },
+          });
           if (!batch) throw new NotFoundException('Batch not found');
 
           inventory = await tx.inventoryItem.create({
@@ -175,7 +221,10 @@ export class StockAdjustmentsService {
             tenantId: '00000000-0000-0000-0000-000000000000',
             productId: item.productId,
             warehouseId: fresh.warehouseId,
-            movementType: item.difference >= 0 ? InventoryMovementType.ADJUSTMENT_INCREASE : InventoryMovementType.ADJUSTMENT_DECREASE,
+            movementType:
+              item.difference >= 0
+                ? InventoryMovementType.ADJUSTMENT_INCREASE
+                : InventoryMovementType.ADJUSTMENT_DECREASE,
             quantity: Math.abs(item.difference),
             beforeQuantity: oldQty,
             afterQuantity: newQty,

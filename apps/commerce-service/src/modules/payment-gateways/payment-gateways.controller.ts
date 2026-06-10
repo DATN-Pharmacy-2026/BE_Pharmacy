@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
@@ -57,31 +68,59 @@ export class PaymentGatewaysController {
 
   @Get('vnpay/return')
   vnpayReturn(@Query() payload: PaymentGatewayReturnDto & Record<string, any>) {
-    return this.service.handleProviderReturn(PaymentGatewayProvider.VNPAY, payload);
+    return this.service.handleProviderReturn(
+      PaymentGatewayProvider.VNPAY,
+      payload,
+    );
   }
 
   @Get('vnpay/ipn')
   vnpayIpn(@Query() payload: PaymentGatewayIpnDto & Record<string, any>) {
-    return this.service.handleProviderIpn(PaymentGatewayProvider.VNPAY, payload);
+    return this.service.handleProviderIpn(
+      PaymentGatewayProvider.VNPAY,
+      payload,
+    );
   }
 
   @Get('momo/return')
   momoReturn(@Query() payload: PaymentGatewayReturnDto & Record<string, any>) {
-    return this.service.handleProviderReturn(PaymentGatewayProvider.MOMO, payload);
+    return this.service.handleProviderReturn(
+      PaymentGatewayProvider.MOMO,
+      payload,
+    );
   }
 
   @Post('momo/ipn')
-  momoIpn(@Body() payload: PaymentGatewayIpnDto & Record<string, any>, @Req() req: Request) {
-    return this.service.handleProviderIpn(PaymentGatewayProvider.MOMO, payload, req.headers as Record<string, any>);
+  momoIpn(
+    @Body() payload: PaymentGatewayIpnDto & Record<string, any>,
+    @Req() req: Request,
+  ) {
+    return this.service.handleProviderIpn(
+      PaymentGatewayProvider.MOMO,
+      payload,
+      req.headers as Record<string, any>,
+    );
   }
 
   @Get('zalopay/return')
-  zalopayReturn(@Query() payload: PaymentGatewayReturnDto & Record<string, any>) {
-    return this.service.handleProviderReturn(PaymentGatewayProvider.ZALOPAY, payload);
+  zalopayReturn(
+    @Query() payload: PaymentGatewayReturnDto & Record<string, any>,
+  ) {
+    return this.service.handleProviderReturn(
+      PaymentGatewayProvider.ZALOPAY,
+      payload,
+    );
   }
 
   @Post('zalopay/callback')
-  zalopayCallback(@Body() payload: PaymentGatewayIpnDto & Record<string, any>, @Req() req: Request) {
-    return this.service.handleProviderIpn(PaymentGatewayProvider.ZALOPAY, payload, req.headers as Record<string, any>);
+  zalopayCallback(
+    @Body() payload: PaymentGatewayIpnDto & Record<string, any>,
+    @Req() req: Request,
+  ) {
+    return this.service.handleProviderIpn(
+      PaymentGatewayProvider.ZALOPAY,
+      payload,
+      req.headers as Record<string, any>,
+    );
   }
 }

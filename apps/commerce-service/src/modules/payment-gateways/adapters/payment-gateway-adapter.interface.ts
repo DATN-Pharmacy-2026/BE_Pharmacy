@@ -1,4 +1,7 @@
-import { PaymentGatewayProvider, PaymentGatewayTransactionStatus } from '.prisma/client/commerce';
+import {
+  PaymentGatewayProvider,
+  PaymentGatewayTransactionStatus,
+} from '.prisma/client/commerce';
 
 export interface CreateGatewayPaymentInput {
   transactionId: string;
@@ -49,10 +52,21 @@ export interface QueryGatewayTransactionResult extends GatewayVerificationResult
 
 export interface PaymentGatewayAdapter {
   provider: PaymentGatewayProvider;
-  createPayment(input: CreateGatewayPaymentInput): Promise<CreateGatewayPaymentResult>;
-  verifyReturnPayload(payload: Record<string, any>): Promise<GatewayVerificationResult> | GatewayVerificationResult;
-  verifyCallbackPayload(payload: Record<string, any>, headers?: Record<string, any>): Promise<GatewayVerificationResult> | GatewayVerificationResult;
-  mapProviderStatus(payload: Record<string, any>): PaymentGatewayTransactionStatus;
-  queryTransaction?(input: QueryGatewayTransactionInput): Promise<QueryGatewayTransactionResult>;
+  createPayment(
+    input: CreateGatewayPaymentInput,
+  ): Promise<CreateGatewayPaymentResult>;
+  verifyReturnPayload(
+    payload: Record<string, any>,
+  ): Promise<GatewayVerificationResult> | GatewayVerificationResult;
+  verifyCallbackPayload(
+    payload: Record<string, any>,
+    headers?: Record<string, any>,
+  ): Promise<GatewayVerificationResult> | GatewayVerificationResult;
+  mapProviderStatus(
+    payload: Record<string, any>,
+  ): PaymentGatewayTransactionStatus;
+  queryTransaction?(
+    input: QueryGatewayTransactionInput,
+  ): Promise<QueryGatewayTransactionResult>;
   buildProviderOrderId?(input: CreateGatewayPaymentInput): string;
 }

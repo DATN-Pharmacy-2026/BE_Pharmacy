@@ -66,6 +66,3 @@ describe('Commerce Demo API', () => {
     expect(response.status).toBe(400);
   });
 });
-
-
-

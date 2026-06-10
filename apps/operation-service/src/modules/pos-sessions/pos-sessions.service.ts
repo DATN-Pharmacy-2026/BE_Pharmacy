@@ -1,5 +1,15 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { PaymentMethod, PaymentStatus, POSSessionStatus, Prisma } from '.prisma/client/operation';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  PaymentMethod,
+  PaymentStatus,
+  POSSessionStatus,
+  Prisma,
+} from '.prisma/client/operation';
 import { Request } from 'express';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { ClosePosSessionDto } from './dto/close-pos-session.dto';
@@ -11,14 +21,31 @@ export class PosSessionsService {
   constructor(private readonly prisma: OperationPrismaService) {}
 
   async findAll(query: QueryPosSessionsDto) {
-    const { page = 1, limit = 20, branchId, storeId, posTerminalId, cashierUserId, status, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      branchId,
+      storeId,
+      posTerminalId,
+      cashierUserId,
+      status,
+      dateFrom,
+      dateTo,
+    } = query;
     const where: Prisma.POSSessionWhereInput = {
       ...(branchId ? { branchId } : {}),
       ...(storeId ? { storeId } : {}),
       ...(posTerminalId ? { posTerminalId } : {}),
       ...(cashierUserId ? { cashierUserId } : {}),
       ...(status ? { status } : {}),
-      ...((dateFrom || dateTo) ? { openedAt: { ...(dateFrom ? { gte: new Date(dateFrom) } : {}), ...(dateTo ? { lte: new Date(dateTo) } : {}) } } : {}),
+      ...(dateFrom || dateTo
+        ? {
+            openedAt: {
+              ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+              ...(dateTo ? { lte: new Date(dateTo) } : {}),
+            },
+          }
+        : {}),
     };
 
     const [items, total] = await this.prisma.$transaction([
@@ -36,7 +63,10 @@ export class PosSessionsService {
       this.prisma.pOSSession.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
@@ -52,7 +82,10 @@ export class PosSessionsService {
     return session;
   }
 
-  async current(req: Request & { user?: { id?: string } }, query: { branchId?: string; storeId?: string; posTerminalId?: string }) {
+  async current(
+    req: Request & { user?: { id?: string } },
+    query: { branchId?: string; storeId?: string; posTerminalId?: string },
+  ) {
     const cashierUserId = this.getUserId(req.user?.id);
     const branchId = query.branchId ?? this.getHeader(req, 'x-branch-id');
 
@@ -76,12 +109,19 @@ export class PosSessionsService {
     return session;
   }
 
-  async open(req: Request & { user?: { id?: string } }, dto: OpenPosSessionDto) {
+  async open(
+    req: Request & { user?: { id?: string } },
+    dto: OpenPosSessionDto,
+  ) {
     await this.validateContext(dto.branchId, dto.storeId, dto.posTerminalId);
 
     const cashierUserId = this.getUserId(req.user?.id);
     const duplicate = await this.prisma.pOSSession.findFirst({
-      where: { cashierUserId, posTerminalId: dto.posTerminalId, status: POSSessionStatus.OPEN },
+      where: {
+        cashierUserId,
+        posTerminalId: dto.posTerminalId,
+        status: POSSessionStatus.OPEN,
+      },
     });
     if (duplicate) throw new ConflictException('POS session already open');
 
@@ -102,8 +142,10 @@ export class PosSessionsService {
 
   async close(id: string, dto: ClosePosSessionDto) {
     const session = await this.findOne(id);
-    if (session.status !== POSSessionStatus.OPEN) throw new ConflictException('POS session already closed');
-    if (dto.closingCash < 0) throw new BadRequestException('quantity cannot be negative');
+    if (session.status !== POSSessionStatus.OPEN)
+      throw new ConflictException('POS session already closed');
+    if (dto.closingCash < 0)
+      throw new BadRequestException('quantity cannot be negative');
 
     await this.prisma.pOSSession.update({
       where: { id },
@@ -161,9 +203,15 @@ export class PosSessionsService {
     };
   }
 
-  private async validateContext(branchId: string, storeId: string, posTerminalId: string) {
+  private async validateContext(
+    branchId: string,
+    storeId: string,
+    posTerminalId: string,
+  ) {
     const [branch, store, terminal] = await this.prisma.$transaction([
-      this.prisma.branch.findFirst({ where: { id: branchId, deletedAt: null } }),
+      this.prisma.branch.findFirst({
+        where: { id: branchId, deletedAt: null },
+      }),
       this.prisma.store.findUnique({ where: { id: storeId } }),
       this.prisma.pOSTerminal.findUnique({ where: { id: posTerminalId } }),
     ]);
@@ -171,9 +219,12 @@ export class PosSessionsService {
     if (!branch) throw new NotFoundException('Branch not found');
     if (!store) throw new NotFoundException('Store not found');
     if (!terminal) throw new NotFoundException('POS terminal not found');
-    if (store.branchId !== branchId) throw new ConflictException('Store does not belong to branch');
+    if (store.branchId !== branchId)
+      throw new ConflictException('Store does not belong to branch');
     if (terminal.branchId !== branchId || terminal.storeId !== storeId) {
-      throw new ConflictException('POS terminal does not belong to branch/store');
+      throw new ConflictException(
+        'POS terminal does not belong to branch/store',
+      );
     }
   }
 

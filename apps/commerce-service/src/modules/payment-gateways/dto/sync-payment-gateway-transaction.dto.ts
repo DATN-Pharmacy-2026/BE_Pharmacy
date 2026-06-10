@@ -3,16 +3,24 @@ import { Type } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class SyncPaymentGatewayTransactionDto {
-  @ApiPropertyOptional() @IsOptional() @IsString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   provider?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   providerOrderId?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   requestId?: string;
 
   @ApiPropertyOptional({ default: false })
-  @IsOptional() @Type(() => Boolean) @IsBoolean()
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
   force?: boolean = false;
 }

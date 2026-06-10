@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
@@ -34,7 +45,9 @@ export class PosOrdersController {
   @Get('session/:posSessionId')
   @UseGuards(PermissionsGuard)
   @Permissions('pos.access', 'pos_order.view')
-  findBySession(@Param('posSessionId', new ParseUUIDPipe()) posSessionId: string) {
+  findBySession(
+    @Param('posSessionId', new ParseUUIDPipe()) posSessionId: string,
+  ) {
     return this.posOrdersService.findBySession(posSessionId);
   }
 
@@ -55,14 +68,21 @@ export class PosOrdersController {
   @Patch(':id/status')
   @UseGuards(PermissionsGuard)
   @Permissions('pos.access', 'pos_order.update')
-  updateStatus(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdatePosOrderStatusDto) {
+  updateStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdatePosOrderStatusDto,
+  ) {
     return this.posOrdersService.updateStatus(id, dto);
   }
 
   @Post(':id/refund')
   @UseGuards(PermissionsGuard)
   @Permissions('pos.access', 'pos.refund')
-  refund(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: Request, @Body() dto: RefundPosOrderDto) {
+  refund(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: Request,
+    @Body() dto: RefundPosOrderDto,
+  ) {
     return this.posOrdersService.refund(id, req, dto);
   }
 }

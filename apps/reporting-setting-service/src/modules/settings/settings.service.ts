@@ -55,7 +55,9 @@ export class SettingsService {
   async findByKey(key: string, branchId?: string) {
     if (branchId) {
       const branchSetting = await this.prisma.setting.findUnique({
-        where: { key_scope_branchId: { key, scope: SettingScope.BRANCH, branchId } },
+        where: {
+          key_scope_branchId: { key, scope: SettingScope.BRANCH, branchId },
+        },
       });
       if (branchSetting) return branchSetting;
     }
@@ -74,7 +76,8 @@ export class SettingsService {
 
   async create(dto: CreateSettingDto) {
     const scope = dto.scope ?? SettingScope.SYSTEM;
-    const branchId = scope === SettingScope.SYSTEM ? null : (dto.branchId ?? null);
+    const branchId =
+      scope === SettingScope.SYSTEM ? null : (dto.branchId ?? null);
     this.validateScope(scope, branchId);
 
     try {
@@ -107,7 +110,9 @@ export class SettingsService {
       return await this.prisma.setting.update({
         where: { id },
         data: {
-          ...(dto.value !== undefined ? { value: dto.value as Prisma.InputJsonValue } : {}),
+          ...(dto.value !== undefined
+            ? { value: dto.value as Prisma.InputJsonValue }
+            : {}),
           scope,
           branchId,
         },

@@ -6,7 +6,18 @@ import {
   NotificationSeverity,
 } from '.prisma/client/reporting';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDateString, IsEnum, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class QueryNotificationEventsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -102,7 +113,10 @@ export class QueryNotificationEventsDto {
   @MaxLength(100)
   q?: string;
 
-  @ApiPropertyOptional({ enum: ['createdAt', 'status', 'severity', 'type'], default: 'createdAt' })
+  @ApiPropertyOptional({
+    enum: ['createdAt', 'status', 'severity', 'type'],
+    default: 'createdAt',
+  })
   @IsOptional()
   @IsString()
   sortBy?: string;

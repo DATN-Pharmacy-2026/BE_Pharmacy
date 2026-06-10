@@ -42,7 +42,13 @@ export class ProductsService {
       sortOrder = 'desc',
     } = query;
     const normalizedSortBy = sortBy === 'price' ? 'basePrice' : sortBy;
-    const allowedSortFields = ['createdAt', 'updatedAt', 'name', 'status', 'basePrice'];
+    const allowedSortFields = [
+      'createdAt',
+      'updatedAt',
+      'name',
+      'status',
+      'basePrice',
+    ];
     if (!allowedSortFields.includes(normalizedSortBy)) {
       throw new BadRequestException('Invalid sort field');
     }
@@ -87,9 +93,21 @@ export class ProductsService {
               { name: { contains: normalizedSearch, mode: 'insensitive' } },
               { sku: { contains: normalizedSearch, mode: 'insensitive' } },
               { barcode: { contains: normalizedSearch, mode: 'insensitive' } },
-              { activeIngredient: { contains: normalizedSearch, mode: 'insensitive' } },
-              { indication: { contains: normalizedSearch, mode: 'insensitive' } },
-              { registrationNumber: { contains: normalizedSearch, mode: 'insensitive' } },
+              {
+                activeIngredient: {
+                  contains: normalizedSearch,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                indication: { contains: normalizedSearch, mode: 'insensitive' },
+              },
+              {
+                registrationNumber: {
+                  contains: normalizedSearch,
+                  mode: 'insensitive',
+                },
+              },
             ],
           }
         : {}),
@@ -114,6 +132,7 @@ export class ProductsService {
           requiresPrescription: true,
           unit: true,
           basePrice: true,
+          minStockLevel: true,
           createdAt: true,
           updatedAt: true,
           category: { select: { id: true, name: true, slug: true } },
@@ -171,9 +190,18 @@ export class ProductsService {
     return product;
   }
 
+  async findBySlug(slug: string) {
+    const product = await this.prisma.product.findFirst({
+      where: { slug, deletedAt: null },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+    return product;
+  }
+
   async create(dto: CreateProductDto) {
     await this.categoriesService.findOne(dto.categoryId);
     if (dto.brandId) await this.brandsService.findOne(dto.brandId);
+    await this.assertUniqueProductFields(dto);
 
     try {
       const product = await this.prisma.product.create({
@@ -194,6 +222,7 @@ export class ProductsService {
     await this.findOne(id);
     if (dto.categoryId) await this.categoriesService.findOne(dto.categoryId);
     if (dto.brandId) await this.brandsService.findOne(dto.brandId);
+    await this.assertUniqueProductFields(dto, id);
 
     try {
       return await this.prisma.product.update({ where: { id }, data: dto });
@@ -310,6 +339,45 @@ export class ProductsService {
       if (target.includes('barcode'))
         throw new ConflictException('Product barcode already exists');
       throw new ConflictException('Duplicate product value');
+    }
+  }
+
+  private async assertUniqueProductFields(
+    dto: Partial<CreateProductDto>,
+    excludeId?: string,
+  ) {
+    const filters = [
+      dto.sku
+        ? { field: 'sku', value: dto.sku, message: 'Product sku already exists' }
+        : null,
+      dto.slug
+        ? { field: 'slug', value: dto.slug, message: 'Product slug already exists' }
+        : null,
+      dto.barcode
+        ? {
+            field: 'barcode',
+            value: dto.barcode,
+            message: 'Product barcode already exists',
+          }
+        : null,
+    ].filter(Boolean) as Array<{
+      field: 'sku' | 'slug' | 'barcode';
+      value: string;
+      message: string;
+    }>;
+
+    for (const filter of filters) {
+      const existing = await this.prisma.product.findFirst({
+        where: {
+          [filter.field]: filter.value,
+          deletedAt: null,
+          ...(excludeId ? { id: { not: excludeId } } : {}),
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        throw new ConflictException(filter.message);
+      }
     }
   }
 

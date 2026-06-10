@@ -17,9 +17,11 @@ export const buildProxyRouteConfig = (
   {
     service: 'identity-service',
     baseUrl: configService.getOrThrow<string>('gateway.services.identity'),
-    prefixes: [...AUTH_ROUTES, ...IDENTITY_ROUTES, ...IDENTITY_EVENT_ROUTES].map((route) =>
-      route.replace('/*', ''),
-    ),
+    prefixes: [
+      ...AUTH_ROUTES,
+      ...IDENTITY_ROUTES,
+      ...IDENTITY_EVENT_ROUTES,
+    ].map((route) => route.replace('/*', '')),
   },
   {
     service: 'commerce-service',

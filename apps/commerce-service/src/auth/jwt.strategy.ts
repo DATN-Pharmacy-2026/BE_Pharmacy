@@ -14,7 +14,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload & { permissions?: string[] }): AuthenticatedUser {
+  validate(
+    payload: JwtPayload & { permissions?: string[] },
+  ): AuthenticatedUser {
     if (payload.tokenType !== 'access') {
       throw new UnauthorizedException('Invalid token type');
     }
@@ -33,4 +35,3 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     };
   }
 }
-

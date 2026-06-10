@@ -85,7 +85,10 @@ export class BranchesService {
   }
 
   async create(dto: CreateBranchDto) {
-    const companyId = dto.companyId ?? (await this.prisma.company.findFirst({ orderBy: { createdAt: 'asc' } }))?.id;
+    const companyId =
+      dto.companyId ??
+      (await this.prisma.company.findFirst({ orderBy: { createdAt: 'asc' } }))
+        ?.id;
     if (!companyId) throw new NotFoundException('Company not found');
     await this.companiesService.findOne(companyId);
     try {
@@ -96,7 +99,9 @@ export class BranchesService {
           address: dto.address ?? '',
           status:
             dto.status ??
-            (dto.isActive === false ? BranchStatus.INACTIVE : BranchStatus.ACTIVE),
+            (dto.isActive === false
+              ? BranchStatus.INACTIVE
+              : BranchStatus.ACTIVE),
         },
       });
     } catch (error) {
@@ -116,7 +121,10 @@ export class BranchesService {
           ? BranchStatus.ACTIVE
           : BranchStatus.INACTIVE);
     try {
-      return await this.prisma.branch.update({ where: { id }, data: { ...dto, status } });
+      return await this.prisma.branch.update({
+        where: { id },
+        data: { ...dto, status },
+      });
     } catch (error) {
       this.handleUniqueError(error, 'Duplicate branch code');
       throw error;

@@ -1,6 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { NotificationChannel, NotificationEventType } from '.prisma/client/reporting';
-import { IsBoolean, IsEnum, IsObject, IsOptional, IsString, Matches } from 'class-validator';
+import {
+  NotificationChannel,
+  NotificationEventType,
+} from '.prisma/client/reporting';
+import {
+  IsBoolean,
+  IsEnum,
+  IsObject,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
 import { NOTIFICATION_TEMPLATE_CODE_REGEX } from '../notification-template.constants';
 
 export class CreateNotificationTemplateDto {

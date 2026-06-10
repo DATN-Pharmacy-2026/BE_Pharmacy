@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '.prisma/client/operation';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { QueryInventoryDto } from './dto/query-inventory.dto';
@@ -12,7 +16,21 @@ export class InventoryService {
   constructor(private readonly prisma: OperationPrismaService) {}
 
   async findAll(query: QueryInventoryDto) {
-    const { page = 1, limit = 20, productId, batchId, warehouseId, locationId, branchId, expiryDateFrom, expiryDateTo, expiringBefore, hasAvailableQuantity, sortBy = 'updatedAt', sortOrder = 'desc' } = query;
+    const {
+      page = 1,
+      limit = 20,
+      productId,
+      batchId,
+      warehouseId,
+      locationId,
+      branchId,
+      expiryDateFrom,
+      expiryDateTo,
+      expiringBefore,
+      hasAvailableQuantity,
+      sortBy = 'updatedAt',
+      sortOrder = 'desc',
+    } = query;
     const allowedSortFields = ['updatedAt', 'expiryDate', 'quantityAvailable'];
     if (!allowedSortFields.includes(sortBy)) {
       throw new BadRequestException('Invalid sort field');
@@ -23,7 +41,7 @@ export class InventoryService {
       ...(warehouseId ? { warehouseId } : {}),
       ...(locationId ? { locationId } : {}),
       ...(branchId ? { branchId } : {}),
-      ...((expiryDateFrom || expiryDateTo || expiringBefore)
+      ...(expiryDateFrom || expiryDateTo || expiringBefore
         ? {
             expiryDate: {
               ...(expiryDateFrom ? { gte: new Date(expiryDateFrom) } : {}),
@@ -46,7 +64,9 @@ export class InventoryService {
         take: limit,
         orderBy: { [sortBy]: sortOrder },
         include: {
-          batch: { select: { id: true, batchNo: true, expiryDate: true, status: true } },
+          batch: {
+            select: { id: true, batchNo: true, expiryDate: true, status: true },
+          },
           warehouse: { select: { id: true, code: true, name: true } },
           location: { select: { id: true, code: true, name: true } },
         },
@@ -54,7 +74,10 @@ export class InventoryService {
       this.prisma.inventoryItem.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async getPublicAvailability(query: PublicProductAvailabilityQueryDto) {
@@ -88,7 +111,10 @@ export class InventoryService {
       _sum: { quantityAvailable: true },
     });
     const quantities = new Map(
-      rows.map((row) => [row.warehouseId, Number(row._sum.quantityAvailable ?? 0)]),
+      rows.map((row) => [
+        row.warehouseId,
+        Number(row._sum.quantityAvailable ?? 0),
+      ]),
     );
     const warehouseAvailability = warehouses.map((warehouse) => ({
       ...warehouse,
@@ -132,7 +158,10 @@ export class InventoryService {
         _sum: { quantityAvailable: true },
       });
       const quantities = new Map(
-        rows.map((row) => [row.productId, Number(row._sum.quantityAvailable ?? 0)]),
+        rows.map((row) => [
+          row.productId,
+          Number(row._sum.quantityAvailable ?? 0),
+        ]),
       );
       const items = dto.items.map((item) => {
         const availableQty = quantities.get(item.productId) ?? 0;
@@ -182,7 +211,9 @@ export class InventoryService {
     const item = await this.prisma.inventoryItem.findUnique({
       where: { id },
       include: {
-        batch: { select: { id: true, batchNo: true, expiryDate: true, status: true } },
+        batch: {
+          select: { id: true, batchNo: true, expiryDate: true, status: true },
+        },
         warehouse: { select: { id: true, code: true, name: true } },
         location: { select: { id: true, code: true, name: true } },
       },
@@ -201,7 +232,8 @@ export class InventoryService {
 
   async lowStock(query: QueryInventoryDto & { threshold?: number }) {
     const threshold = query.threshold ?? 10;
-    if (threshold < 0) throw new BadRequestException('threshold must be non-negative');
+    if (threshold < 0)
+      throw new BadRequestException('threshold must be non-negative');
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const where: Prisma.InventoryItemWhereInput = {
@@ -219,12 +251,21 @@ export class InventoryService {
       }),
       this.prisma.inventoryItem.count({ where }),
     ]);
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
-  async expiring(query: QueryInventoryDto & { beforeDate?: string; days?: number }) {
+  async expiring(
+    query: QueryInventoryDto & { beforeDate?: string; days?: number },
+  ) {
     const days = query.days ?? 30;
-    const beforeDate = query.beforeDate ? new Date(query.beforeDate) : new Date(Date.now() + days * 86400000);
+    const beforeDate = query.beforeDate
+      ? new Date(query.beforeDate)
+      : new Date(Date.now() + days * 86400000);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
     const where: Prisma.InventoryItemWhereInput = {
       ...(query.warehouseId ? { warehouseId: query.warehouseId } : {}),
       ...(query.branchId ? { branchId: query.branchId } : {}),
@@ -235,8 +276,8 @@ export class InventoryService {
     const [items, total] = await this.prisma.$transaction([
       this.prisma.inventoryItem.findMany({
         where,
-        skip: (query.page! - 1) * query.limit!,
-        take: query.limit,
+        skip: (page - 1) * limit,
+        take: limit,
         orderBy: { expiryDate: 'asc' },
         include: { batch: true, warehouse: true, location: true },
       }),
@@ -246,10 +287,10 @@ export class InventoryService {
     return {
       items,
       meta: {
-        page: query.page,
-        limit: query.limit,
+        page,
+        limit,
         total,
-        totalPages: Math.ceil(total / query.limit!),
+        totalPages: Math.ceil(total / limit),
       },
     };
   }

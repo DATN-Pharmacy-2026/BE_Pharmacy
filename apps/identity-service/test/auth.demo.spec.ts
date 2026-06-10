@@ -73,7 +73,11 @@ describe('Identity Demo API', () => {
 
     expect(response.status).toBe(200);
     const data = body?.data ?? body;
-    expect(data?.roles?.some((role: { code: string }) => role.code === 'SUPER_ADMIN')).toBe(true);
+    expect(
+      data?.roles?.some(
+        (role: { code: string }) => role.code === 'SUPER_ADMIN',
+      ),
+    ).toBe(true);
     expect(Array.isArray(data?.permissions)).toBe(true);
     expect(data?.scope?.branchScopeMode).toBe('ALL');
     expect(data?.scope?.warehouseScopeMode).toBe('ALL');
@@ -115,6 +119,3 @@ describe('Identity Demo API', () => {
     expect(data?.access?.canAccessPos).toBe(false);
   });
 });
-
-
-

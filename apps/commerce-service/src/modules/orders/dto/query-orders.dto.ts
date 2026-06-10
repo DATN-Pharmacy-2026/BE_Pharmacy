@@ -78,7 +78,9 @@ export class QueryOrdersDto {
   @MaxLength(50)
   orderNo?: string;
 
-  @ApiPropertyOptional({ enum: ['createdAt', 'updatedAt', 'status', 'paymentStatus'] })
+  @ApiPropertyOptional({
+    enum: ['createdAt', 'updatedAt', 'status', 'paymentStatus'],
+  })
   @IsOptional()
   @IsString()
   sortBy?: string;

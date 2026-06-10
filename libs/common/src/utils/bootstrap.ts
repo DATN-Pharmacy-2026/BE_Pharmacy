@@ -21,7 +21,10 @@ export async function bootstrapHttpApp(
   });
   const configService = app.get(ConfigService);
   const nodeEnv = configService.get<string>('app.nodeEnv', 'development');
-  const corsOriginsRaw = configService.get<string>('gateway.corsOrigins', 'http://localhost:4008,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000');
+  const corsOriginsRaw = configService.get<string>(
+    'gateway.corsOrigins',
+    'http://localhost:4008,http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000',
+  );
   const corsOrigins = corsOriginsRaw
     .split(',')
     .map((item) => item.trim())

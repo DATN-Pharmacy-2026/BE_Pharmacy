@@ -36,7 +36,8 @@ export const configuration = () => ({
     jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
     jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
     bcryptSaltRounds: parsePort(process.env.BCRYPT_SALT_ROUNDS, 10),
-    passwordResetExpiresMinutes: process.env.PASSWORD_RESET_EXPIRES_MINUTES ?? '30',
+    passwordResetExpiresMinutes:
+      process.env.PASSWORD_RESET_EXPIRES_MINUTES ?? '30',
   },
   internal: {
     serviceKey: process.env.INTERNAL_SERVICE_KEY ?? 'pharmplus-internal-dev',
@@ -64,20 +65,36 @@ export const configuration = () => ({
       (process.env.ENABLE_REQUEST_LOGGING ?? 'true').toLowerCase() === 'true',
   },
   events: {
-    retryEnabled: (process.env.EVENT_RETRY_ENABLED ?? 'true').toLowerCase() === 'true',
+    retryEnabled:
+      (process.env.EVENT_RETRY_ENABLED ?? 'true').toLowerCase() === 'true',
     retryStrategy: process.env.EVENT_RETRY_STRATEGY ?? 'delay-buckets',
     retryMaxAttempts: parsePort(process.env.EVENT_RETRY_MAX_ATTEMPTS, 4),
-    retryBackoffMs: process.env.EVENT_RETRY_BACKOFF_MS ?? '5000,30000,120000,600000',
-    retryJitterEnabled: (process.env.EVENT_RETRY_JITTER_ENABLED ?? 'true').toLowerCase() === 'true',
-    retryJitterRatio: Number.parseFloat(process.env.EVENT_RETRY_JITTER_RATIO ?? '0.2'),
-    dlqEnabled: (process.env.EVENT_DLQ_ENABLED ?? 'true').toLowerCase() === 'true',
+    retryBackoffMs:
+      process.env.EVENT_RETRY_BACKOFF_MS ?? '5000,30000,120000,600000',
+    retryJitterEnabled:
+      (process.env.EVENT_RETRY_JITTER_ENABLED ?? 'true').toLowerCase() ===
+      'true',
+    retryJitterRatio: Number.parseFloat(
+      process.env.EVENT_RETRY_JITTER_RATIO ?? '0.2',
+    ),
+    dlqEnabled:
+      (process.env.EVENT_DLQ_ENABLED ?? 'true').toLowerCase() === 'true',
     dlqExchange: process.env.EVENT_DLQ_EXCHANGE ?? 'pharmacy.events.dlx',
     retryExchange: process.env.EVENT_RETRY_EXCHANGE ?? 'pharmacy.events.retry',
-    replayEnabled: (process.env.EVENT_REPLAY_ENABLED ?? 'true').toLowerCase() === 'true',
+    replayEnabled:
+      (process.env.EVENT_REPLAY_ENABLED ?? 'true').toLowerCase() === 'true',
     replayMaxBatchSize: parsePort(process.env.EVENT_REPLAY_MAX_BATCH_SIZE, 50),
-    failureRetentionDays: parsePort(process.env.EVENT_FAILURE_RETENTION_DAYS, 30),
-    payloadPreviewMaxChars: parsePort(process.env.EVENT_DLQ_PAYLOAD_PREVIEW_MAX_CHARS, 4000),
-    adminEndpointsEnabled: (process.env.EVENT_ADMIN_ENDPOINTS_ENABLED ?? 'true').toLowerCase() === 'true',
+    failureRetentionDays: parsePort(
+      process.env.EVENT_FAILURE_RETENTION_DAYS,
+      30,
+    ),
+    payloadPreviewMaxChars: parsePort(
+      process.env.EVENT_DLQ_PAYLOAD_PREVIEW_MAX_CHARS,
+      4000,
+    ),
+    adminEndpointsEnabled:
+      (process.env.EVENT_ADMIN_ENDPOINTS_ENABLED ?? 'true').toLowerCase() ===
+      'true',
   },
 });
 

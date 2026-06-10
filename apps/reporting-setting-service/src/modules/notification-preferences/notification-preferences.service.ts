@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '.prisma/client/reporting';
 import { AuditLogWriterService } from '../audit-logs/audit-log-writer.service';
 import { ReportingPrismaService } from '../../prisma/reporting-prisma.service';
@@ -17,7 +21,16 @@ export class NotificationPreferencesService {
   ) {}
 
   async findAll(query: QueryNotificationPreferencesDto) {
-    const { page = 1, limit = 20, userId, branchId, warehouseId, eventType, channel, enabled } = query;
+    const {
+      page = 1,
+      limit = 20,
+      userId,
+      branchId,
+      warehouseId,
+      eventType,
+      channel,
+      enabled,
+    } = query;
     const where: Prisma.NotificationPreferenceWhereInput = {
       ...(userId ? { userId } : {}),
       ...(branchId ? { branchId } : {}),
@@ -37,12 +50,18 @@ export class NotificationPreferencesService {
       this.prisma.notificationPreference.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
-    const found = await this.prisma.notificationPreference.findUnique({ where: { id } });
-    if (!found) throw new NotFoundException('notification preference not found');
+    const found = await this.prisma.notificationPreference.findUnique({
+      where: { id },
+    });
+    if (!found)
+      throw new NotFoundException('notification preference not found');
     return found;
   }
 
@@ -97,7 +116,10 @@ export class NotificationPreferencesService {
 
       return created;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException('duplicate preference scope');
       }
       throw error;

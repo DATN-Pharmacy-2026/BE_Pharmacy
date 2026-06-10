@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { QueryPosPaymentsDto } from './dto/query-pos-payments.dto';
@@ -36,7 +45,10 @@ export class PosPaymentsController {
   @Patch(':id/status')
   @UseGuards(PermissionsGuard)
   @Permissions('pos.access', 'pos_payment.create|pos_payment.update')
-  updateStatus(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdatePosPaymentStatusDto) {
+  updateStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdatePosPaymentStatusDto,
+  ) {
     return this.posPaymentsService.updateStatus(id, dto);
   }
 }

@@ -24,4 +24,5 @@ export const PERMISSION_CODES = {
 } as const;
 
 export type RoleCode = (typeof ROLE_CODES)[keyof typeof ROLE_CODES];
-export type PermissionCode = (typeof PERMISSION_CODES)[keyof typeof PERMISSION_CODES];
+export type PermissionCode =
+  (typeof PERMISSION_CODES)[keyof typeof PERMISSION_CODES];

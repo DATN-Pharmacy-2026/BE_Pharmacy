@@ -10,8 +10,14 @@ export class RagService {
   ) {}
 
   async search(query: string, topK = 5) {
-    const queryEmbedding = await this.embeddingService.createEmbedding(query, 'RETRIEVAL_QUERY');
-    const results = await this.vectorStoreService.searchSimilar(queryEmbedding, topK);
+    const queryEmbedding = await this.embeddingService.createEmbedding(
+      query,
+      'RETRIEVAL_QUERY',
+    );
+    const results = await this.vectorStoreService.searchSimilar(
+      queryEmbedding,
+      topK,
+    );
     return {
       query,
       results: results.map((item) => ({

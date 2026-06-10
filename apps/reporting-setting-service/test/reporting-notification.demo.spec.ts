@@ -62,6 +62,3 @@ describe('Reporting / Notification Demo API', () => {
     expect(response.status).toBe(200);
   });
 });
-
-
-

@@ -1,5 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { POSSessionStatus, Prisma, VerificationResult } from '.prisma/client/operation';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  POSSessionStatus,
+  Prisma,
+  VerificationResult,
+} from '.prisma/client/operation';
 import { Request } from 'express';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { QueryBarcodeVerificationsDto } from './dto/query-barcode-verifications.dto';
@@ -11,13 +19,17 @@ import { VerifyProductAvailabilityDto } from './dto/verify-product-availability.
 export class VerificationService {
   constructor(private readonly prisma: OperationPrismaService) {}
 
-  async verifyBarcode(req: Request & { user?: { id?: string } }, dto: VerifyBarcodeDto) {
+  async verifyBarcode(
+    req: Request & { user?: { id?: string } },
+    dto: VerifyBarcodeDto,
+  ) {
     const branchIdFromHeader = this.getHeader(req, 'x-branch-id');
 
     if (!dto.productId && !dto.batchId) {
       return {
         result: 'WARNING',
-        reason: 'Barcode belongs to catalog domain. Provide productId or batchId for operation-side verification.',
+        reason:
+          'Barcode belongs to catalog domain. Provide productId or batchId for operation-side verification.',
         barcode: dto.barcode,
         productId: dto.productId,
         batchId: dto.batchId,
@@ -31,15 +43,30 @@ export class VerificationService {
 
     let warehouse: { id: string; branchId: string | null } | null = null;
     if (dto.warehouseId) {
-      warehouse = await this.prisma.warehouse.findUnique({ where: { id: dto.warehouseId }, select: { id: true, branchId: true } });
+      warehouse = await this.prisma.warehouse.findUnique({
+        where: { id: dto.warehouseId },
+        select: { id: true, branchId: true },
+      });
       if (!warehouse) throw new NotFoundException('warehouse not found');
     }
 
-    let batch: { id: string; productId: string; expiryDate: Date } | null = null;
+    let batch: { id: string; productId: string; expiryDate: Date } | null =
+      null;
     if (dto.batchId) {
-      batch = await this.prisma.batch.findUnique({ where: { id: dto.batchId }, select: { id: true, productId: true, expiryDate: true } });
+      batch = await this.prisma.batch.findUnique({
+        where: { id: dto.batchId },
+        select: { id: true, productId: true, expiryDate: true },
+      });
       if (!batch) {
-        await this.persistVerification(req, dto, VerificationResult.NOT_FOUND, dto.branchId ?? branchIdFromHeader ?? warehouse?.branchId ?? undefined);
+        await this.persistVerification(
+          req,
+          dto,
+          VerificationResult.NOT_FOUND,
+          dto.branchId ??
+            branchIdFromHeader ??
+            warehouse?.branchId ??
+            undefined,
+        );
         return {
           result: 'FAILED',
           reason: 'Batch not found.',
@@ -50,7 +77,16 @@ export class VerificationService {
         };
       }
       if (dto.productId && batch.productId !== dto.productId) {
-        await this.persistVerification(req, dto, VerificationResult.INVALID, dto.branchId ?? branchIdFromHeader ?? warehouse?.branchId ?? undefined, batch.id);
+        await this.persistVerification(
+          req,
+          dto,
+          VerificationResult.INVALID,
+          dto.branchId ??
+            branchIdFromHeader ??
+            warehouse?.branchId ??
+            undefined,
+          batch.id,
+        );
         return {
           result: 'FAILED',
           reason: 'Batch does not match provided productId.',
@@ -61,7 +97,16 @@ export class VerificationService {
         };
       }
       if (batch.expiryDate < new Date()) {
-        await this.persistVerification(req, dto, VerificationResult.EXPIRED, dto.branchId ?? branchIdFromHeader ?? warehouse?.branchId ?? undefined, batch.id);
+        await this.persistVerification(
+          req,
+          dto,
+          VerificationResult.EXPIRED,
+          dto.branchId ??
+            branchIdFromHeader ??
+            warehouse?.branchId ??
+            undefined,
+          batch.id,
+        );
         return {
           result: 'FAILED',
           reason: 'Batch is expired.',
@@ -94,7 +139,16 @@ export class VerificationService {
         },
       });
       if (!inventory) {
-        await this.persistVerification(req, dto, VerificationResult.NOT_FOUND, dto.branchId ?? branchIdFromHeader ?? warehouse?.branchId ?? undefined, dto.batchId);
+        await this.persistVerification(
+          req,
+          dto,
+          VerificationResult.NOT_FOUND,
+          dto.branchId ??
+            branchIdFromHeader ??
+            warehouse?.branchId ??
+            undefined,
+          dto.batchId,
+        );
         return {
           result: 'FAILED',
           reason: 'Inventory item not found for warehouse/product context.',
@@ -106,7 +160,13 @@ export class VerificationService {
       }
     }
 
-    await this.persistVerification(req, dto, VerificationResult.VALID, dto.branchId ?? branchIdFromHeader ?? warehouse?.branchId ?? undefined, dto.batchId);
+    await this.persistVerification(
+      req,
+      dto,
+      VerificationResult.VALID,
+      dto.branchId ?? branchIdFromHeader ?? warehouse?.branchId ?? undefined,
+      dto.batchId,
+    );
     return {
       result: 'VERIFIED',
       reason: 'Operation-side checks passed.',
@@ -127,7 +187,9 @@ export class VerificationService {
         warehouseId: dto.warehouseId,
         ...(dto.branchId ? { branchId: dto.branchId } : {}),
         quantityAvailable: { gt: 0 },
-        ...(dto.excludeExpired ?? true ? { expiryDate: { gte: new Date() } } : {}),
+        ...((dto.excludeExpired ?? true)
+          ? { expiryDate: { gte: new Date() } }
+          : {}),
       },
       orderBy: [{ expiryDate: 'asc' }, { updatedAt: 'asc' }],
     });
@@ -141,36 +203,67 @@ export class VerificationService {
       availableQty,
       shortageQty,
       earliestExpiryDate: rows[0]?.expiryDate ?? null,
-      batches: rows.map((r) => ({ batchId: r.batchId, expiryDate: r.expiryDate, quantityAvailable: r.quantityAvailable })),
+      batches: rows.map((r) => ({
+        batchId: r.batchId,
+        expiryDate: r.expiryDate,
+        quantityAvailable: r.quantityAvailable,
+      })),
     };
   }
 
   async verifyPosSale(dto: VerifyPosSaleDto) {
-    const branch = await this.prisma.branch.findFirst({ where: { id: dto.branchId, deletedAt: null } });
+    const branch = await this.prisma.branch.findFirst({
+      where: { id: dto.branchId, deletedAt: null },
+    });
     if (!branch) throw new NotFoundException('branch not found');
 
-    const store = await this.prisma.store.findUnique({ where: { id: dto.storeId } });
+    const store = await this.prisma.store.findUnique({
+      where: { id: dto.storeId },
+    });
     if (!store) throw new NotFoundException('store not found');
-    if (store.branchId !== dto.branchId) throw new BadRequestException('Store does not belong to branch');
+    if (store.branchId !== dto.branchId)
+      throw new BadRequestException('Store does not belong to branch');
 
-    const terminal = await this.prisma.pOSTerminal.findUnique({ where: { id: dto.posTerminalId } });
+    const terminal = await this.prisma.pOSTerminal.findUnique({
+      where: { id: dto.posTerminalId },
+    });
     if (!terminal) throw new NotFoundException('POS terminal not found');
-    if (terminal.branchId !== dto.branchId || terminal.storeId !== dto.storeId) {
-      throw new BadRequestException('POS terminal does not belong to branch/store');
+    if (
+      terminal.branchId !== dto.branchId ||
+      terminal.storeId !== dto.storeId
+    ) {
+      throw new BadRequestException(
+        'POS terminal does not belong to branch/store',
+      );
     }
 
     if (dto.posSessionId) {
-      const session = await this.prisma.pOSSession.findUnique({ where: { id: dto.posSessionId } });
+      const session = await this.prisma.pOSSession.findUnique({
+        where: { id: dto.posSessionId },
+      });
       if (!session) throw new NotFoundException('POS session not found');
-      if (session.status !== POSSessionStatus.OPEN) throw new BadRequestException('invalid POS session/order state');
-      if (session.branchId !== dto.branchId || session.storeId !== dto.storeId || session.posTerminalId !== dto.posTerminalId) {
+      if (session.status !== POSSessionStatus.OPEN)
+        throw new BadRequestException('invalid POS session/order state');
+      if (
+        session.branchId !== dto.branchId ||
+        session.storeId !== dto.storeId ||
+        session.posTerminalId !== dto.posTerminalId
+      ) {
         throw new BadRequestException('POS session context mismatch');
       }
     }
 
     await this.assertWarehouse(dto.warehouseId);
 
-    const itemResults: Array<{ productId: string; batchId?: string; requestedQty: number; availableQty: number; ready: boolean; reason: string; allocations?: Array<{ batchId: string; qty: number; expiryDate: Date }> }> = [];
+    const itemResults: Array<{
+      productId: string;
+      batchId?: string;
+      requestedQty: number;
+      availableQty: number;
+      ready: boolean;
+      reason: string;
+      allocations?: Array<{ batchId: string; qty: number; expiryDate: Date }>;
+    }> = [];
 
     for (const item of dto.items) {
       if (item.batchId) {
@@ -191,7 +284,10 @@ export class VerificationService {
           requestedQty: item.quantity,
           availableQty,
           ready: availableQty >= item.quantity,
-          reason: availableQty >= item.quantity ? 'Batch inventory is sufficient.' : 'Insufficient inventory for specified batch.',
+          reason:
+            availableQty >= item.quantity
+              ? 'Batch inventory is sufficient.'
+              : 'Insufficient inventory for specified batch.',
         });
         continue;
       }
@@ -207,23 +303,37 @@ export class VerificationService {
       });
 
       let remaining = item.quantity;
-      const allocations: Array<{ batchId: string; qty: number; expiryDate: Date }> = [];
+      const allocations: Array<{
+        batchId: string;
+        qty: number;
+        expiryDate: Date;
+      }> = [];
       for (const row of rows) {
         if (remaining <= 0) break;
         const qty = Math.min(remaining, row.quantityAvailable);
         if (qty > 0) {
-          allocations.push({ batchId: row.batchId, qty, expiryDate: row.expiryDate });
+          allocations.push({
+            batchId: row.batchId,
+            qty,
+            expiryDate: row.expiryDate,
+          });
           remaining -= qty;
         }
       }
 
-      const availableQty = rows.reduce((sum, r) => sum + r.quantityAvailable, 0);
+      const availableQty = rows.reduce(
+        (sum, r) => sum + r.quantityAvailable,
+        0,
+      );
       itemResults.push({
         productId: item.productId,
         requestedQty: item.quantity,
         availableQty,
         ready: remaining === 0,
-        reason: remaining === 0 ? 'FEFO can satisfy requested quantity.' : 'Insufficient inventory for FEFO allocation.',
+        reason:
+          remaining === 0
+            ? 'FEFO can satisfy requested quantity.'
+            : 'Insufficient inventory for FEFO allocation.',
         allocations,
       });
     }
@@ -237,16 +347,37 @@ export class VerificationService {
   }
 
   async history(query: QueryBarcodeVerificationsDto) {
-    const { page = 1, limit = 20, barcode, productId, batchId, branchId, warehouseId, scannedByUserId, result, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      barcode,
+      productId,
+      batchId,
+      branchId,
+      warehouseId,
+      scannedByUserId,
+      result,
+      dateFrom,
+      dateTo,
+    } = query;
     const where: Prisma.BarcodeVerificationWhereInput = {
-      ...(barcode ? { barcode: { contains: barcode, mode: 'insensitive' } } : {}),
+      ...(barcode
+        ? { barcode: { contains: barcode, mode: 'insensitive' } }
+        : {}),
       ...(productId ? { productId } : {}),
       ...(batchId ? { batchId } : {}),
       ...(branchId ? { branchId } : {}),
       ...(warehouseId ? { warehouseId } : {}),
       ...(scannedByUserId ? { verifiedByUserId: scannedByUserId } : {}),
       ...(result ? { result } : {}),
-      ...((dateFrom || dateTo) ? { verifiedAt: { ...(dateFrom ? { gte: new Date(dateFrom) } : {}), ...(dateTo ? { lte: new Date(dateTo) } : {}) } } : {}),
+      ...(dateFrom || dateTo
+        ? {
+            verifiedAt: {
+              ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+              ...(dateTo ? { lte: new Date(dateTo) } : {}),
+            },
+          }
+        : {}),
     };
 
     const [items, total] = await this.prisma.$transaction([
@@ -259,11 +390,16 @@ export class VerificationService {
       this.prisma.barcodeVerification.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async historyById(id: string) {
-    const row = await this.prisma.barcodeVerification.findUnique({ where: { id } });
+    const row = await this.prisma.barcodeVerification.findUnique({
+      where: { id },
+    });
     if (!row) throw new NotFoundException('verification history not found');
     return row;
   }
@@ -277,7 +413,9 @@ export class VerificationService {
   ) {
     if (!branchId) return;
 
-    const branch = await this.prisma.branch.findFirst({ where: { id: branchId, deletedAt: null } });
+    const branch = await this.prisma.branch.findFirst({
+      where: { id: branchId, deletedAt: null },
+    });
     if (!branch) return;
 
     await this.prisma.barcodeVerification.create({
@@ -289,7 +427,8 @@ export class VerificationService {
         storeId: null,
         warehouseId: dto.warehouseId,
         result,
-        verifiedByUserId: req.user?.id ?? '00000000-0000-0000-0000-000000000000',
+        verifiedByUserId:
+          req.user?.id ?? '00000000-0000-0000-0000-000000000000',
         verifiedAt: new Date(),
       },
     });
@@ -301,7 +440,9 @@ export class VerificationService {
   }
 
   private async assertBranch(id: string) {
-    const branch = await this.prisma.branch.findFirst({ where: { id, deletedAt: null } });
+    const branch = await this.prisma.branch.findFirst({
+      where: { id, deletedAt: null },
+    });
     if (!branch) throw new NotFoundException('branch not found');
   }
 

@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
@@ -12,7 +23,9 @@ import { StockAdjustmentsService } from './stock-adjustments.service';
 @UseGuards(JwtAuthGuard)
 @Controller('api/stock-adjustments')
 export class StockAdjustmentsController {
-  constructor(private readonly stockAdjustmentsService: StockAdjustmentsService) {}
+  constructor(
+    private readonly stockAdjustmentsService: StockAdjustmentsService,
+  ) {}
 
   @Get()
   @UseGuards(PermissionsGuard)
@@ -38,7 +51,11 @@ export class StockAdjustmentsController {
   @Patch(':id/status')
   @UseGuards(PermissionsGuard)
   @Permissions('stock_adjustment.approve')
-  updateStatus(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: Request, @Body() dto: UpdateStockAdjustmentStatusDto) {
+  updateStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: Request,
+    @Body() dto: UpdateStockAdjustmentStatusDto,
+  ) {
     return this.stockAdjustmentsService.updateStatus(id, req, dto);
   }
 }

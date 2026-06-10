@@ -1,8 +1,12 @@
-import { BadRequestException, forwardRef, Inject, Injectable, Optional, NotFoundException } from '@nestjs/common';
 import {
-  NotificationEventStatus,
-  Prisma,
-} from '.prisma/client/reporting';
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Optional,
+  NotFoundException,
+} from '@nestjs/common';
+import { NotificationEventStatus, Prisma } from '.prisma/client/reporting';
 import { AuditLogWriterService } from '../audit-logs/audit-log-writer.service';
 import { NotificationWebsocketService } from '../notification-delivery/notification-websocket.service';
 import { ReportingPrismaService } from '../../prisma/reporting-prisma.service';
@@ -60,7 +64,7 @@ export class NotificationEventsService {
       ...(sourceEntityType ? { sourceEntityType } : {}),
       ...(sourceEntityId ? { sourceEntityId } : {}),
       ...(unreadOnly ? { status: { not: NotificationEventStatus.READ } } : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -114,7 +118,9 @@ export class NotificationEventsService {
   }
 
   async findOne(id: string) {
-    const found = await this.prisma.notificationEvent.findUnique({ where: { id } });
+    const found = await this.prisma.notificationEvent.findUnique({
+      where: { id },
+    });
     if (!found) throw new NotFoundException('notification event not found');
     return found;
   }
@@ -172,7 +178,7 @@ export class NotificationEventsService {
       entityId: created.id,
       afterData: created,
     });
-    this.notificationWebsocketService?.emitNotificationEvent(created as any);
+    this.notificationWebsocketService?.emitNotificationEvent(created);
     return created;
   }
 
@@ -197,7 +203,7 @@ export class NotificationEventsService {
       entityId: updated.id,
       afterData: { status: updated.status, readAt: updated.readAt },
     });
-    this.notificationWebsocketService?.emitRead(updated as any);
+    this.notificationWebsocketService?.emitRead(updated);
     return updated;
   }
 
@@ -214,7 +220,9 @@ export class NotificationEventsService {
     }
     const result = await this.prisma.notificationEvent.updateMany({
       where: {
-        ...(params.recipientUserId ? { recipientUserId: params.recipientUserId } : {}),
+        ...(params.recipientUserId
+          ? { recipientUserId: params.recipientUserId }
+          : {}),
         ...(params.branchId ? { branchId: params.branchId } : {}),
         ...(params.warehouseId ? { warehouseId: params.warehouseId } : {}),
         status: { not: NotificationEventStatus.READ },
@@ -236,7 +244,9 @@ export class NotificationEventsService {
   }) {
     const count = await this.prisma.notificationEvent.count({
       where: {
-        ...(params.recipientUserId ? { recipientUserId: params.recipientUserId } : {}),
+        ...(params.recipientUserId
+          ? { recipientUserId: params.recipientUserId }
+          : {}),
         ...(params.branchId ? { branchId: params.branchId } : {}),
         ...(params.warehouseId ? { warehouseId: params.warehouseId } : {}),
         ...(params.severity ? { severity: params.severity as any } : {}),

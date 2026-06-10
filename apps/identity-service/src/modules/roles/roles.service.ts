@@ -25,7 +25,10 @@ export class RolesService {
     let candidate = baseCode;
     let index = 1;
     while (true) {
-      const existing = await this.prisma.role.findUnique({ where: { code: candidate }, select: { id: true } });
+      const existing = await this.prisma.role.findUnique({
+        where: { code: candidate },
+        select: { id: true },
+      });
       if (!existing) return candidate;
       candidate = `${baseCode}_${index}`;
       index += 1;
@@ -39,7 +42,13 @@ export class RolesService {
         rolePermissions: {
           include: {
             permission: {
-              select: { id: true, code: true, name: true, module: true, action: true },
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                module: true,
+                action: true,
+              },
             },
           },
         },
@@ -54,7 +63,13 @@ export class RolesService {
         rolePermissions: {
           include: {
             permission: {
-              select: { id: true, code: true, name: true, module: true, action: true },
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                module: true,
+                action: true,
+              },
             },
           },
         },
@@ -67,7 +82,9 @@ export class RolesService {
   }
 
   async create(dto: CreateRoleDto) {
-    const normalizedFromInput = dto.code ? this.normalizeRoleCode(dto.code) : '';
+    const normalizedFromInput = dto.code
+      ? this.normalizeRoleCode(dto.code)
+      : '';
     const normalizedFromName = this.normalizeRoleCode(dto.name || '');
     const baseCode = normalizedFromInput || normalizedFromName || 'ROLE';
     const finalCode = await this.ensureUniqueRoleCode(baseCode);

@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { BatchStatus, Prisma } from '.prisma/client/operation';
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
@@ -14,13 +19,25 @@ export class BatchesService {
   ) {}
 
   async findAll(query: QueryBatchesDto) {
-    const { page = 1, limit = 20, productId, batchNo, supplierId, status, expiryDateFrom, expiryDateTo, expiringBefore } = query;
+    const {
+      page = 1,
+      limit = 20,
+      productId,
+      batchNo,
+      supplierId,
+      status,
+      expiryDateFrom,
+      expiryDateTo,
+      expiringBefore,
+    } = query;
     const where: Prisma.BatchWhereInput = {
       ...(productId ? { productId } : {}),
-      ...(batchNo ? { batchNo: { contains: batchNo, mode: 'insensitive' } } : {}),
+      ...(batchNo
+        ? { batchNo: { contains: batchNo, mode: 'insensitive' } }
+        : {}),
       ...(supplierId ? { supplierId } : {}),
       ...(status ? { status } : {}),
-      ...((expiryDateFrom || expiryDateTo || expiringBefore)
+      ...(expiryDateFrom || expiryDateTo || expiringBefore
         ? {
             expiryDate: {
               ...(expiryDateFrom ? { gte: new Date(expiryDateFrom) } : {}),
@@ -42,7 +59,10 @@ export class BatchesService {
       this.prisma.batch.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
@@ -67,7 +87,9 @@ export class BatchesService {
         data: {
           productId: dto.productId,
           batchNo: dto.batchNo,
-          manufactureDate: dto.manufactureDate ? new Date(dto.manufactureDate) : null,
+          manufactureDate: dto.manufactureDate
+            ? new Date(dto.manufactureDate)
+            : null,
           expiryDate: new Date(dto.expiryDate),
           supplierId: dto.supplierId,
           status: dto.status ?? BatchStatus.ACTIVE,
@@ -81,7 +103,11 @@ export class BatchesService {
 
   async update(id: string, dto: UpdateBatchDto) {
     const existing = await this.findOne(id);
-    const manufactureDate = dto.manufactureDate ?? (existing.manufactureDate ? existing.manufactureDate.toISOString() : undefined);
+    const manufactureDate =
+      dto.manufactureDate ??
+      (existing.manufactureDate
+        ? existing.manufactureDate.toISOString()
+        : undefined);
     const expiryDate = dto.expiryDate ?? existing.expiryDate.toISOString();
 
     await this.validateDates(manufactureDate, expiryDate);
@@ -90,8 +116,16 @@ export class BatchesService {
     return this.prisma.batch.update({
       where: { id },
       data: {
-        ...(dto.manufactureDate !== undefined ? { manufactureDate: dto.manufactureDate ? new Date(dto.manufactureDate) : null } : {}),
-        ...(dto.expiryDate !== undefined ? { expiryDate: new Date(dto.expiryDate) } : {}),
+        ...(dto.manufactureDate !== undefined
+          ? {
+              manufactureDate: dto.manufactureDate
+                ? new Date(dto.manufactureDate)
+                : null,
+            }
+          : {}),
+        ...(dto.expiryDate !== undefined
+          ? { expiryDate: new Date(dto.expiryDate) }
+          : {}),
         ...(dto.supplierId !== undefined ? { supplierId: dto.supplierId } : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
       },
@@ -100,9 +134,14 @@ export class BatchesService {
 
   async remove(id: string) {
     const batch = await this.findOne(id);
-    const linked = await this.prisma.goodsReceiptItem.count({ where: { batchId: batch.id } });
+    const linked = await this.prisma.goodsReceiptItem.count({
+      where: { batchId: batch.id },
+    });
     if (linked > 0) {
-      return this.prisma.batch.update({ where: { id }, data: { status: BatchStatus.EXPIRED } });
+      return this.prisma.batch.update({
+        where: { id },
+        data: { status: BatchStatus.EXPIRED },
+      });
     }
     return this.prisma.batch.delete({ where: { id } });
   }
@@ -110,12 +149,17 @@ export class BatchesService {
   private async validateDates(manufactureDate?: string, expiryDate?: string) {
     if (!expiryDate) throw new BadRequestException('expiryDate is required');
     if (manufactureDate && new Date(manufactureDate) >= new Date(expiryDate)) {
-      throw new BadRequestException('manufactureDate must be before expiryDate');
+      throw new BadRequestException(
+        'manufactureDate must be before expiryDate',
+      );
     }
   }
 
   private handleUniqueError(error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
       throw new ConflictException('Duplicate batchNo for product');
     }
   }

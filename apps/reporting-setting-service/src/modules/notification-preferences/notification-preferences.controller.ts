@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Headers, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiHeader, ApiTags } from '@nestjs/swagger';
 import { CreateNotificationPreferenceDto } from './dto/create-notification-preference.dto';
 import { QueryNotificationPreferencesDto } from './dto/query-notification-preferences.dto';
@@ -37,7 +48,10 @@ export class NotificationPreferencesController {
   }
 
   @Patch(':id')
-  update(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateNotificationPreferenceDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateNotificationPreferenceDto,
+  ) {
     return this.service.update(id, dto);
   }
 

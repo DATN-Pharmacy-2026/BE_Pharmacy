@@ -1,7 +1,18 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { NotificationChannel, NotificationEventType } from '.prisma/client/reporting';
+import {
+  NotificationChannel,
+  NotificationEventType,
+} from '.prisma/client/reporting';
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class QueryNotificationTemplatesDto {
   @ApiPropertyOptional({ default: 1 })

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '.prisma/client/reporting';
 import { ReportingPrismaService } from '../../prisma/reporting-prisma.service';
 import { CreateKpiSnapshotDto } from './dto/create-kpi-snapshot.dto';
@@ -9,7 +13,16 @@ export class KpisService {
   constructor(private readonly prisma: ReportingPrismaService) {}
 
   async findAll(query: QueryKpiSnapshotsDto) {
-    const { page = 1, limit = 20, branchId, warehouseId, metricCode, snapshotDate, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      branchId,
+      warehouseId,
+      metricCode,
+      snapshotDate,
+      dateFrom,
+      dateTo,
+    } = query;
     const where: Prisma.KPISnapshotWhereInput = {
       ...(branchId ? { branchId } : {}),
       ...(warehouseId ? { warehouseId } : {}),
@@ -22,7 +35,7 @@ export class KpisService {
             },
           }
         : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             snapshotDate: {
               ...(dateFrom ? { gte: this.toDayStart(new Date(dateFrom)) } : {}),
@@ -59,7 +72,8 @@ export class KpisService {
   }
 
   async create(dto: CreateKpiSnapshotDto) {
-    if (!dto.metricCode?.trim()) throw new BadRequestException('invalid metricCode');
+    if (!dto.metricCode?.trim())
+      throw new BadRequestException('invalid metricCode');
 
     return this.prisma.kPISnapshot.create({
       data: {
@@ -89,7 +103,10 @@ export class KpisService {
             branchId: item.branchId ?? null,
             warehouseId: item.warehouseId ?? null,
             metricCode: item.metricCode.trim(),
-            snapshotDate: { gte: normalizedDate, lte: this.toDayEnd(normalizedDate) },
+            snapshotDate: {
+              gte: normalizedDate,
+              lte: this.toDayEnd(normalizedDate),
+            },
           },
           select: { id: true },
         });

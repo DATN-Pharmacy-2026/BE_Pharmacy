@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   AllocationOrderType,
   AllocationStatus,
@@ -57,7 +62,7 @@ export class FefoService {
       ...(branchId ? { branchId } : {}),
       ...(batchId ? { batchId } : {}),
       ...(status ? { status } : {}),
-      ...((expiryDateFrom || expiryDateTo)
+      ...(expiryDateFrom || expiryDateTo
         ? {
             expiryDate: {
               ...(expiryDateFrom ? { gte: new Date(expiryDateFrom) } : {}),
@@ -65,7 +70,7 @@ export class FefoService {
             },
           }
         : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -92,7 +97,9 @@ export class FefoService {
   }
 
   async findAllocation(id: string) {
-    const allocation = await this.prisma.fEFOAllocation.findUnique({ where: { id } });
+    const allocation = await this.prisma.fEFOAllocation.findUnique({
+      where: { id },
+    });
     if (!allocation) throw new NotFoundException('Allocation not found');
     return allocation;
   }
@@ -113,7 +120,8 @@ export class FefoService {
   }
 
   async preview(req: Request, dto: FefoPreviewDto) {
-    const warehouseId = dto.warehouseId ?? this.getHeader(req, 'x-warehouse-id');
+    const warehouseId =
+      dto.warehouseId ?? this.getHeader(req, 'x-warehouse-id');
     const branchId = dto.branchId ?? this.getHeader(req, 'x-branch-id');
     if (!warehouseId) throw new BadRequestException('warehouseId is required');
 
@@ -137,14 +145,21 @@ export class FefoService {
     };
   }
 
-  async allocate(req: Request & { user?: { id?: string } }, dto: CreateFefoAllocationDto) {
-    const warehouseId = dto.warehouseId ?? this.getHeader(req, 'x-warehouse-id');
+  async allocate(
+    req: Request & { user?: { id?: string } },
+    dto: CreateFefoAllocationDto,
+  ) {
+    const warehouseId =
+      dto.warehouseId ?? this.getHeader(req, 'x-warehouse-id');
     const branchId = dto.branchId ?? this.getHeader(req, 'x-branch-id');
     if (!warehouseId) throw new BadRequestException('warehouseId is required');
 
     await this.warehousesService.findOne(warehouseId);
 
-    const activeStatuses: AllocationStatus[] = [AllocationStatus.RESERVED, AllocationStatus.PICKED];
+    const activeStatuses: AllocationStatus[] = [
+      AllocationStatus.RESERVED,
+      AllocationStatus.PICKED,
+    ];
     const duplicate = await this.prisma.fEFOAllocation.findFirst({
       where: {
         orderType: dto.orderType,
@@ -175,12 +190,16 @@ export class FefoService {
 
       const allocationLines = plan.items;
       for (const line of allocationLines) {
-        const inventory = await tx.inventoryItem.findUnique({ where: { id: line.inventoryItemId } });
+        const inventory = await tx.inventoryItem.findUnique({
+          where: { id: line.inventoryItemId },
+        });
         if (!inventory) throw new NotFoundException('Inventory item not found');
 
         const nextReserved = inventory.quantityReserved + line.allocatedQty;
         if (nextReserved > inventory.quantityOnHand) {
-          throw new BadRequestException('quantityReserved cannot exceed quantityOnHand');
+          throw new BadRequestException(
+            'quantityReserved cannot exceed quantityOnHand',
+          );
         }
         const nextAvailable = inventory.quantityOnHand - nextReserved;
         if (nextAvailable < 0) {
@@ -218,7 +237,10 @@ export class FefoService {
         orderId: dto.orderId,
         orderItemId: dto.orderItemId,
         requestedQty: dto.quantity,
-        allocatedQty: allocationLines.reduce((sum, i) => sum + i.allocatedQty, 0),
+        allocatedQty: allocationLines.reduce(
+          (sum, i) => sum + i.allocatedQty,
+          0,
+        ),
         shortageQty: plan.shortageQty,
         allocations: allocationLines,
       };
@@ -274,7 +296,10 @@ export class FefoService {
   }
 
   async releaseByOrder(dto: ReleaseFefoByOrderDto) {
-    const activeStatuses: AllocationStatus[] = [AllocationStatus.RESERVED, AllocationStatus.PICKED];
+    const activeStatuses: AllocationStatus[] = [
+      AllocationStatus.RESERVED,
+      AllocationStatus.PICKED,
+    ];
     return this.prisma.$transaction(async (tx) => {
       const allocations = await tx.fEFOAllocation.findMany({
         where: {
@@ -296,7 +321,8 @@ export class FefoService {
         });
         if (!inventory) throw new NotFoundException('Inventory item not found');
 
-        const nextReserved = inventory.quantityReserved - allocation.allocatedQty;
+        const nextReserved =
+          inventory.quantityReserved - allocation.allocatedQty;
         if (nextReserved < 0) {
           throw new BadRequestException('quantityReserved cannot be negative');
         }
@@ -361,11 +387,15 @@ export class FefoService {
         }
 
         for (const line of plan.items) {
-          const inventory = await tx.inventoryItem.findUnique({ where: { id: line.inventoryItemId } });
-          if (!inventory) throw new NotFoundException('Inventory item not found');
+          const inventory = await tx.inventoryItem.findUnique({
+            where: { id: line.inventoryItemId },
+          });
+          if (!inventory)
+            throw new NotFoundException('Inventory item not found');
           const nextReserved = inventory.quantityReserved + line.allocatedQty;
           const nextAvailable = inventory.quantityOnHand - nextReserved;
-          if (nextAvailable < 0) throw new ConflictException('Insufficient inventory');
+          if (nextAvailable < 0)
+            throw new ConflictException('Insufficient inventory');
 
           await tx.inventoryItem.update({
             where: { id: inventory.id },
@@ -423,9 +453,12 @@ export class FefoService {
         });
         if (!inventory) throw new NotFoundException('Inventory item not found');
         const nextOnHand = inventory.quantityOnHand - allocation.allocatedQty;
-        const nextReserved = inventory.quantityReserved - allocation.allocatedQty;
+        const nextReserved =
+          inventory.quantityReserved - allocation.allocatedQty;
         if (nextOnHand < 0 || nextReserved < 0) {
-          throw new BadRequestException('Inventory quantity cannot be negative');
+          throw new BadRequestException(
+            'Inventory quantity cannot be negative',
+          );
         }
 
         await tx.inventoryItem.update({
@@ -508,8 +541,10 @@ export class FefoService {
   }
 
   private parseOrderType(value: string): AllocationOrderType {
-    if (value === AllocationOrderType.ONLINE_ORDER) return AllocationOrderType.ONLINE_ORDER;
-    if (value === AllocationOrderType.POS_ORDER) return AllocationOrderType.POS_ORDER;
+    if (value === AllocationOrderType.ONLINE_ORDER)
+      return AllocationOrderType.ONLINE_ORDER;
+    if (value === AllocationOrderType.POS_ORDER)
+      return AllocationOrderType.POS_ORDER;
     throw new BadRequestException('Invalid orderType');
   }
 

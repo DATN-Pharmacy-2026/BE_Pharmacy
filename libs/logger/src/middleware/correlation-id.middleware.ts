@@ -5,7 +5,8 @@ import { RequestWithCorrelation } from '../interfaces/request-with-correlation.i
 export const createCorrelationIdMiddleware =
   () =>
   (req: RequestWithCorrelation, res: Response, next: NextFunction): void => {
-    const headerValue = req.header('x-correlation-id') ?? req.header('x-request-id');
+    const headerValue =
+      req.header('x-correlation-id') ?? req.header('x-request-id');
     const requestId =
       headerValue && headerValue.trim().length > 0 ? headerValue : randomUUID();
 

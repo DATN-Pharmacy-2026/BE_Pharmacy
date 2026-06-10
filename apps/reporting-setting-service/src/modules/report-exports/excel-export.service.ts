@@ -33,7 +33,9 @@ export class ExcelExportService {
     const filters = (reportJob.filters ?? {}) as Record<string, unknown>;
     const { columns, rows } = await this.getTabularData(reportJob, filters);
     const header = columns.join(',');
-    const lines = rows.map((row) => columns.map((key) => this.escapeCsvCell(row[key])).join(','));
+    const lines = rows.map((row) =>
+      columns.map((key) => this.escapeCsvCell(row[key])).join(','),
+    );
     return Buffer.from([header, ...lines].join('\n'), 'utf-8');
   }
 
@@ -97,7 +99,8 @@ export class ExcelExportService {
     const where: Record<string, unknown> = {};
     if (reportJob.branchId) where.branchId = reportJob.branchId;
     if (reportJob.warehouseId) where.warehouseId = reportJob.warehouseId;
-    if (typeof filters.metricCode === 'string') where.metricCode = filters.metricCode;
+    if (typeof filters.metricCode === 'string')
+      where.metricCode = filters.metricCode;
 
     const dateFrom = this.parseDate(filters.dateFrom);
     const dateTo = this.parseDate(filters.dateTo);
@@ -130,12 +133,15 @@ export class ExcelExportService {
     const where: Record<string, unknown> = {};
     if (reportJob.branchId) where.branchId = reportJob.branchId;
     if (reportJob.warehouseId) where.warehouseId = reportJob.warehouseId;
-    if (typeof filters.serviceName === 'string') where.serviceName = filters.serviceName;
+    if (typeof filters.serviceName === 'string')
+      where.serviceName = filters.serviceName;
     if (typeof filters.module === 'string') where.module = filters.module;
     if (typeof filters.action === 'string') where.action = filters.action;
-    if (typeof filters.entityType === 'string') where.entityType = filters.entityType;
+    if (typeof filters.entityType === 'string')
+      where.entityType = filters.entityType;
     if (typeof filters.entityId === 'string') where.entityId = filters.entityId;
-    if (typeof filters.actorUserId === 'string') where.actorUserId = filters.actorUserId;
+    if (typeof filters.actorUserId === 'string')
+      where.actorUserId = filters.actorUserId;
     const dateFrom = this.parseDate(filters.dateFrom);
     const dateTo = this.parseDate(filters.dateTo);
     if (dateFrom || dateTo) {
@@ -168,7 +174,10 @@ export class ExcelExportService {
   private async getTabularData(
     reportJob: ReportJob,
     filters: Record<string, unknown>,
-  ): Promise<{ columns: string[]; rows: Array<Record<string, string | number>> }> {
+  ): Promise<{
+    columns: string[];
+    rows: Array<Record<string, string | number>>;
+  }> {
     switch (reportJob.reportType) {
       case 'SALES_SUMMARY':
       case 'SALES_DETAIL':
@@ -186,14 +195,32 @@ export class ExcelExportService {
       case 'GOODS_RECEIPT': {
         const rows = await this.getKpiRows(reportJob, filters);
         return {
-          columns: ['snapshotDate', 'metricCode', 'metricValue', 'branchId', 'warehouseId'],
+          columns: [
+            'snapshotDate',
+            'metricCode',
+            'metricValue',
+            'branchId',
+            'warehouseId',
+          ],
           rows,
         };
       }
       case 'AUDIT_LOG': {
         const rows = await this.getAuditRows(reportJob, filters);
         return {
-          columns: ['createdAt', 'serviceName', 'module', 'action', 'entityType', 'entityId', 'actorUserId', 'branchId', 'warehouseId', 'beforeData', 'afterData'],
+          columns: [
+            'createdAt',
+            'serviceName',
+            'module',
+            'action',
+            'entityType',
+            'entityId',
+            'actorUserId',
+            'branchId',
+            'warehouseId',
+            'beforeData',
+            'afterData',
+          ],
           rows,
         };
       }
@@ -216,10 +243,12 @@ export class ExcelExportService {
       default:
         return {
           columns: ['status', 'message'],
-          rows: [{
-            status: 'NOT_IMPLEMENTED',
-            message: `Report type ${reportJob.reportType} is not fully implemented for export in foundation phase. No cross-service query is performed.`,
-          }],
+          rows: [
+            {
+              status: 'NOT_IMPLEMENTED',
+              message: `Report type ${reportJob.reportType} is not fully implemented for export in foundation phase. No cross-service query is performed.`,
+            },
+          ],
         };
     }
   }

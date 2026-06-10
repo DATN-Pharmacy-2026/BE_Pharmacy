@@ -26,8 +26,18 @@ import { IdentityPrismaModule } from './prisma/identity-prisma.module';
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: Number.parseInt(process.env.IDENTITY_THROTTLE_TTL_MS ?? process.env.GATEWAY_THROTTLE_TTL_MS ?? '60000', 10),
-        limit: Number.parseInt(process.env.IDENTITY_THROTTLE_LIMIT ?? process.env.GATEWAY_THROTTLE_LIMIT ?? '1000', 10),
+        ttl: Number.parseInt(
+          process.env.IDENTITY_THROTTLE_TTL_MS ??
+            process.env.GATEWAY_THROTTLE_TTL_MS ??
+            '60000',
+          10,
+        ),
+        limit: Number.parseInt(
+          process.env.IDENTITY_THROTTLE_LIMIT ??
+            process.env.GATEWAY_THROTTLE_LIMIT ??
+            '1000',
+          10,
+        ),
       },
     ]),
     LoggerModule,

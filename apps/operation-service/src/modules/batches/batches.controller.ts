@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { BatchesService } from './batches.service';
@@ -23,7 +34,10 @@ export class BatchesController {
   @Get('product/:productId')
   @UseGuards(PermissionsGuard)
   @Permissions('batch.view')
-  findByProduct(@Param('productId', new ParseUUIDPipe()) productId: string, @Query() query: QueryBatchesDto) {
+  findByProduct(
+    @Param('productId', new ParseUUIDPipe()) productId: string,
+    @Query() query: QueryBatchesDto,
+  ) {
     return this.batchesService.findByProduct(productId, query);
   }
 
@@ -44,7 +58,10 @@ export class BatchesController {
   @Patch(':id')
   @UseGuards(PermissionsGuard)
   @Permissions('batch.manage')
-  update(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateBatchDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateBatchDto,
+  ) {
     return this.batchesService.update(id, dto);
   }
 

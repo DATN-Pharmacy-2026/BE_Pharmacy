@@ -1,5 +1,15 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { NotificationChannel, Prisma, ReportJobStatus } from '.prisma/client/reporting';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  NotificationChannel,
+  Prisma,
+  ReportJobStatus,
+} from '.prisma/client/reporting';
 import { AuditLogWriterService } from '../audit-logs/audit-log-writer.service';
 import { NotificationEventPublisherService } from '../notification-events/notification-event-publisher.service';
 import { ReportingPrismaService } from '../../prisma/reporting-prisma.service';
@@ -21,12 +31,21 @@ export class ReportExportsService {
   ) {}
 
   async findAll(query: QueryReportExportsDto) {
-    const { page = 1, limit = 20, reportJobId, fileType, reportType, dateFrom, dateTo, search } = query;
+    const {
+      page = 1,
+      limit = 20,
+      reportJobId,
+      fileType,
+      reportType,
+      dateFrom,
+      dateTo,
+      search,
+    } = query;
     const where: Prisma.ReportExportWhereInput = {
       ...(reportJobId ? { reportJobId } : {}),
       ...(fileType ? { fileType } : {}),
       ...(reportType ? { reportJob: { reportType } } : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -54,7 +73,10 @@ export class ReportExportsService {
       this.prisma.reportExport.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
@@ -68,7 +90,9 @@ export class ReportExportsService {
   }
 
   async create(dto: CreateReportExportDto, actorUserId?: string) {
-    const reportJob = await this.prisma.reportJob.findUnique({ where: { id: dto.reportJobId } });
+    const reportJob = await this.prisma.reportJob.findUnique({
+      where: { id: dto.reportJobId },
+    });
     if (!reportJob) throw new NotFoundException('report job not found');
 
     const created = await this.prisma.$transaction(async (tx) => {
@@ -119,7 +143,11 @@ export class ReportExportsService {
     if (reportJob.status === ReportJobStatus.PROCESSING) {
       throw new ConflictException('report job is already processing');
     }
-    if (!payload.force && reportJob.status === ReportJobStatus.COMPLETED && reportJob.exports[0]) {
+    if (
+      !payload.force &&
+      reportJob.status === ReportJobStatus.COMPLETED &&
+      reportJob.exports[0]
+    ) {
       const latest = reportJob.exports[0];
       return {
         reportJob,
@@ -139,11 +167,20 @@ export class ReportExportsService {
     });
 
     try {
-      const buffer = fileType === 'CSV'
-        ? await this.excelExportService.generateCsvBuffer(reportJob)
-        : await this.excelExportService.generateWorkbookBuffer(reportJob);
-      const fileName = this.resolveFileName(reportJob.reportType, payload.fileName, fileType);
-      await this.reportExportStorageService.writeFile(reportJob.id, fileName, buffer);
+      const buffer =
+        fileType === 'CSV'
+          ? await this.excelExportService.generateCsvBuffer(reportJob)
+          : await this.excelExportService.generateWorkbookBuffer(reportJob);
+      const fileName = this.resolveFileName(
+        reportJob.reportType,
+        payload.fileName,
+        fileType,
+      );
+      await this.reportExportStorageService.writeFile(
+        reportJob.id,
+        fileName,
+        buffer,
+      );
 
       const result = await this.prisma.$transaction(async (tx) => {
         const createdExport = await tx.reportExport.create({
@@ -261,10 +298,16 @@ export class ReportExportsService {
     });
   }
 
-  private resolveFileName(reportType: string, inputFileName?: string, fileType: string = 'XLSX'): string {
+  private resolveFileName(
+    reportType: string,
+    inputFileName?: string,
+    fileType: string = 'XLSX',
+  ): string {
     const extension = fileType === 'CSV' ? 'csv' : 'xlsx';
     if (inputFileName) {
-      const named = /\.[a-z0-9]+$/i.test(inputFileName) ? inputFileName : `${inputFileName}.${extension}`;
+      const named = /\.[a-z0-9]+$/i.test(inputFileName)
+        ? inputFileName
+        : `${inputFileName}.${extension}`;
       return this.reportExportStorageService.sanitizeFileName(named);
     }
     const timestamp = new Date()

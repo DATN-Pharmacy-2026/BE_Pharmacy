@@ -16,7 +16,9 @@ export class RabbitmqEventBrokerService implements EventBroker {
     await ch.assertExchange(exchange, exchangeType, { durable: true });
     const content = Buffer.from(JSON.stringify(event));
     ch.publish(exchange, event.eventType, content, {
-      persistent: `${process.env.RABBITMQ_MESSAGE_PERSISTENT ?? 'true'}`.toLowerCase() === 'true',
+      persistent:
+        `${process.env.RABBITMQ_MESSAGE_PERSISTENT ?? 'true'}`.toLowerCase() ===
+        'true',
       headers: {
         'x-event-id': event.eventId,
         'x-event-type': event.eventType,

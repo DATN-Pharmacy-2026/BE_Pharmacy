@@ -37,7 +37,11 @@ Quy tac:
     conversationId?: string,
     topK = 5,
   ): Promise<ChatResponseDto> {
-    const convId = await this.conversationService.ensureConversation(userId, message, conversationId);
+    const convId = await this.conversationService.ensureConversation(
+      userId,
+      message,
+      conversationId,
+    );
     await this.conversationService.appendMessage(convId, 'USER', message);
 
     const safety = this.safetyService.checkSafety(message);
@@ -60,18 +64,29 @@ Quy tac:
         conversationId: convId,
       };
 
-      await this.conversationService.appendMessage(convId, 'ASSISTANT', response.answer, {
-        sources: response.sources,
-        handoffRequired: true,
-        handoffReason: response.handoffReason,
-        handoffTicketId: response.handoffTicketId,
-        handoffTicketCode: response.handoffTicketCode,
-      });
+      await this.conversationService.appendMessage(
+        convId,
+        'ASSISTANT',
+        response.answer,
+        {
+          sources: response.sources,
+          handoffRequired: true,
+          handoffReason: response.handoffReason,
+          handoffTicketId: response.handoffTicketId,
+          handoffTicketCode: response.handoffTicketCode,
+        },
+      );
       return response;
     }
 
-    const queryEmbedding = await this.embeddingService.createEmbedding(message, 'RETRIEVAL_QUERY');
-    const contexts = await this.vectorStoreService.searchSimilar(queryEmbedding, topK);
+    const queryEmbedding = await this.embeddingService.createEmbedding(
+      message,
+      'RETRIEVAL_QUERY',
+    );
+    const contexts = await this.vectorStoreService.searchSimilar(
+      queryEmbedding,
+      topK,
+    );
 
     if (!contexts.length || contexts[0].score < 0.35) {
       const ticket = await this.handoffService.createTicket({
@@ -92,13 +107,18 @@ Quy tac:
         conversationId: convId,
       };
 
-      await this.conversationService.appendMessage(convId, 'ASSISTANT', response.answer, {
-        sources: response.sources,
-        handoffRequired: true,
-        handoffReason: response.handoffReason,
-        handoffTicketId: response.handoffTicketId,
-        handoffTicketCode: response.handoffTicketCode,
-      });
+      await this.conversationService.appendMessage(
+        convId,
+        'ASSISTANT',
+        response.answer,
+        {
+          sources: response.sources,
+          handoffRequired: true,
+          handoffReason: response.handoffReason,
+          handoffTicketId: response.handoffTicketId,
+          handoffTicketCode: response.handoffTicketCode,
+        },
+      );
       return response;
     }
 
@@ -118,10 +138,16 @@ Quy tac:
 
     let answer: string;
     try {
-      answer = await this.llmService.generateAnswer(this.systemPrompt, userPrompt);
+      answer = await this.llmService.generateAnswer(
+        this.systemPrompt,
+        userPrompt,
+      );
     } catch (error) {
-      const messageText = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`LLM unavailable, returning fallback answer: ${messageText}`);
+      const messageText =
+        error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `LLM unavailable, returning fallback answer: ${messageText}`,
+      );
       answer = this.buildFallbackAnswer(contexts);
     }
 
@@ -132,23 +158,34 @@ Quy tac:
       conversationId: convId,
     };
 
-    await this.conversationService.appendMessage(convId, 'ASSISTANT', response.answer, {
-      sources: response.sources,
-      handoffRequired: false,
-      handoffReason: null,
-    });
+    await this.conversationService.appendMessage(
+      convId,
+      'ASSISTANT',
+      response.answer,
+      {
+        sources: response.sources,
+        handoffRequired: false,
+        handoffReason: null,
+      },
+    );
 
     return response;
   }
 
   private buildFallbackAnswer(
-    contexts: Array<{ title: string; category: string; source: string; content: string }>,
+    contexts: Array<{
+      title: string;
+      category: string;
+      source: string;
+      content: string;
+    }>,
   ): string {
     const highlights = contexts
       .slice(0, 3)
       .map((contextItem, index) => {
         const content = contextItem.content.replace(/\s+/g, ' ').trim();
-        const summary = content.length > 220 ? `${content.slice(0, 217)}...` : content;
+        const summary =
+          content.length > 220 ? `${content.slice(0, 217)}...` : content;
         return `${index + 1}. ${contextItem.title}: ${summary}`;
       })
       .join('\n');

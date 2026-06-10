@@ -13,8 +13,11 @@ export class VectorStoreService {
   private readonly collectionName: string;
 
   constructor() {
-    this.qdrantUrl = (process.env.QDRANT_URL || 'http://localhost:6333').replace(/\/+$/, '');
-    this.collectionName = process.env.QDRANT_COLLECTION || 'pharmacy_knowledge_base';
+    this.qdrantUrl = (
+      process.env.QDRANT_URL || 'http://localhost:6333'
+    ).replace(/\/+$/, '');
+    this.collectionName =
+      process.env.QDRANT_COLLECTION || 'pharmacy_knowledge_base';
   }
 
   getCollectionName(): string {
@@ -22,25 +25,32 @@ export class VectorStoreService {
   }
 
   async ensureCollection(vectorSize: number): Promise<void> {
-    const check = await fetch(`${this.qdrantUrl}/collections/${this.collectionName}`);
+    const check = await fetch(
+      `${this.qdrantUrl}/collections/${this.collectionName}`,
+    );
     if (check.ok) {
       return;
     }
 
-    const create = await fetch(`${this.qdrantUrl}/collections/${this.collectionName}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vectors: {
-          size: vectorSize,
-          distance: 'Cosine',
-        },
-      }),
-    });
+    const create = await fetch(
+      `${this.qdrantUrl}/collections/${this.collectionName}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vectors: {
+            size: vectorSize,
+            distance: 'Cosine',
+          },
+        }),
+      },
+    );
 
     if (!create.ok) {
       const err = await create.text();
-      throw new Error(`Failed to create Qdrant collection: ${create.status} ${err}`);
+      throw new Error(
+        `Failed to create Qdrant collection: ${create.status} ${err}`,
+      );
     }
   }
 
@@ -74,7 +84,10 @@ export class VectorStoreService {
     }
   }
 
-  async searchSimilar(queryEmbedding: number[], topK = 5): Promise<SimilarSearchResult[]> {
+  async searchSimilar(
+    queryEmbedding: number[],
+    topK = 5,
+  ): Promise<SimilarSearchResult[]> {
     const response = await fetch(
       `${this.qdrantUrl}/collections/${this.collectionName}/points/search`,
       {

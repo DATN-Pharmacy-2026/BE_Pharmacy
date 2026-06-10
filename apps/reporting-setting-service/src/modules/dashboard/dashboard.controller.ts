@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiHeader, ApiTags } from '@nestjs/swagger';
 import { CreateDashboardSnapshotDto } from './dto/create-dashboard-snapshot.dto';
 import { DashboardOverviewQueryDto } from './dto/dashboard-overview-query.dto';

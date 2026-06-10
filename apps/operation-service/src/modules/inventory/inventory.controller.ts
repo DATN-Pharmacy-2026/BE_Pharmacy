@@ -1,4 +1,11 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { InventoryService } from './inventory.service';
@@ -21,14 +28,20 @@ export class InventoryController {
   @Get('product/:productId')
   @UseGuards(PermissionsGuard)
   @Permissions('inventory.view')
-  findByProduct(@Param('productId', new ParseUUIDPipe()) productId: string, @Query() query: QueryInventoryDto) {
+  findByProduct(
+    @Param('productId', new ParseUUIDPipe()) productId: string,
+    @Query() query: QueryInventoryDto,
+  ) {
     return this.inventoryService.findByProduct(productId, query);
   }
 
   @Get('warehouse/:warehouseId')
   @UseGuards(PermissionsGuard)
   @Permissions('inventory.view')
-  findByWarehouse(@Param('warehouseId', new ParseUUIDPipe()) warehouseId: string, @Query() query: QueryInventoryDto) {
+  findByWarehouse(
+    @Param('warehouseId', new ParseUUIDPipe()) warehouseId: string,
+    @Query() query: QueryInventoryDto,
+  ) {
     return this.inventoryService.findByWarehouse(warehouseId, query);
   }
 
@@ -42,7 +55,9 @@ export class InventoryController {
   @Get('expiring')
   @UseGuards(PermissionsGuard)
   @Permissions('inventory.view')
-  expiring(@Query() query: QueryInventoryDto & { beforeDate?: string; days?: number }) {
+  expiring(
+    @Query() query: QueryInventoryDto & { beforeDate?: string; days?: number },
+  ) {
     return this.inventoryService.expiring(query);
   }
 

@@ -8,7 +8,13 @@ import { GoodsReceiptsController } from './goods-receipts.controller';
 import { GoodsReceiptsService } from './goods-receipts.service';
 
 @Module({
-  imports: [SuppliersModule, WarehousesModule, BranchesModule, PurchaseOrdersModule, BatchesModule],
+  imports: [
+    SuppliersModule,
+    WarehousesModule,
+    BranchesModule,
+    PurchaseOrdersModule,
+    BatchesModule,
+  ],
   controllers: [GoodsReceiptsController],
   providers: [GoodsReceiptsService],
 })

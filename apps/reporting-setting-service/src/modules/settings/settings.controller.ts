@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Headers, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiHeader, ApiTags } from '@nestjs/swagger';
 import { CreateSettingDto } from './dto/create-setting.dto';
 import { QuerySettingsDto } from './dto/query-settings.dto';
@@ -32,7 +43,10 @@ export class SettingsController {
     @Query('branchId') branchId?: string,
     @Headers('x-branch-id') branchIdHeader?: string,
   ) {
-    return this.settingsService.resolveEffective(key, branchId ?? branchIdHeader);
+    return this.settingsService.resolveEffective(
+      key,
+      branchId ?? branchIdHeader,
+    );
   }
 
   @Get(':id')
@@ -52,11 +66,18 @@ export class SettingsController {
     @Query('branchId') branchId?: string,
     @Headers('x-branch-id') branchIdHeader?: string,
   ) {
-    return this.settingsService.updateByKey(key, dto, branchId ?? branchIdHeader);
+    return this.settingsService.updateByKey(
+      key,
+      dto,
+      branchId ?? branchIdHeader,
+    );
   }
 
   @Patch(':id')
-  update(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateSettingDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateSettingDto,
+  ) {
     return this.settingsService.update(id, dto);
   }
 

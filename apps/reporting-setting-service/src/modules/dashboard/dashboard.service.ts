@@ -44,7 +44,9 @@ export class DashboardService {
     const metrics = { ...DEFAULT_DASHBOARD_METRICS };
     for (const item of kpis) {
       if (DASHBOARD_METRIC_CODES.includes(item.metricCode as never)) {
-        metrics[item.metricCode as keyof typeof metrics] = Number(item.metricValue);
+        metrics[item.metricCode as keyof typeof metrics] = Number(
+          item.metricValue,
+        );
       }
     }
     const kpiList = Object.entries(metrics).map(([key, value]) => ({
@@ -68,7 +70,15 @@ export class DashboardService {
   }
 
   async findSnapshots(query: QueryDashboardSnapshotsDto) {
-    const { page = 1, limit = 20, branchId, warehouseId, snapshotDate, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      branchId,
+      warehouseId,
+      snapshotDate,
+      dateFrom,
+      dateTo,
+    } = query;
 
     const where: Prisma.DashboardSnapshotWhereInput = {
       ...(branchId ? { branchId } : {}),
@@ -81,7 +91,7 @@ export class DashboardService {
             },
           }
         : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             snapshotDate: {
               ...(dateFrom ? { gte: this.toDayStart(new Date(dateFrom)) } : {}),
@@ -108,7 +118,9 @@ export class DashboardService {
   }
 
   async findSnapshotById(id: string) {
-    const found = await this.prisma.dashboardSnapshot.findUnique({ where: { id } });
+    const found = await this.prisma.dashboardSnapshot.findUnique({
+      where: { id },
+    });
     if (!found) throw new NotFoundException('dashboard snapshot not found');
     return found;
   }

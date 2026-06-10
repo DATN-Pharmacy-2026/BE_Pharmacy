@@ -1,5 +1,15 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { InventoryMovementType, Prisma, ShipmentStatus, StockTransferStatus } from '.prisma/client/operation';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  InventoryMovementType,
+  Prisma,
+  ShipmentStatus,
+  StockTransferStatus,
+} from '.prisma/client/operation';
 import { Request } from 'express';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { CreateStockTransferDto } from './dto/create-stock-transfer.dto';
@@ -13,10 +23,26 @@ export class StockTransfersService {
   constructor(private readonly prisma: OperationPrismaService) {}
 
   async findAll(query: QueryStockTransfersDto) {
-    const { page = 1, limit = 20, search, transferNo, fromWarehouseId, toWarehouseId, fromBranchId, toBranchId, status, requestedByUserId, approvedByUserId, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      transferNo,
+      fromWarehouseId,
+      toWarehouseId,
+      fromBranchId,
+      toBranchId,
+      status,
+      requestedByUserId,
+      approvedByUserId,
+      dateFrom,
+      dateTo,
+    } = query;
 
     const where: Prisma.StockTransferWhereInput = {
-      ...(transferNo ? { transferNo: { contains: transferNo, mode: 'insensitive' } } : {}),
+      ...(transferNo
+        ? { transferNo: { contains: transferNo, mode: 'insensitive' } }
+        : {}),
       ...(fromWarehouseId ? { fromWarehouseId } : {}),
       ...(toWarehouseId ? { toWarehouseId } : {}),
       ...(fromBranchId ? { fromBranchId } : {}),
@@ -24,7 +50,7 @@ export class StockTransfersService {
       ...(status ? { status } : {}),
       ...(requestedByUserId ? { requestedByUserId } : {}),
       ...(approvedByUserId ? { approvedByUserId } : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             requestedAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -36,8 +62,20 @@ export class StockTransfersService {
         ? {
             OR: [
               { transferNo: { contains: search, mode: 'insensitive' } },
-              { shipments: { some: { shipmentNo: { contains: search, mode: 'insensitive' } } } },
-              { shipments: { some: { trackingNo: { contains: search, mode: 'insensitive' } } } },
+              {
+                shipments: {
+                  some: {
+                    shipmentNo: { contains: search, mode: 'insensitive' },
+                  },
+                },
+              },
+              {
+                shipments: {
+                  some: {
+                    trackingNo: { contains: search, mode: 'insensitive' },
+                  },
+                },
+              },
             ],
           }
         : {}),
@@ -59,7 +97,11 @@ export class StockTransfersService {
     ]);
 
     return {
-      items: items.map((t) => ({ ...t, itemCount: t._count.items, latestShipment: t.shipments[0] ?? null })),
+      items: items.map((t) => ({
+        ...t,
+        itemCount: t._count.items,
+        latestShipment: t.shipments[0] ?? null,
+      })),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -92,23 +134,34 @@ export class StockTransfersService {
     const transfer = await this.findOne(id);
     const events = [
       { type: 'REQUESTED', at: transfer.requestedAt },
-      transfer.approvedAt ? { type: 'APPROVED', at: transfer.approvedAt } : null,
+      transfer.approvedAt
+        ? { type: 'APPROVED', at: transfer.approvedAt }
+        : null,
       transfer.shippedAt ? { type: 'SHIPPED', at: transfer.shippedAt } : null,
-      transfer.receivedAt ? { type: 'RECEIVED', at: transfer.receivedAt } : null,
+      transfer.receivedAt
+        ? { type: 'RECEIVED', at: transfer.receivedAt }
+        : null,
     ].filter(Boolean);
 
     return { transferId: transfer.id, status: transfer.status, events };
   }
 
-  async create(req: Request & { user?: { id?: string } }, dto: CreateStockTransferDto) {
+  async create(
+    req: Request & { user?: { id?: string } },
+    dto: CreateStockTransferDto,
+  ) {
     if (dto.fromWarehouseId === dto.toWarehouseId) {
-      throw new BadRequestException('fromWarehouseId and toWarehouseId must be different');
+      throw new BadRequestException(
+        'fromWarehouseId and toWarehouseId must be different',
+      );
     }
 
     await this.assertWarehouseExists(dto.fromWarehouseId, 'fromWarehouseId');
     await this.assertWarehouseExists(dto.toWarehouseId, 'toWarehouseId');
-    if (dto.fromBranchId) await this.assertBranchExists(dto.fromBranchId, 'fromBranchId');
-    if (dto.toBranchId) await this.assertBranchExists(dto.toBranchId, 'toBranchId');
+    if (dto.fromBranchId)
+      await this.assertBranchExists(dto.fromBranchId, 'fromBranchId');
+    if (dto.toBranchId)
+      await this.assertBranchExists(dto.toBranchId, 'toBranchId');
 
     for (const item of dto.items) {
       await this.assertBatchExists(item.batchId);
@@ -119,7 +172,8 @@ export class StockTransfersService {
           warehouseId: dto.fromWarehouseId,
         },
       });
-      if (!sourceInventory) throw new NotFoundException('Source inventory item not found');
+      if (!sourceInventory)
+        throw new NotFoundException('Source inventory item not found');
       if (sourceInventory.quantityAvailable < item.requestedQty) {
         throw new ConflictException('Insufficient source inventory');
       }
@@ -158,7 +212,10 @@ export class StockTransfersService {
   async updateStatus(id: string, dto: UpdateStockTransferStatusDto) {
     const transfer = await this.findOne(id);
     this.assertStatusTransition(transfer.status, dto.status);
-    return this.prisma.stockTransfer.update({ where: { id }, data: { status: dto.status } });
+    return this.prisma.stockTransfer.update({
+      where: { id },
+      data: { status: dto.status },
+    });
   }
 
   async approve(id: string, req: Request & { user?: { id?: string } }) {
@@ -170,9 +227,14 @@ export class StockTransfersService {
 
     for (const item of transfer.items) {
       const inventory = await this.prisma.inventoryItem.findFirst({
-        where: { productId: item.productId, batchId: item.batchId ?? undefined, warehouseId: transfer.fromWarehouseId },
+        where: {
+          productId: item.productId,
+          batchId: item.batchId ?? undefined,
+          warehouseId: transfer.fromWarehouseId,
+        },
       });
-      if (!inventory) throw new NotFoundException('Source inventory item not found');
+      if (!inventory)
+        throw new NotFoundException('Source inventory item not found');
       if (inventory.quantityAvailable < item.requestedQty) {
         throw new ConflictException('Insufficient source inventory');
       }
@@ -189,7 +251,11 @@ export class StockTransfersService {
     });
   }
 
-  async ship(id: string, req: Request & { user?: { id?: string } }, dto: ShipStockTransferDto) {
+  async ship(
+    id: string,
+    req: Request & { user?: { id?: string } },
+    dto: ShipStockTransferDto,
+  ) {
     const transfer = await this.findOne(id);
     if (transfer.status !== StockTransferStatus.APPROVED) {
       throw new ConflictException('Invalid transfer status transition');
@@ -199,15 +265,25 @@ export class StockTransfersService {
     const shippedAt = dto.shippedAt ? new Date(dto.shippedAt) : new Date();
 
     return this.prisma.$transaction(async (tx) => {
-      const inputMap = new Map((dto.items ?? []).map((i) => [i.stockTransferItemId, i.shippedQty]));
+      const inputMap = new Map(
+        (dto.items ?? []).map((i) => [i.stockTransferItemId, i.shippedQty]),
+      );
 
-      const txItems = await tx.stockTransferItem.findMany({ where: { stockTransferId: transfer.id } });
+      const txItems = await tx.stockTransferItem.findMany({
+        where: { stockTransferId: transfer.id },
+      });
       let totalShipped = 0;
 
       for (const item of txItems) {
-        const shippedQty = inputMap.has(item.id) ? (inputMap.get(item.id) as number) : item.requestedQty;
-        if (shippedQty < 0) throw new BadRequestException('quantity cannot be negative');
-        if (shippedQty > item.requestedQty) throw new BadRequestException('shippedQty cannot exceed requestedQty');
+        const shippedQty = inputMap.has(item.id)
+          ? (inputMap.get(item.id) as number)
+          : item.requestedQty;
+        if (shippedQty < 0)
+          throw new BadRequestException('quantity cannot be negative');
+        if (shippedQty > item.requestedQty)
+          throw new BadRequestException(
+            'shippedQty cannot exceed requestedQty',
+          );
         totalShipped += shippedQty;
 
         const sourceInventory = await tx.inventoryItem.findFirst({
@@ -217,13 +293,16 @@ export class StockTransfersService {
             warehouseId: transfer.fromWarehouseId,
           },
         });
-        if (!sourceInventory) throw new NotFoundException('Source inventory item not found');
-        if (sourceInventory.quantityAvailable < shippedQty) throw new ConflictException('Insufficient source inventory');
+        if (!sourceInventory)
+          throw new NotFoundException('Source inventory item not found');
+        if (sourceInventory.quantityAvailable < shippedQty)
+          throw new ConflictException('Insufficient source inventory');
 
         const beforeQty = sourceInventory.quantityOnHand;
         const afterQty = beforeQty - shippedQty;
         const afterAvailable = afterQty - sourceInventory.quantityReserved;
-        if (afterQty < 0 || afterAvailable < 0) throw new ConflictException('quantity cannot be negative');
+        if (afterQty < 0 || afterAvailable < 0)
+          throw new ConflictException('quantity cannot be negative');
 
         await tx.inventoryItem.update({
           where: { id: sourceInventory.id },
@@ -255,7 +334,9 @@ export class StockTransfersService {
       }
 
       if (totalShipped <= 0) {
-        throw new BadRequestException('At least one item must have shippedQty > 0');
+        throw new BadRequestException(
+          'At least one item must have shippedQty > 0',
+        );
       }
 
       const shipmentNo = await this.generateShipmentNo(tx);
@@ -283,7 +364,11 @@ export class StockTransfersService {
     });
   }
 
-  async receive(id: string, req: Request & { user?: { id?: string } }, dto: ReceiveStockTransferDto) {
+  async receive(
+    id: string,
+    req: Request & { user?: { id?: string } },
+    dto: ReceiveStockTransferDto,
+  ) {
     const transfer = await this.findOne(id);
     if (transfer.status !== StockTransferStatus.SHIPPED) {
       throw new ConflictException('Invalid transfer status transition');
@@ -293,20 +378,31 @@ export class StockTransfersService {
     const receivedByUserId = this.getUserId(req.user?.id);
 
     return this.prisma.$transaction(async (tx) => {
-      const inputMap = new Map((dto.items ?? []).map((i) => [i.stockTransferItemId, i.receivedQty]));
-      const txItems = await tx.stockTransferItem.findMany({ where: { stockTransferId: transfer.id } });
+      const inputMap = new Map(
+        (dto.items ?? []).map((i) => [i.stockTransferItemId, i.receivedQty]),
+      );
+      const txItems = await tx.stockTransferItem.findMany({
+        where: { stockTransferId: transfer.id },
+      });
       let hasPartialReceipt = false;
 
       for (const item of txItems) {
         const shippedQty = item.shippedQty ?? 0;
-        const receivedQty = inputMap.has(item.id) ? (inputMap.get(item.id) as number) : shippedQty;
+        const receivedQty = inputMap.has(item.id)
+          ? (inputMap.get(item.id) as number)
+          : shippedQty;
 
-        if (receivedQty < 0) throw new BadRequestException('quantity cannot be negative');
-        if (receivedQty > shippedQty) throw new BadRequestException('receivedQty cannot exceed shippedQty');
+        if (receivedQty < 0)
+          throw new BadRequestException('quantity cannot be negative');
+        if (receivedQty > shippedQty)
+          throw new BadRequestException('receivedQty cannot exceed shippedQty');
         if (receivedQty < shippedQty) hasPartialReceipt = true;
 
-        const batch = item.batchId ? await tx.batch.findUnique({ where: { id: item.batchId } }) : null;
-        if (item.batchId && !batch) throw new NotFoundException('Batch not found');
+        const batch = item.batchId
+          ? await tx.batch.findUnique({ where: { id: item.batchId } })
+          : null;
+        if (item.batchId && !batch)
+          throw new NotFoundException('Batch not found');
 
         const sourceInventory = await tx.inventoryItem.findFirst({
           where: {
@@ -327,8 +423,10 @@ export class StockTransfersService {
         if (destinationInventory) {
           const beforeQty = destinationInventory.quantityOnHand;
           const afterQty = beforeQty + receivedQty;
-          const afterAvailable = afterQty - destinationInventory.quantityReserved;
-          if (afterAvailable < 0) throw new ConflictException('quantityAvailable cannot be negative');
+          const afterAvailable =
+            afterQty - destinationInventory.quantityReserved;
+          if (afterAvailable < 0)
+            throw new ConflictException('quantityAvailable cannot be negative');
 
           await tx.inventoryItem.update({
             where: { id: destinationInventory.id },
@@ -364,7 +462,8 @@ export class StockTransfersService {
               quantityReserved: 0,
               quantityAvailable: receivedQty,
               unitCost: sourceInventory?.unitCost ?? null,
-              expiryDate: sourceInventory?.expiryDate ?? batch?.expiryDate ?? new Date(),
+              expiryDate:
+                sourceInventory?.expiryDate ?? batch?.expiryDate ?? new Date(),
             },
           });
 
@@ -384,14 +483,22 @@ export class StockTransfersService {
           });
         }
 
-        await tx.stockTransferItem.update({ where: { id: item.id }, data: { receivedQty } });
+        await tx.stockTransferItem.update({
+          where: { id: item.id },
+          data: { receivedQty },
+        });
       }
 
       if (hasPartialReceipt) {
-        throw new ConflictException('Partial receive is not supported. Receive full shipped quantity or create an adjustment flow.');
+        throw new ConflictException(
+          'Partial receive is not supported. Receive full shipped quantity or create an adjustment flow.',
+        );
       }
 
-      const latestShipment = await tx.shipment.findFirst({ where: { stockTransferId: transfer.id }, orderBy: { createdAt: 'desc' } });
+      const latestShipment = await tx.shipment.findFirst({
+        where: { stockTransferId: transfer.id },
+        orderBy: { createdAt: 'desc' },
+      });
       if (latestShipment) {
         await tx.shipment.update({
           where: { id: latestShipment.id },
@@ -424,14 +531,29 @@ export class StockTransfersService {
       throw new ConflictException('cannot cancel shipped transfer');
     }
 
-    return this.prisma.stockTransfer.update({ where: { id }, data: { status: StockTransferStatus.CANCELLED } });
+    return this.prisma.stockTransfer.update({
+      where: { id },
+      data: { status: StockTransferStatus.CANCELLED },
+    });
   }
 
-  private assertStatusTransition(current: StockTransferStatus, next: StockTransferStatus) {
+  private assertStatusTransition(
+    current: StockTransferStatus,
+    next: StockTransferStatus,
+  ) {
     const transitions: Record<StockTransferStatus, StockTransferStatus[]> = {
-      [StockTransferStatus.DRAFT]: [StockTransferStatus.PENDING_APPROVAL, StockTransferStatus.CANCELLED],
-      [StockTransferStatus.PENDING_APPROVAL]: [StockTransferStatus.APPROVED, StockTransferStatus.CANCELLED],
-      [StockTransferStatus.APPROVED]: [StockTransferStatus.SHIPPED, StockTransferStatus.CANCELLED],
+      [StockTransferStatus.DRAFT]: [
+        StockTransferStatus.PENDING_APPROVAL,
+        StockTransferStatus.CANCELLED,
+      ],
+      [StockTransferStatus.PENDING_APPROVAL]: [
+        StockTransferStatus.APPROVED,
+        StockTransferStatus.CANCELLED,
+      ],
+      [StockTransferStatus.APPROVED]: [
+        StockTransferStatus.SHIPPED,
+        StockTransferStatus.CANCELLED,
+      ],
       [StockTransferStatus.SHIPPED]: [StockTransferStatus.RECEIVED],
       [StockTransferStatus.RECEIVED]: [StockTransferStatus.RECEIVED],
       [StockTransferStatus.CANCELLED]: [StockTransferStatus.CANCELLED],
@@ -448,7 +570,9 @@ export class StockTransfersService {
   }
 
   private async assertBranchExists(id: string, field: string) {
-    const branch = await this.prisma.branch.findFirst({ where: { id, deletedAt: null } });
+    const branch = await this.prisma.branch.findFirst({
+      where: { id, deletedAt: null },
+    });
     if (!branch) throw new NotFoundException(`${field} branch not found`);
   }
 
@@ -461,7 +585,9 @@ export class StockTransfersService {
     return userId ?? '00000000-0000-0000-0000-000000000000';
   }
 
-  private async generateTransferNo(tx: Prisma.TransactionClient): Promise<string> {
+  private async generateTransferNo(
+    tx: Prisma.TransactionClient,
+  ): Promise<string> {
     for (let i = 0; i < 5; i++) {
       const now = new Date();
       const y = now.getFullYear();
@@ -469,13 +595,17 @@ export class StockTransfersService {
       const d = String(now.getDate()).padStart(2, '0');
       const rand = Math.floor(100000 + Math.random() * 900000);
       const transferNo = `ST-${y}${m}${d}-${rand}`;
-      const exists = await tx.stockTransfer.findUnique({ where: { transferNo } });
+      const exists = await tx.stockTransfer.findUnique({
+        where: { transferNo },
+      });
       if (!exists) return transferNo;
     }
     throw new BadRequestException('Failed to generate transfer number');
   }
 
-  private async generateShipmentNo(tx: Prisma.TransactionClient): Promise<string> {
+  private async generateShipmentNo(
+    tx: Prisma.TransactionClient,
+  ): Promise<string> {
     for (let i = 0; i < 5; i++) {
       const now = new Date();
       const y = now.getFullYear();

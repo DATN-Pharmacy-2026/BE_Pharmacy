@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { NotificationEvent, NotificationDeliveryStatus } from '.prisma/client/reporting';
+import {
+  NotificationEvent,
+  NotificationDeliveryStatus,
+} from '.prisma/client/reporting';
 import {
   EMAIL_PROVIDER_CONSOLE,
   EMAIL_PROVIDER_SMTP,
@@ -24,7 +27,9 @@ export class NotificationEmailService {
     const emailEnabled =
       `${process.env.NOTIFICATION_EMAIL_ENABLED ?? 'false'}`.toLowerCase() ===
       'true';
-    const provider = (process.env.NOTIFICATION_EMAIL_PROVIDER ?? 'console').toLowerCase();
+    const provider = (
+      process.env.NOTIFICATION_EMAIL_PROVIDER ?? 'console'
+    ).toLowerCase();
 
     if (!emailEnabled) {
       return {
@@ -57,10 +62,12 @@ export class NotificationEmailService {
 
     const host = process.env.SMTP_HOST;
     const port = Number(process.env.SMTP_PORT ?? '587');
-    const secure = `${process.env.SMTP_SECURE ?? 'false'}`.toLowerCase() === 'true';
+    const secure =
+      `${process.env.SMTP_SECURE ?? 'false'}`.toLowerCase() === 'true';
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM ?? 'Pharmacy ERP <no-reply@pharmacy.local>';
+    const from =
+      process.env.SMTP_FROM ?? 'Pharmacy ERP <no-reply@pharmacy.local>';
 
     if (!host || !user || !pass) {
       return {

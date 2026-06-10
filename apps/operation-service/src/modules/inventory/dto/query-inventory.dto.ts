@@ -1,44 +1,76 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class QueryInventoryDto {
   @ApiPropertyOptional({ default: 1 })
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page: number = 1;
 
   @ApiPropertyOptional({ default: 20, maximum: 100 })
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
   limit: number = 20;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   productId?: string;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   batchId?: string;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   warehouseId?: string;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   locationId?: string;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   branchId?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsDateString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
   expiryDateFrom?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsDateString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
   expiryDateTo?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsDateString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
   expiringBefore?: string;
 
-  @ApiPropertyOptional() @IsOptional() @Type(() => Boolean) @IsBoolean()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
   hasAvailableQuantity?: boolean;
 
-  @ApiPropertyOptional({ enum: ['updatedAt', 'expiryDate', 'quantityAvailable'] })
+  @ApiPropertyOptional({
+    enum: ['updatedAt', 'expiryDate', 'quantityAvailable'],
+  })
   @IsOptional()
   @IsString()
   sortBy?: string;

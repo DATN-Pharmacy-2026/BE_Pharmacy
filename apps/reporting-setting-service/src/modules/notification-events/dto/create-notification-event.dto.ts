@@ -12,12 +12,18 @@ export class CreateNotificationEventDto {
   @IsEnum(NotificationEventType)
   type!: NotificationEventType;
 
-  @ApiPropertyOptional({ enum: NotificationChannel, default: NotificationChannel.IN_APP })
+  @ApiPropertyOptional({
+    enum: NotificationChannel,
+    default: NotificationChannel.IN_APP,
+  })
   @IsOptional()
   @IsEnum(NotificationChannel)
   channel?: NotificationChannel;
 
-  @ApiPropertyOptional({ enum: NotificationSeverity, default: NotificationSeverity.INFO })
+  @ApiPropertyOptional({
+    enum: NotificationSeverity,
+    default: NotificationSeverity.INFO,
+  })
   @IsOptional()
   @IsEnum(NotificationSeverity)
   severity?: NotificationSeverity;
@@ -77,7 +83,10 @@ export class CreateNotificationEventDto {
   @IsOptional()
   payload?: unknown;
 
-  @ApiPropertyOptional({ enum: NotificationEventStatus, default: NotificationEventStatus.PENDING })
+  @ApiPropertyOptional({
+    enum: NotificationEventStatus,
+    default: NotificationEventStatus.PENDING,
+  })
   @IsOptional()
   @IsEnum(NotificationEventStatus)
   status?: NotificationEventStatus;

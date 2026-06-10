@@ -4,11 +4,17 @@ import { PaymentGatewayProvider } from '.prisma/client/commerce';
 @Injectable()
 export class PaymentGatewayConfigService {
   isSandbox() {
-    return `${process.env.PAYMENT_GATEWAY_SANDBOX ?? 'true'}`.toLowerCase() === 'true';
+    return (
+      `${process.env.PAYMENT_GATEWAY_SANDBOX ?? 'true'}`.toLowerCase() ===
+      'true'
+    );
   }
 
   isGatewayEnabled() {
-    return `${process.env.PAYMENT_GATEWAY_ENABLED ?? 'false'}`.toLowerCase() === 'true';
+    return (
+      `${process.env.PAYMENT_GATEWAY_ENABLED ?? 'false'}`.toLowerCase() ===
+      'true'
+    );
   }
 
   isProviderEnabled(provider: PaymentGatewayProvider) {

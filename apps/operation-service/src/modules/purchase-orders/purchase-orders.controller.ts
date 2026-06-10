@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
@@ -48,7 +60,10 @@ export class PurchaseOrdersController {
   @Patch(':id')
   @UseGuards(PermissionsGuard)
   @Permissions('purchase_order.update')
-  update(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdatePurchaseOrderDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdatePurchaseOrderDto,
+  ) {
     return this.purchaseOrdersService.update(id, dto);
   }
 

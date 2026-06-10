@@ -8,7 +8,10 @@ export class MarkNotificationReadDto {
   @IsDateString()
   readAt?: string;
 
-  @ApiPropertyOptional({ enum: NotificationEventStatus, default: NotificationEventStatus.READ })
+  @ApiPropertyOptional({
+    enum: NotificationEventStatus,
+    default: NotificationEventStatus.READ,
+  })
   @IsOptional()
   @IsEnum(NotificationEventStatus)
   status?: NotificationEventStatus;

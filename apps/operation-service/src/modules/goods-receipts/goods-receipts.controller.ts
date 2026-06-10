@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
@@ -48,21 +60,30 @@ export class GoodsReceiptsController {
   @Patch(':id')
   @UseGuards(PermissionsGuard)
   @Permissions('goods_receipt.update')
-  update(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateGoodsReceiptDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateGoodsReceiptDto,
+  ) {
     return this.goodsReceiptsService.update(id, dto);
   }
 
   @Patch(':id/status')
   @UseGuards(PermissionsGuard)
   @Permissions('goods_receipt.receive')
-  updateStatus(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateGoodsReceiptStatusDto) {
+  updateStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateGoodsReceiptStatusDto,
+  ) {
     return this.goodsReceiptsService.updateStatus(id, dto);
   }
 
   @Post(':id/post-inventory')
   @UseGuards(PermissionsGuard)
   @Permissions('goods_receipt.receive')
-  postInventory(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: Request) {
+  postInventory(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: Request,
+  ) {
     return this.goodsReceiptsService.postInventory(id, req);
   }
 

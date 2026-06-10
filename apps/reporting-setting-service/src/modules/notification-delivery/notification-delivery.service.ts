@@ -33,13 +33,22 @@ export class NotificationDeliveryService {
   ) {}
 
   async listAttempts(query: QueryDeliveryAttemptsDto) {
-    const { page = 1, limit = 20, notificationEventId, channel, status, provider, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      notificationEventId,
+      channel,
+      status,
+      provider,
+      dateFrom,
+      dateTo,
+    } = query;
     const where: Prisma.NotificationDeliveryAttemptWhereInput = {
       ...(notificationEventId ? { notificationEventId } : {}),
       ...(channel ? { channel } : {}),
       ...(status ? { status } : {}),
       ...(provider ? { provider } : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             attemptedAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -71,22 +80,37 @@ export class NotificationDeliveryService {
     return attempt;
   }
 
-  async deliverEvent(notificationEventId: string, dto: DeliverNotificationDto = {}) {
-    const event = await this.notificationEventsService.findOne(notificationEventId);
+  async deliverEvent(
+    notificationEventId: string,
+    dto: DeliverNotificationDto = {},
+  ) {
+    const event =
+      await this.notificationEventsService.findOne(notificationEventId);
     const channels = dto.channels?.length ? dto.channels : [event.channel];
     const attempts: Array<{ status: NotificationDeliveryStatus }> = [];
     for (const channel of channels) {
-      const preferenceResult = await this.notificationPreferenceResolverService.isChannelEnabledForEvent(event, channel);
+      const preferenceResult =
+        await this.notificationPreferenceResolverService.isChannelEnabledForEvent(
+          event,
+          channel,
+        );
       const pending = await this.prisma.notificationDeliveryAttempt.create({
         data: {
           notificationEventId: event.id,
           channel,
           status: NotificationDeliveryStatus.PENDING,
-          provider: channel === NotificationChannel.EMAIL ? (process.env.NOTIFICATION_EMAIL_PROVIDER ?? 'console') : 'websocket',
+          provider:
+            channel === NotificationChannel.EMAIL
+              ? (process.env.NOTIFICATION_EMAIL_PROVIDER ?? 'console')
+              : 'websocket',
           recipient:
             channel === NotificationChannel.EMAIL
-              ? (dto.recipientEmail ?? this.readRecipientEmailFromPayload(event.payload))
-              : (event.recipientUserId ?? event.branchId ?? event.warehouseId ?? null),
+              ? (dto.recipientEmail ??
+                this.readRecipientEmailFromPayload(event.payload))
+              : (event.recipientUserId ??
+                event.branchId ??
+                event.warehouseId ??
+                null),
         },
       });
 
@@ -143,23 +167,33 @@ export class NotificationDeliveryService {
     };
   }
 
-  async deliverEventSafely(notificationEventId: string, dto: DeliverNotificationDto = {}) {
+  async deliverEventSafely(
+    notificationEventId: string,
+    dto: DeliverNotificationDto = {},
+  ) {
     try {
       return await this.deliverEvent(notificationEventId, dto);
     } catch {
       return {
-        notificationEvent: await this.notificationEventsService.findOne(notificationEventId),
+        notificationEvent:
+          await this.notificationEventsService.findOne(notificationEventId),
         attempts: [],
-        summary: { requested: dto.channels?.length ?? 0, sent: 0, delivered: 0, failed: 1, skipped: 0 },
+        summary: {
+          requested: dto.channels?.length ?? 0,
+          sent: 0,
+          delivered: 0,
+          failed: 1,
+          skipped: 0,
+        },
       };
     }
   }
 
   async sendTestNotification(dto: SendTestNotificationDto) {
     const createdEvent = await this.notificationEventsService.create({
-      type: 'CUSTOM' as any,
+      type: 'CUSTOM',
       channel: dto.channel,
-      severity: 'INFO' as any,
+      severity: 'INFO',
       title: dto.title,
       message: dto.message,
       recipientUserId: dto.recipientUserId,
@@ -216,13 +250,17 @@ export class NotificationDeliveryService {
           'EMAIL delivery requires recipientEmail if no safe email exists in payload',
         );
       }
-      const renderContext = this.notificationTemplateRendererService.buildContextFromNotificationEvent(event);
-      const rendered = await this.notificationTemplateRendererService.renderByEventType(
-        event.type,
-        channel,
-        'vi',
-        renderContext,
-      );
+      const renderContext =
+        this.notificationTemplateRendererService.buildContextFromNotificationEvent(
+          event,
+        );
+      const rendered =
+        await this.notificationTemplateRendererService.renderByEventType(
+          event.type,
+          channel,
+          'vi',
+          renderContext,
+        );
       return this.notificationEmailService.sendEmail(event, recipientEmail, {
         subject: rendered.subject || event.title,
         message: rendered.message || event.message,
@@ -230,20 +268,29 @@ export class NotificationDeliveryService {
       });
     }
 
-    if (channel === NotificationChannel.WEBSOCKET || channel === NotificationChannel.IN_APP) {
-      const renderContext = this.notificationTemplateRendererService.buildContextFromNotificationEvent(event);
-      const rendered = await this.notificationTemplateRendererService.renderByEventType(
-        event.type,
-        channel,
-        'vi',
-        renderContext,
-      );
+    if (
+      channel === NotificationChannel.WEBSOCKET ||
+      channel === NotificationChannel.IN_APP
+    ) {
+      const renderContext =
+        this.notificationTemplateRendererService.buildContextFromNotificationEvent(
+          event,
+        );
+      const rendered =
+        await this.notificationTemplateRendererService.renderByEventType(
+          event.type,
+          channel,
+          'vi',
+          renderContext,
+        );
       this.notificationWebsocketService.emitNotificationEvent({
         ...event,
         title: rendered.title || event.title,
         message: rendered.message || event.message,
         payload: {
-          ...(event.payload && typeof event.payload === 'object' ? event.payload : {}),
+          ...(event.payload && typeof event.payload === 'object'
+            ? event.payload
+            : {}),
           renderedSubject: rendered.subject,
           renderedTitle: rendered.title,
           renderedMessage: rendered.message,
@@ -276,8 +323,9 @@ export class NotificationDeliveryService {
           deliveredAt: new Date(),
         },
       });
-      const event = await this.notificationEventsService.findOne(notificationEventId);
-      this.notificationWebsocketService.emitDelivered(event as any);
+      const event =
+        await this.notificationEventsService.findOne(notificationEventId);
+      this.notificationWebsocketService.emitDelivered(event);
     }
   }
 
@@ -287,13 +335,23 @@ export class NotificationDeliveryService {
     return typeof val === 'string' ? val : undefined;
   }
 
-  private summarizeAttempts(requested: number, attempts: Array<{ status: NotificationDeliveryStatus }>) {
+  private summarizeAttempts(
+    requested: number,
+    attempts: Array<{ status: NotificationDeliveryStatus }>,
+  ) {
     return {
       requested,
-      sent: attempts.filter((a) => a.status === NotificationDeliveryStatus.SENT).length,
-      delivered: attempts.filter((a) => a.status === NotificationDeliveryStatus.DELIVERED).length,
-      failed: attempts.filter((a) => a.status === NotificationDeliveryStatus.FAILED).length,
-      skipped: attempts.filter((a) => a.status === NotificationDeliveryStatus.SKIPPED).length,
+      sent: attempts.filter((a) => a.status === NotificationDeliveryStatus.SENT)
+        .length,
+      delivered: attempts.filter(
+        (a) => a.status === NotificationDeliveryStatus.DELIVERED,
+      ).length,
+      failed: attempts.filter(
+        (a) => a.status === NotificationDeliveryStatus.FAILED,
+      ).length,
+      skipped: attempts.filter(
+        (a) => a.status === NotificationDeliveryStatus.SKIPPED,
+      ).length,
     };
   }
 }

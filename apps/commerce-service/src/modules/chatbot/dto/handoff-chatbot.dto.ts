@@ -24,4 +24,3 @@ export class HandoffChatbotDto {
   @MaxLength(1500)
   question!: string;
 }
-

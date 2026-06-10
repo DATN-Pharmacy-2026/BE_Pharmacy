@@ -11,7 +11,9 @@ export class EventSubscriberService {
   }
 
   async dispatch(event: EventEnvelope) {
-    const matched = this.handlers.filter((h) => h.eventTypes.includes(event.eventType));
+    const matched = this.handlers.filter((h) =>
+      h.eventTypes.includes(event.eventType),
+    );
     for (const handler of matched) {
       await handler.handle(event);
     }

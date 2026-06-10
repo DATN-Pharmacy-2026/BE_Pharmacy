@@ -64,6 +64,3 @@ describe('Operation Demo API', () => {
     expect([200, 401, 403]).toContain(response.status);
   });
 });
-
-
-

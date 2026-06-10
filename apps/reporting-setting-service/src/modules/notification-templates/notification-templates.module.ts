@@ -7,7 +7,10 @@ import { NotificationTemplatesService } from './notification-templates.service';
 @Module({
   imports: [AuditLogsModule],
   controllers: [NotificationTemplatesController],
-  providers: [NotificationTemplatesService, NotificationTemplateRendererService],
+  providers: [
+    NotificationTemplatesService,
+    NotificationTemplateRendererService,
+  ],
   exports: [NotificationTemplatesService, NotificationTemplateRendererService],
 })
 export class NotificationTemplatesModule {}

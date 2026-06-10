@@ -1,5 +1,13 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { NotificationChannel, NotificationEventType, Prisma } from '.prisma/client/reporting';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  NotificationChannel,
+  NotificationEventType,
+  Prisma,
+} from '.prisma/client/reporting';
 import { AuditLogWriterService } from '../audit-logs/audit-log-writer.service';
 import { ReportingPrismaService } from '../../prisma/reporting-prisma.service';
 import { CreateNotificationTemplateDto } from './dto/create-notification-template.dto';
@@ -18,7 +26,16 @@ export class NotificationTemplatesService {
   ) {}
 
   async findAll(query: QueryNotificationTemplatesDto) {
-    const { page = 1, limit = 20, code, eventType, channel, locale, enabled, isDefault } = query;
+    const {
+      page = 1,
+      limit = 20,
+      code,
+      eventType,
+      channel,
+      locale,
+      enabled,
+      isDefault,
+    } = query;
     const where: Prisma.NotificationTemplateWhereInput = {
       ...(code ? { code: { contains: code, mode: 'insensitive' } } : {}),
       ...(eventType ? { eventType } : {}),
@@ -38,11 +55,16 @@ export class NotificationTemplatesService {
       this.prisma.notificationTemplate.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
-    const found = await this.prisma.notificationTemplate.findUnique({ where: { id } });
+    const found = await this.prisma.notificationTemplate.findUnique({
+      where: { id },
+    });
     if (!found) throw new NotFoundException('notification template not found');
     return found;
   }
@@ -50,14 +72,21 @@ export class NotificationTemplatesService {
   async create(dto: CreateNotificationTemplateDto) {
     try {
       if (dto.isDefault) {
-        await this.clearDefaultForScope(dto.eventType, dto.channel, dto.locale ?? DEFAULT_NOTIFICATION_LOCALE);
+        await this.clearDefaultForScope(
+          dto.eventType,
+          dto.channel,
+          dto.locale ?? DEFAULT_NOTIFICATION_LOCALE,
+        );
       }
 
       const created = await this.prisma.notificationTemplate.create({
         data: {
           ...dto,
           locale: dto.locale ?? DEFAULT_NOTIFICATION_LOCALE,
-          variables: dto.variables === undefined ? undefined : (dto.variables as Prisma.InputJsonValue),
+          variables:
+            dto.variables === undefined
+              ? undefined
+              : (dto.variables as Prisma.InputJsonValue),
           enabled: dto.enabled ?? true,
           isDefault: dto.isDefault ?? false,
         },
@@ -74,7 +103,10 @@ export class NotificationTemplatesService {
 
       return created;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException('duplicate template code');
       }
       throw error;
@@ -85,14 +117,22 @@ export class NotificationTemplatesService {
     const existing = await this.findOne(id);
 
     if (dto.isDefault === true) {
-      await this.clearDefaultForScope(existing.eventType, existing.channel, existing.locale, id);
+      await this.clearDefaultForScope(
+        existing.eventType,
+        existing.channel,
+        existing.locale,
+        id,
+      );
     }
 
     const updated = await this.prisma.notificationTemplate.update({
       where: { id },
       data: {
         ...dto,
-        variables: dto.variables === undefined ? undefined : (dto.variables as Prisma.InputJsonValue),
+        variables:
+          dto.variables === undefined
+            ? undefined
+            : (dto.variables as Prisma.InputJsonValue),
       },
     });
 
@@ -129,7 +169,12 @@ export class NotificationTemplatesService {
     if (dto.templateCode) {
       return this.renderer.renderByTemplateCode(dto.templateCode, dto.context);
     }
-    return this.renderer.renderByEventType(dto.eventType, dto.channel, dto.locale, dto.context);
+    return this.renderer.renderByEventType(
+      dto.eventType,
+      dto.channel,
+      dto.locale,
+      dto.context,
+    );
   }
 
   async seedDefaults() {
@@ -138,7 +183,9 @@ export class NotificationTemplatesService {
     let updated = 0;
 
     for (const item of defaults) {
-      const existing = await this.prisma.notificationTemplate.findUnique({ where: { code: item.code } });
+      const existing = await this.prisma.notificationTemplate.findUnique({
+        where: { code: item.code },
+      });
       if (existing) {
         await this.prisma.notificationTemplate.update({
           where: { id: existing.id },
@@ -190,7 +237,11 @@ export class NotificationTemplatesService {
 
   private buildDefaultTemplates() {
     const locale = DEFAULT_NOTIFICATION_LOCALE;
-    const byChannels = [NotificationChannel.IN_APP, NotificationChannel.WEBSOCKET, NotificationChannel.EMAIL];
+    const byChannels = [
+      NotificationChannel.IN_APP,
+      NotificationChannel.WEBSOCKET,
+      NotificationChannel.EMAIL,
+    ];
 
     const rows: Array<{
       code: string;
@@ -214,8 +265,10 @@ export class NotificationTemplatesService {
         locale,
         subject: 'Báo cáo đã sẵn sàng',
         titleTemplate: 'Báo cáo đã xuất xong',
-        messageTemplate: 'Báo cáo {{reportType}} đã được xuất thành công. Bạn có thể tải tại {{downloadUrl}}.',
-        htmlTemplate: '<p>Báo cáo <strong>{{reportType}}</strong> đã được xuất thành công. Tải: {{downloadUrl}}</p>',
+        messageTemplate:
+          'Báo cáo {{reportType}} đã được xuất thành công. Bạn có thể tải tại {{downloadUrl}}.',
+        htmlTemplate:
+          '<p>Báo cáo <strong>{{reportType}}</strong> đã được xuất thành công. Tải: {{downloadUrl}}</p>',
         variables: { reportType: '', downloadUrl: '' },
         enabled: true,
         isDefault: true,
@@ -228,8 +281,10 @@ export class NotificationTemplatesService {
         locale,
         subject: 'Xuất báo cáo thất bại',
         titleTemplate: 'Xuất báo cáo thất bại',
-        messageTemplate: 'Báo cáo {{reportType}} xuất thất bại. Lý do: {{errorMessage}}.',
-        htmlTemplate: '<p>Báo cáo <strong>{{reportType}}</strong> thất bại. Lý do: {{errorMessage}}</p>',
+        messageTemplate:
+          'Báo cáo {{reportType}} xuất thất bại. Lý do: {{errorMessage}}.',
+        htmlTemplate:
+          '<p>Báo cáo <strong>{{reportType}}</strong> thất bại. Lý do: {{errorMessage}}</p>',
         variables: { reportType: '', errorMessage: '' },
         enabled: true,
         isDefault: true,
@@ -244,7 +299,8 @@ export class NotificationTemplatesService {
         locale,
         subject: 'Canh bao ton kho thap',
         titleTemplate: 'Tồn kho thấp',
-        messageTemplate: 'Sản phẩm {{productName}} tại chi nhánh/kho {{branchId}}{{warehouseId}} đang dưới ngưỡng tồn kho.',
+        messageTemplate:
+          'Sản phẩm {{productName}} tại chi nhánh/kho {{branchId}}{{warehouseId}} đang dưới ngưỡng tồn kho.',
         htmlTemplate: null,
         variables: { productName: '', branchId: '', warehouseId: '' },
         enabled: true,
@@ -257,7 +313,8 @@ export class NotificationTemplatesService {
         locale,
         subject: 'Canh bao lo sap het han',
         titleTemplate: 'Lo hang sap het han',
-        messageTemplate: 'Lo {{batchCode}} cua san pham {{productName}} se het han vao {{expiryDate}}.',
+        messageTemplate:
+          'Lo {{batchCode}} cua san pham {{productName}} se het han vao {{expiryDate}}.',
         htmlTemplate: null,
         variables: { batchCode: '', productName: '', expiryDate: '' },
         enabled: true,
@@ -283,7 +340,8 @@ export class NotificationTemplatesService {
         locale,
         subject: 'Canh bao hoat dong he thong',
         titleTemplate: 'Hoat dong can chu y',
-        messageTemplate: '{{actorUserId}} đã thực hiện {{action}} trên {{entityType}}.',
+        messageTemplate:
+          '{{actorUserId}} đã thực hiện {{action}} trên {{entityType}}.',
         htmlTemplate: null,
         variables: { actorUserId: '', action: '', entityType: '' },
         enabled: true,

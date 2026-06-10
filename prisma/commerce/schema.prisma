@@ -149,6 +149,7 @@ model Product {
   requiresPrescription  Boolean         @default(false)
   unit                  String
   basePrice             Decimal         @db.Decimal(18, 2)
+  minStockLevel         Int             @default(0)
   status                ProductStatus
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt

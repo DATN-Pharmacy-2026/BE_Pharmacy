@@ -40,7 +40,9 @@ export class ChatbotService {
   }
 
   ingest(documents: IngestDocumentDto[]) {
-    const map = new Map<string, RagDocument>(this.customDocuments.map((d) => [d.id, d]));
+    const map = new Map<string, RagDocument>(
+      this.customDocuments.map((d) => [d.id, d]),
+    );
     for (const doc of documents) {
       map.set(doc.id, {
         id: doc.id,
@@ -50,7 +52,11 @@ export class ChatbotService {
         source: doc.source ?? 'manual-ingest',
       });
     }
-    this.customDocuments.splice(0, this.customDocuments.length, ...map.values());
+    this.customDocuments.splice(
+      0,
+      this.customDocuments.length,
+      ...map.values(),
+    );
     return {
       message: 'Ingest completed',
       totalDocuments: this.customDocuments.length,
@@ -204,7 +210,9 @@ export class ChatbotService {
 
   private shouldSuggestHandoff(query: string, lowConfidence: boolean): boolean {
     const q = query.toLowerCase();
-    return lowConfidence || q.includes('duoc si') || this.shouldEscalateMedical(q);
+    return (
+      lowConfidence || q.includes('duoc si') || this.shouldEscalateMedical(q)
+    );
   }
 
   private toSnippet(text: string): string {

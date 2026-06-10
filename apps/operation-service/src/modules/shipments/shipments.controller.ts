@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { QueryShipmentsDto } from './dto/query-shipments.dto';
@@ -22,7 +31,9 @@ export class ShipmentsController {
   @Get('stock-transfer/:stockTransferId')
   @UseGuards(PermissionsGuard)
   @Permissions('shipment.view')
-  findByStockTransferId(@Param('stockTransferId', new ParseUUIDPipe()) stockTransferId: string) {
+  findByStockTransferId(
+    @Param('stockTransferId', new ParseUUIDPipe()) stockTransferId: string,
+  ) {
     return this.shipmentsService.findByStockTransferId(stockTransferId);
   }
 
@@ -36,7 +47,10 @@ export class ShipmentsController {
   @Patch(':id/status')
   @UseGuards(PermissionsGuard)
   @Permissions('shipment.update')
-  updateStatus(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateShipmentStatusDto) {
+  updateStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateShipmentStatusDto,
+  ) {
     return this.shipmentsService.updateStatus(id, dto);
   }
 }

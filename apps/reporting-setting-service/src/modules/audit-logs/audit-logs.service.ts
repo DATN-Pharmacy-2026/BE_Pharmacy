@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '.prisma/client/reporting';
 import { ReportingPrismaService } from '../../prisma/reporting-prisma.service';
 import { AuditLogWriterService } from './audit-log-writer.service';
@@ -46,12 +50,16 @@ export class AuditLogsService {
       ...(actorUserId ? { actorUserId } : {}),
       ...(branchId ? { branchId } : {}),
       ...(warehouseId ? { warehouseId } : {}),
-      ...(serviceName ? { serviceName: { contains: serviceName, mode: 'insensitive' } } : {}),
+      ...(serviceName
+        ? { serviceName: { contains: serviceName, mode: 'insensitive' } }
+        : {}),
       ...(module ? { module: { contains: module, mode: 'insensitive' } } : {}),
       ...(action ? { action: { contains: action, mode: 'insensitive' } } : {}),
-      ...(entityType ? { entityType: { contains: entityType, mode: 'insensitive' } } : {}),
+      ...(entityType
+        ? { entityType: { contains: entityType, mode: 'insensitive' } }
+        : {}),
       ...(entityId ? { entityId } : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -62,10 +70,17 @@ export class AuditLogsService {
       ...(normalizedSearch
         ? {
             OR: [
-              { serviceName: { contains: normalizedSearch, mode: 'insensitive' } },
+              {
+                serviceName: {
+                  contains: normalizedSearch,
+                  mode: 'insensitive',
+                },
+              },
               { module: { contains: normalizedSearch, mode: 'insensitive' } },
               { action: { contains: normalizedSearch, mode: 'insensitive' } },
-              { entityType: { contains: normalizedSearch, mode: 'insensitive' } },
+              {
+                entityType: { contains: normalizedSearch, mode: 'insensitive' },
+              },
             ],
           }
         : {}),
@@ -105,7 +120,11 @@ export class AuditLogsService {
     return this.maskAuditLog(log);
   }
 
-  async findByEntity(entityType: string, entityId: string, query: QueryAuditLogsDto) {
+  async findByEntity(
+    entityType: string,
+    entityId: string,
+    query: QueryAuditLogsDto,
+  ) {
     return this.findAll({ ...query, entityType, entityId });
   }
 
@@ -113,7 +132,9 @@ export class AuditLogsService {
     return this.findAll({ ...query, actorUserId });
   }
 
-  private maskAuditLog<T extends { beforeData: unknown; afterData: unknown }>(log: T): T {
+  private maskAuditLog<T extends { beforeData: unknown; afterData: unknown }>(
+    log: T,
+  ): T {
     return {
       ...log,
       beforeData: this.auditLogWriterService.maskSensitiveData(log.beforeData),

@@ -89,7 +89,11 @@ export class WarehousesService {
     if (dto.branchId) await this.branchesService.findOne(dto.branchId);
     const resolvedType =
       dto.type ??
-      (dto.isCentral ? WarehouseType.CENTRAL : dto.branchId ? WarehouseType.BRANCH : WarehouseType.CENTRAL);
+      (dto.isCentral
+        ? WarehouseType.CENTRAL
+        : dto.branchId
+          ? WarehouseType.BRANCH
+          : WarehouseType.CENTRAL);
     try {
       return await this.prisma.warehouse.create({
         data: {

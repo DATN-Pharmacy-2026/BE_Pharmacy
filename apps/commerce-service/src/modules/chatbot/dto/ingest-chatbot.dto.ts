@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMaxSize, IsArray, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class IngestDocumentDto {
@@ -39,4 +46,3 @@ export class IngestChatbotDto {
   @Type(() => IngestDocumentDto)
   documents!: IngestDocumentDto[];
 }
-

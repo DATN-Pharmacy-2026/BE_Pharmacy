@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { DeliverNotificationDto } from './dto/deliver-notification.dto';
 import { QueryDeliveryAttemptsDto } from './dto/query-delivery-attempts.dto';
@@ -24,10 +32,14 @@ export class NotificationDeliveryController {
 
   @Post('events/:notificationEventId/deliver')
   deliverEvent(
-    @Param('notificationEventId', new ParseUUIDPipe()) notificationEventId: string,
+    @Param('notificationEventId', new ParseUUIDPipe())
+    notificationEventId: string,
     @Body() dto: DeliverNotificationDto,
   ) {
-    return this.notificationDeliveryService.deliverEvent(notificationEventId, dto);
+    return this.notificationDeliveryService.deliverEvent(
+      notificationEventId,
+      dto,
+    );
   }
 
   @Post('test')

@@ -1,7 +1,17 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { AllocationOrderType, AllocationStatus } from '.prisma/client/operation';
+import {
+  AllocationOrderType,
+  AllocationStatus,
+} from '.prisma/client/operation';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class QueryFefoAllocationsDto {
   @ApiPropertyOptional({ default: 1 })
@@ -19,39 +29,57 @@ export class QueryFefoAllocationsDto {
   @Max(100)
   limit: number = 20;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   productId?: string;
 
-  @ApiPropertyOptional({ enum: AllocationOrderType }) @IsOptional() @IsEnum(AllocationOrderType)
+  @ApiPropertyOptional({ enum: AllocationOrderType })
+  @IsOptional()
+  @IsEnum(AllocationOrderType)
   orderType?: AllocationOrderType;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   orderId?: string;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   orderItemId?: string;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   warehouseId?: string;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   branchId?: string;
 
-  @ApiPropertyOptional() @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   batchId?: string;
 
-  @ApiPropertyOptional({ enum: AllocationStatus }) @IsOptional() @IsEnum(AllocationStatus)
+  @ApiPropertyOptional({ enum: AllocationStatus })
+  @IsOptional()
+  @IsEnum(AllocationStatus)
   status?: AllocationStatus;
 
-  @ApiPropertyOptional() @IsOptional() @IsDateString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
   expiryDateFrom?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsDateString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
   expiryDateTo?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsDateString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
   dateFrom?: string;
 
-  @ApiPropertyOptional() @IsOptional() @IsDateString()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
   dateTo?: string;
 }

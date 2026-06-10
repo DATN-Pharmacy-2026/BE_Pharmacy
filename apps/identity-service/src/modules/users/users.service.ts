@@ -90,21 +90,35 @@ export class UsersService {
     });
 
     if (dto.roleCode || dto.roleIds?.length) {
-      await this.assignRoles(user.id, { roleCode: dto.roleCode, roleIds: dto.roleIds });
+      await this.assignRoles(user.id, {
+        roleCode: dto.roleCode,
+        roleIds: dto.roleIds,
+      });
     }
 
     if (dto.branchId) {
       await this.prisma.userBranchAccess.upsert({
         where: { userId_branchId: { userId: user.id, branchId: dto.branchId } },
-        create: { userId: user.id, branchId: dto.branchId, status: AccessStatus.ACTIVE, isDefaultBranch: true },
+        create: {
+          userId: user.id,
+          branchId: dto.branchId,
+          status: AccessStatus.ACTIVE,
+          isDefaultBranch: true,
+        },
         update: { status: AccessStatus.ACTIVE, isDefaultBranch: true },
       });
     }
 
     if (dto.warehouseId) {
       await this.prisma.userWarehouseAccess.upsert({
-        where: { userId_warehouseId: { userId: user.id, warehouseId: dto.warehouseId } },
-        create: { userId: user.id, warehouseId: dto.warehouseId, status: AccessStatus.ACTIVE },
+        where: {
+          userId_warehouseId: { userId: user.id, warehouseId: dto.warehouseId },
+        },
+        create: {
+          userId: user.id,
+          warehouseId: dto.warehouseId,
+          status: AccessStatus.ACTIVE,
+        },
         update: { status: AccessStatus.ACTIVE },
       });
     }
@@ -166,7 +180,8 @@ export class UsersService {
   async resetPassword(id: string, dto: ResetPasswordDto) {
     await this.findOne(id);
     const rawPassword =
-      dto.newPassword || this.configService.get<string>('auth.defaultPassword', 'admin123');
+      dto.newPassword ||
+      this.configService.get<string>('auth.defaultPassword', 'admin123');
 
     const passwordHash = await this.normalizePasswordHash(rawPassword);
     await this.prisma.user.update({

@@ -28,15 +28,21 @@ export class NotificationEventPublisherService {
     },
   ) {
     let created = input as any;
-    if (!options?.force && input.sourceService && input.sourceEntityType && input.sourceEntityId) {
-      const existing = await this.notificationEventsService.findExistingBySource({
-        type: input.type,
-        sourceService: input.sourceService,
-        sourceModule: input.sourceModule,
-        sourceEntityType: input.sourceEntityType,
-        sourceEntityId: input.sourceEntityId,
-        recipientUserId: input.recipientUserId,
-      });
+    if (
+      !options?.force &&
+      input.sourceService &&
+      input.sourceEntityType &&
+      input.sourceEntityId
+    ) {
+      const existing =
+        await this.notificationEventsService.findExistingBySource({
+          type: input.type,
+          sourceService: input.sourceService,
+          sourceModule: input.sourceModule,
+          sourceEntityType: input.sourceEntityType,
+          sourceEntityId: input.sourceEntityId,
+          recipientUserId: input.recipientUserId,
+        });
       if (existing) {
         created = existing;
       } else {
@@ -47,11 +53,12 @@ export class NotificationEventPublisherService {
     }
 
     if (options?.deliverImmediately) {
-      const deliverPromise = this.notificationDeliveryService.deliverEventSafely(created.id, {
-        channels: options.channels,
-        recipientEmail: options.recipientEmail,
-        dryRun: options.dryRun,
-      });
+      const deliverPromise =
+        this.notificationDeliveryService.deliverEventSafely(created.id, {
+          channels: options.channels,
+          recipientEmail: options.recipientEmail,
+          dryRun: options.dryRun,
+        });
       if (options.strict) {
         await deliverPromise;
       } else {
@@ -61,75 +68,101 @@ export class NotificationEventPublisherService {
     return created;
   }
 
-  async publishReportExportCompleted(params: {
-    reportJobId: string;
-    reportExportId: string;
-    downloadUrl: string;
-    reportType: string;
-    recipientUserId?: string | null;
-    branchId?: string | null;
-    warehouseId?: string | null;
-  }, options?: { deliverImmediately?: boolean; recipientEmail?: string; channels?: NotificationChannel[]; dryRun?: boolean }) {
-    return this.publish({
-      type: NotificationEventType.REPORT_EXPORT_COMPLETED,
-      channel: NotificationChannel.IN_APP,
-      severity: NotificationSeverity.SUCCESS,
-      title: 'Report export completed',
-      message: 'Your report export is ready for download.',
-      recipientUserId: params.recipientUserId ?? undefined,
-      branchId: params.branchId ?? undefined,
-      warehouseId: params.warehouseId ?? undefined,
-      sourceService: 'reporting-setting-service',
-      sourceModule: 'report-exports',
-      sourceEntityType: 'ReportExport',
-      sourceEntityId: params.reportExportId,
-      payload: {
-        reportJobId: params.reportJobId,
-        reportExportId: params.reportExportId,
-        reportType: params.reportType,
-        downloadUrl: params.downloadUrl,
-        branchId: params.branchId,
-        warehouseId: params.warehouseId,
-        requestedByUserId: params.recipientUserId,
+  async publishReportExportCompleted(
+    params: {
+      reportJobId: string;
+      reportExportId: string;
+      downloadUrl: string;
+      reportType: string;
+      recipientUserId?: string | null;
+      branchId?: string | null;
+      warehouseId?: string | null;
+    },
+    options?: {
+      deliverImmediately?: boolean;
+      recipientEmail?: string;
+      channels?: NotificationChannel[];
+      dryRun?: boolean;
+    },
+  ) {
+    return this.publish(
+      {
+        type: NotificationEventType.REPORT_EXPORT_COMPLETED,
+        channel: NotificationChannel.IN_APP,
+        severity: NotificationSeverity.SUCCESS,
+        title: 'Report export completed',
+        message: 'Your report export is ready for download.',
+        recipientUserId: params.recipientUserId ?? undefined,
+        branchId: params.branchId ?? undefined,
+        warehouseId: params.warehouseId ?? undefined,
+        sourceService: 'reporting-setting-service',
+        sourceModule: 'report-exports',
+        sourceEntityType: 'ReportExport',
+        sourceEntityId: params.reportExportId,
+        payload: {
+          reportJobId: params.reportJobId,
+          reportExportId: params.reportExportId,
+          reportType: params.reportType,
+          downloadUrl: params.downloadUrl,
+          branchId: params.branchId,
+          warehouseId: params.warehouseId,
+          requestedByUserId: params.recipientUserId,
+        },
+        status: NotificationEventStatus.PENDING,
       },
-      status: NotificationEventStatus.PENDING,
-    }, {
-      deliverImmediately: options?.deliverImmediately ?? false,
-      channels: options?.channels ?? [NotificationChannel.IN_APP],
-      recipientEmail: options?.recipientEmail,
-      dryRun: options?.dryRun,
-    });
+      {
+        deliverImmediately: options?.deliverImmediately ?? false,
+        channels: options?.channels ?? [NotificationChannel.IN_APP],
+        recipientEmail: options?.recipientEmail,
+        dryRun: options?.dryRun,
+      },
+    );
   }
 
-  async publishReportExportFailed(params: {
-    reportJobId: string;
-    reportType: string;
-    recipientUserId?: string | null;
-    branchId?: string | null;
-    warehouseId?: string | null;
-    errorMessage: string;
-  }, options?: { deliverImmediately?: boolean; recipientEmail?: string; channels?: NotificationChannel[]; dryRun?: boolean }) {
-    return this.publish({
-      type: NotificationEventType.REPORT_EXPORT_FAILED,
-      channel: NotificationChannel.IN_APP,
-      severity: NotificationSeverity.ERROR,
-      title: 'Report export failed',
-      message: params.errorMessage,
-      recipientUserId: params.recipientUserId ?? undefined,
-      branchId: params.branchId ?? undefined,
-      warehouseId: params.warehouseId ?? undefined,
-      sourceService: 'reporting-setting-service',
-      sourceModule: 'report-exports',
-      sourceEntityType: 'ReportJob',
-      sourceEntityId: params.reportJobId,
-      payload: { reportJobId: params.reportJobId, reportType: params.reportType, errorMessage: params.errorMessage },
-      status: NotificationEventStatus.PENDING,
-    }, {
-      deliverImmediately: options?.deliverImmediately ?? false,
-      channels: options?.channels ?? [NotificationChannel.IN_APP],
-      recipientEmail: options?.recipientEmail,
-      dryRun: options?.dryRun,
-    });
+  async publishReportExportFailed(
+    params: {
+      reportJobId: string;
+      reportType: string;
+      recipientUserId?: string | null;
+      branchId?: string | null;
+      warehouseId?: string | null;
+      errorMessage: string;
+    },
+    options?: {
+      deliverImmediately?: boolean;
+      recipientEmail?: string;
+      channels?: NotificationChannel[];
+      dryRun?: boolean;
+    },
+  ) {
+    return this.publish(
+      {
+        type: NotificationEventType.REPORT_EXPORT_FAILED,
+        channel: NotificationChannel.IN_APP,
+        severity: NotificationSeverity.ERROR,
+        title: 'Report export failed',
+        message: params.errorMessage,
+        recipientUserId: params.recipientUserId ?? undefined,
+        branchId: params.branchId ?? undefined,
+        warehouseId: params.warehouseId ?? undefined,
+        sourceService: 'reporting-setting-service',
+        sourceModule: 'report-exports',
+        sourceEntityType: 'ReportJob',
+        sourceEntityId: params.reportJobId,
+        payload: {
+          reportJobId: params.reportJobId,
+          reportType: params.reportType,
+          errorMessage: params.errorMessage,
+        },
+        status: NotificationEventStatus.PENDING,
+      },
+      {
+        deliverImmediately: options?.deliverImmediately ?? false,
+        channels: options?.channels ?? [NotificationChannel.IN_APP],
+        recipientEmail: options?.recipientEmail,
+        dryRun: options?.dryRun,
+      },
+    );
   }
 
   async publishAuditAlert(input: {

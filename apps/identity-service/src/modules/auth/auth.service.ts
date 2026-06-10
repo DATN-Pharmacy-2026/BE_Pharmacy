@@ -8,7 +8,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { createHash, randomBytes } from 'crypto';
-import { AccessStatus, RefreshToken, UserStatus } from '.prisma/client/identity';
+import {
+  AccessStatus,
+  RefreshToken,
+  UserStatus,
+} from '.prisma/client/identity';
 import { AuthenticatedUser, JwtPayload } from '@app/auth';
 import { IdentityPrismaService } from '../../prisma/identity-prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -131,7 +135,9 @@ export class AuthService {
     });
     if (existing) {
       throw new BadRequestException(
-        existing.email === email ? 'Email already exists' : 'Username already exists',
+        existing.email === email
+          ? 'Email already exists'
+          : 'Username already exists',
       );
     }
 
@@ -269,7 +275,10 @@ export class AuthService {
       });
     });
 
-    this.logger.log('Password reset token created', { userId: user.id, email: user.email });
+    this.logger.log('Password reset token created', {
+      userId: user.id,
+      email: user.email,
+    });
 
     return {
       message: 'Password reset link created',
@@ -297,7 +306,11 @@ export class AuthService {
       },
     });
 
-    if (!tokenRecord || tokenRecord.user.deletedAt || tokenRecord.user.status !== UserStatus.ACTIVE) {
+    if (
+      !tokenRecord ||
+      tokenRecord.user.deletedAt ||
+      tokenRecord.user.status !== UserStatus.ACTIVE
+    ) {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
@@ -363,15 +376,30 @@ export class AuthService {
     const activeWarehouseAccesses = fullUser.warehouseAccesses.filter(
       (entry) => entry.status === AccessStatus.ACTIVE,
     );
-    const branchScopeMode = this.resolveBranchScopeMode(authUser.roles, activeBranchAccesses.length);
-    const warehouseScopeMode = this.resolveWarehouseScopeMode(authUser.roles, activeWarehouseAccesses.length);
-    const defaultBranchId = this.resolveDefaultBranchId(activeBranchAccesses, branchScopeMode);
+    const branchScopeMode = this.resolveBranchScopeMode(
+      authUser.roles,
+      activeBranchAccesses.length,
+    );
+    const warehouseScopeMode = this.resolveWarehouseScopeMode(
+      authUser.roles,
+      activeWarehouseAccesses.length,
+    );
+    const defaultBranchId = this.resolveDefaultBranchId(
+      activeBranchAccesses,
+      branchScopeMode,
+    );
     const defaultWarehouseId = this.resolveDefaultWarehouseId(
       activeWarehouseAccesses,
       warehouseScopeMode,
     );
-    const canAccessAdmin = this.hasPermission(authUser, PERMISSION_CODES.ADMIN_ACCESS);
-    const canAccessPos = this.hasPermission(authUser, PERMISSION_CODES.POS_ACCESS);
+    const canAccessAdmin = this.hasPermission(
+      authUser,
+      PERMISSION_CODES.ADMIN_ACCESS,
+    );
+    const canAccessPos = this.hasPermission(
+      authUser,
+      PERMISSION_CODES.POS_ACCESS,
+    );
 
     return {
       id: fullUser.id,
@@ -431,7 +459,10 @@ export class AuthService {
   }
 
   private buildPasswordResetLink(token: string): string {
-    const frontendUrl = this.configService.get<string>('gateway.frontendUrl', 'http://localhost:5173');
+    const frontendUrl = this.configService.get<string>(
+      'gateway.frontendUrl',
+      'http://localhost:5173',
+    );
     const baseUrl = frontendUrl.replace(/\/+$/, '');
     return `${baseUrl}/reset-password?token=${encodeURIComponent(token)}`;
   }
@@ -485,21 +516,24 @@ export class AuthService {
       branchAccess: user.branchAccesses
         .filter((entry) => entry.status === AccessStatus.ACTIVE)
         .map((entry) => ({
-        id: entry.branchId,
-        roleId: entry.roleId,
-        status: entry.status,
-      })),
+          id: entry.branchId,
+          roleId: entry.roleId,
+          status: entry.status,
+        })),
       warehouseAccess: user.warehouseAccesses
         .filter((entry) => entry.status === AccessStatus.ACTIVE)
         .map((entry) => ({
-        id: entry.warehouseId,
-        roleId: entry.roleId,
-        status: entry.status,
-      })),
+          id: entry.warehouseId,
+          roleId: entry.roleId,
+          status: entry.status,
+        })),
     };
   }
 
-  private hasPermission(user: AuthenticatedUser, permissionCode: string): boolean {
+  private hasPermission(
+    user: AuthenticatedUser,
+    permissionCode: string,
+  ): boolean {
     return (
       user.isSystemAdmin ||
       user.roles.includes(ROLE_CODES.SUPER_ADMIN) ||
@@ -508,7 +542,10 @@ export class AuthService {
     );
   }
 
-  private resolveBranchScopeMode(roles: string[], branchCount: number): ScopeMode {
+  private resolveBranchScopeMode(
+    roles: string[],
+    branchCount: number,
+  ): ScopeMode {
     if (
       roles.includes(ROLE_CODES.SUPER_ADMIN) ||
       roles.includes(ROLE_CODES.COMPANY_ADMIN)
@@ -527,7 +564,10 @@ export class AuthService {
     return 'NONE';
   }
 
-  private resolveWarehouseScopeMode(roles: string[], warehouseCount: number): ScopeMode {
+  private resolveWarehouseScopeMode(
+    roles: string[],
+    warehouseCount: number,
+  ): ScopeMode {
     if (
       roles.includes(ROLE_CODES.SUPER_ADMIN) ||
       roles.includes(ROLE_CODES.COMPANY_ADMIN)
@@ -717,7 +757,8 @@ export class AuthService {
       .replace(/[^a-z0-9._-]/g, '')
       .replace(/^\.+|\.+$/g, '')
       .slice(0, 50);
-    const base = cleaned.length >= 3 ? cleaned : `user${Date.now().toString().slice(-6)}`;
+    const base =
+      cleaned.length >= 3 ? cleaned : `user${Date.now().toString().slice(-6)}`;
 
     const exact = await this.prisma.user.findFirst({
       where: { username: base },

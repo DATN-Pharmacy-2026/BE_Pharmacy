@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   FulfillmentStatus,
   OrderStatus,
+  PaymentMethod,
   PaymentStatus,
   Prisma,
 } from '.prisma/client/commerce';
@@ -28,8 +29,8 @@ export class OrdersService {
   ) {}
 
   private hasPermission(req: Request | undefined, permission: string): boolean {
-    const permissions = (req as Request & { user?: { permissions?: string[] } })?.user
-      ?.permissions;
+    const permissions = (req as Request & { user?: { permissions?: string[] } })
+      ?.user?.permissions;
     return Array.isArray(permissions) && permissions.includes(permission);
   }
 
@@ -55,7 +56,12 @@ export class OrdersService {
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = query;
-    const allowedSortFields = ['createdAt', 'updatedAt', 'status', 'paymentStatus'];
+    const allowedSortFields = [
+      'createdAt',
+      'updatedAt',
+      'status',
+      'paymentStatus',
+    ];
     if (!allowedSortFields.includes(sortBy)) {
       throw new BadRequestException('Invalid sort field');
     }
@@ -84,9 +90,24 @@ export class OrdersService {
         ? {
             OR: [
               { orderNo: { contains: normalizedSearch, mode: 'insensitive' } },
-              { customerName: { contains: normalizedSearch, mode: 'insensitive' } },
-              { customerPhone: { contains: normalizedSearch, mode: 'insensitive' } },
-              { shippingAddress: { contains: normalizedSearch, mode: 'insensitive' } },
+              {
+                customerName: {
+                  contains: normalizedSearch,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                customerPhone: {
+                  contains: normalizedSearch,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                shippingAddress: {
+                  contains: normalizedSearch,
+                  mode: 'insensitive',
+                },
+              },
             ],
           }
         : {}),
@@ -219,22 +240,63 @@ export class OrdersService {
       throw new ConflictException('Cancelled order status cannot be changed');
     }
 
-    if (dto.status === OrderStatus.COMPLETED && existing.status !== OrderStatus.COMPLETED) {
+    const latestPayment = existing.payments
+      .slice()
+      .sort(
+        (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
+      )[0];
+    const requestedPaymentStatus = dto.paymentStatus ?? existing.paymentStatus;
+    const isCod = latestPayment?.method === PaymentMethod.COD;
+    const completingOrder =
+      dto.status === OrderStatus.COMPLETED &&
+      existing.status !== OrderStatus.COMPLETED;
+    const nextPaymentStatus =
+      completingOrder && isCod ? PaymentStatus.PAID : requestedPaymentStatus;
+
+    if (completingOrder && nextPaymentStatus !== PaymentStatus.PAID) {
+      throw new ConflictException(
+        'Order cannot be completed before payment is paid',
+      );
+    }
+
+    if (
+      dto.status === OrderStatus.COMPLETED &&
+      existing.status !== OrderStatus.COMPLETED
+    ) {
       await this.updateOperationInventory('consume', id);
     }
-    if (dto.status === OrderStatus.CANCELLED && existing.status !== OrderStatus.CANCELLED) {
+    if (
+      dto.status === OrderStatus.CANCELLED &&
+      existing.status !== OrderStatus.CANCELLED
+    ) {
       await this.updateOperationInventory('release', id);
     }
 
-    await this.prisma.onlineOrder.update({
-      where: { id },
-      data: {
-        ...(dto.status ? { status: dto.status } : {}),
-        ...(dto.paymentStatus ? { paymentStatus: dto.paymentStatus } : {}),
-        ...(dto.fulfillmentStatus
-          ? { fulfillmentStatus: dto.fulfillmentStatus }
-          : {}),
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.onlineOrder.update({
+        where: { id },
+        data: {
+          ...(dto.status ? { status: dto.status } : {}),
+          ...(nextPaymentStatus !== existing.paymentStatus
+            ? { paymentStatus: nextPaymentStatus }
+            : {}),
+          ...(dto.fulfillmentStatus
+            ? { fulfillmentStatus: dto.fulfillmentStatus }
+            : {}),
+        },
+      });
+
+      if (nextPaymentStatus !== existing.paymentStatus) {
+        await tx.payment.updateMany({
+          where: { onlineOrderId: id },
+          data: {
+            status: nextPaymentStatus,
+            ...(nextPaymentStatus === PaymentStatus.PAID
+              ? { paidAt: new Date() }
+              : {}),
+          },
+        });
+      }
     });
 
     return this.findOne(id);

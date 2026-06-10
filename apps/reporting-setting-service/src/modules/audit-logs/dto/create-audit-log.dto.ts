@@ -34,11 +34,27 @@ export class CreateAuditLogDto {
   @IsOptional()
   entityId?: string;
 
-  @ApiPropertyOptional({ oneOf: [{ type: 'object' }, { type: 'array', items: {} }, { type: 'string' }, { type: 'number' }, { type: 'boolean' }] })
+  @ApiPropertyOptional({
+    oneOf: [
+      { type: 'object' },
+      { type: 'array', items: {} },
+      { type: 'string' },
+      { type: 'number' },
+      { type: 'boolean' },
+    ],
+  })
   @IsOptional()
   beforeData?: unknown;
 
-  @ApiPropertyOptional({ oneOf: [{ type: 'object' }, { type: 'array', items: {} }, { type: 'string' }, { type: 'number' }, { type: 'boolean' }] })
+  @ApiPropertyOptional({
+    oneOf: [
+      { type: 'object' },
+      { type: 'array', items: {} },
+      { type: 'string' },
+      { type: 'number' },
+      { type: 'boolean' },
+    ],
+  })
   @IsOptional()
   afterData?: unknown;
 

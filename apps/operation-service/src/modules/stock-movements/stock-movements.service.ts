@@ -8,17 +8,34 @@ export class StockMovementsService {
   constructor(private readonly prisma: OperationPrismaService) {}
 
   async findAll(query: QueryStockMovementsDto) {
-    const { page = 1, limit = 20, productId, batchId, warehouseId, branchId, movementType, referenceType, referenceId, createdByUserId, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      productId,
+      batchId,
+      warehouseId,
+      branchId,
+      movementType,
+      referenceType,
+      referenceId,
+      createdByUserId,
+      dateFrom,
+      dateTo,
+    } = query;
     const where: Prisma.StockMovementWhereInput = {
       ...(productId ? { productId } : {}),
       ...(batchId ? { batchId } : {}),
       ...(warehouseId ? { warehouseId } : {}),
       ...(branchId ? { branchId } : {}),
       ...(movementType ? { movementType } : {}),
-      ...(referenceType ? { referenceType: { contains: referenceType, mode: 'insensitive' } } : {}),
-      ...(referenceId ? { referenceId: { contains: referenceId, mode: 'insensitive' } } : {}),
+      ...(referenceType
+        ? { referenceType: { contains: referenceType, mode: 'insensitive' } }
+        : {}),
+      ...(referenceId
+        ? { referenceId: { contains: referenceId, mode: 'insensitive' } }
+        : {}),
       ...(createdByUserId ? { createdByUserId } : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -38,11 +55,16 @@ export class StockMovementsService {
       this.prisma.stockMovement.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
-    const movement = await this.prisma.stockMovement.findUnique({ where: { id } });
+    const movement = await this.prisma.stockMovement.findUnique({
+      where: { id },
+    });
     if (!movement) throw new NotFoundException('Stock movement not found');
     return movement;
   }

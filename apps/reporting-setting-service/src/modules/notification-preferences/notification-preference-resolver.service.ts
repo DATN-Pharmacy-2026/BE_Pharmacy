@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { NotificationChannel, NotificationEventType, NotificationSeverity } from '.prisma/client/reporting';
+import {
+  NotificationChannel,
+  NotificationEventType,
+  NotificationSeverity,
+} from '.prisma/client/reporting';
 import { ReportingPrismaService } from '../../prisma/reporting-prisma.service';
 import { ResolveNotificationPreferenceDto } from './dto/resolve-notification-preference.dto';
 
@@ -31,22 +35,45 @@ export class NotificationPreferenceResolverService {
   }> {
     const matchedPreference = await this.findMatchedPreference(input);
     if (!matchedPreference) {
-      return { enabled: true, matchedPreference: null, reason: 'NO_MATCH_DEFAULT_ALLOW' };
+      return {
+        enabled: true,
+        matchedPreference: null,
+        reason: 'NO_MATCH_DEFAULT_ALLOW',
+      };
     }
 
     if (!matchedPreference.enabled) {
-      return { enabled: false, matchedPreference, reason: this.classifyMatchReason(matchedPreference, input) };
+      return {
+        enabled: false,
+        matchedPreference,
+        reason: this.classifyMatchReason(matchedPreference, input),
+      };
     }
 
     if (input.severity && matchedPreference.severityThreshold) {
-      if (SEVERITY_ORDER[input.severity] < SEVERITY_ORDER[matchedPreference.severityThreshold]) {
-        return { enabled: false, matchedPreference, reason: 'SEVERITY_BLOCKED' };
+      if (
+        SEVERITY_ORDER[input.severity] <
+        SEVERITY_ORDER[matchedPreference.severityThreshold]
+      ) {
+        return {
+          enabled: false,
+          matchedPreference,
+          reason: 'SEVERITY_BLOCKED',
+        };
       }
     }
 
     const checkQuietHours = input.checkQuietHours ?? true;
-    if (checkQuietHours && input.severity !== NotificationSeverity.CRITICAL && this.isInQuietHours(matchedPreference)) {
-      return { enabled: false, matchedPreference, reason: 'QUIET_HOURS_BLOCKED' };
+    if (
+      checkQuietHours &&
+      input.severity !== NotificationSeverity.CRITICAL &&
+      this.isInQuietHours(matchedPreference)
+    ) {
+      return {
+        enabled: false,
+        matchedPreference,
+        reason: 'QUIET_HOURS_BLOCKED',
+      };
     }
 
     return {
@@ -56,13 +83,16 @@ export class NotificationPreferenceResolverService {
     };
   }
 
-  async isChannelEnabledForEvent(notificationEvent: {
-    recipientUserId?: string | null;
-    branchId?: string | null;
-    warehouseId?: string | null;
-    type: NotificationEventType;
-    severity: NotificationSeverity;
-  }, channel: NotificationChannel) {
+  async isChannelEnabledForEvent(
+    notificationEvent: {
+      recipientUserId?: string | null;
+      branchId?: string | null;
+      warehouseId?: string | null;
+      type: NotificationEventType;
+      severity: NotificationSeverity;
+    },
+    channel: NotificationChannel,
+  ) {
     return this.resolve({
       userId: notificationEvent.recipientUserId ?? undefined,
       branchId: notificationEvent.branchId ?? undefined,
@@ -92,14 +122,24 @@ export class NotificationPreferenceResolverService {
     );
 
     return {
-      enabledChannels: results.filter((r) => r.result.enabled).map((r) => r.channel),
+      enabledChannels: results
+        .filter((r) => r.result.enabled)
+        .map((r) => r.channel),
       details: results,
     };
   }
 
   private async findMatchedPreference(input: ResolveNotificationPreferenceDto) {
-    const scopes: Array<{ userId?: string; branchId?: string; warehouseId?: string }> = [
-      { userId: input.userId, branchId: input.branchId, warehouseId: input.warehouseId },
+    const scopes: Array<{
+      userId?: string;
+      branchId?: string;
+      warehouseId?: string;
+    }> = [
+      {
+        userId: input.userId,
+        branchId: input.branchId,
+        warehouseId: input.warehouseId,
+      },
       { userId: input.userId, branchId: input.branchId },
       { userId: input.userId, warehouseId: input.warehouseId },
       { userId: input.userId },
@@ -125,16 +165,27 @@ export class NotificationPreferenceResolverService {
   }
 
   private classifyMatchReason(
-    pref: { userId: string | null; branchId: string | null; warehouseId: string | null },
+    pref: {
+      userId: string | null;
+      branchId: string | null;
+      warehouseId: string | null;
+    },
     input: ResolveNotificationPreferenceDto,
   ): PreferenceResolveReason {
-    if (pref.userId && pref.userId === input.userId) return 'EXPLICIT_USER_MATCH';
-    if (pref.branchId && pref.branchId === input.branchId) return 'BRANCH_MATCH';
-    if (pref.warehouseId && pref.warehouseId === input.warehouseId) return 'WAREHOUSE_MATCH';
+    if (pref.userId && pref.userId === input.userId)
+      return 'EXPLICIT_USER_MATCH';
+    if (pref.branchId && pref.branchId === input.branchId)
+      return 'BRANCH_MATCH';
+    if (pref.warehouseId && pref.warehouseId === input.warehouseId)
+      return 'WAREHOUSE_MATCH';
     return 'GLOBAL_DEFAULT';
   }
 
-  private isInQuietHours(pref: { quietHoursStart: string | null; quietHoursEnd: string | null; timezone: string | null }) {
+  private isInQuietHours(pref: {
+    quietHoursStart: string | null;
+    quietHoursEnd: string | null;
+    timezone: string | null;
+  }) {
     if (!pref.quietHoursStart || !pref.quietHoursEnd) return false;
 
     const [startH, startM] = pref.quietHoursStart.split(':').map(Number);

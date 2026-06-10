@@ -7,11 +7,15 @@ export class NotificationWebsocketService {
   constructor(private readonly gateway: NotificationWebsocketGateway) {}
 
   emitToRecipient(userId: string, payload: unknown) {
-    this.gateway.server?.to(`user:${userId}`).emit('notification.event', payload);
+    this.gateway.server
+      ?.to(`user:${userId}`)
+      .emit('notification.event', payload);
   }
 
   emitToBranch(branchId: string, payload: unknown) {
-    this.gateway.server?.to(`branch:${branchId}`).emit('notification.event', payload);
+    this.gateway.server
+      ?.to(`branch:${branchId}`)
+      .emit('notification.event', payload);
   }
 
   emitToWarehouse(warehouseId: string, payload: unknown) {

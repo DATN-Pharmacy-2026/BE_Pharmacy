@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, ReportJobStatus } from '.prisma/client/reporting';
 import { AuditLogWriterService } from '../audit-logs/audit-log-writer.service';
 import { ReportExportsService } from '../report-exports/report-exports.service';
@@ -7,7 +11,10 @@ import { CreateReportJobDto } from './dto/create-report-job.dto';
 import { QueryReportJobsDto } from './dto/query-report-jobs.dto';
 import { ReportSummaryQueryDto } from './dto/report-summary-query.dto';
 import { UpdateReportJobStatusDto } from './dto/update-report-job-status.dto';
-import { REPORT_TYPE_DESCRIPTIONS, REPORT_TYPES } from './report-types.constants';
+import {
+  REPORT_TYPE_DESCRIPTIONS,
+  REPORT_TYPES,
+} from './report-types.constants';
 
 const DEV_USER_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -20,14 +27,24 @@ export class ReportsService {
   ) {}
 
   async findAll(query: QueryReportJobsDto) {
-    const { page = 1, limit = 20, reportType, requestedByUserId, branchId, warehouseId, status, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      reportType,
+      requestedByUserId,
+      branchId,
+      warehouseId,
+      status,
+      dateFrom,
+      dateTo,
+    } = query;
     const where: Prisma.ReportJobWhereInput = {
       ...(reportType ? { reportType } : {}),
       ...(requestedByUserId ? { requestedByUserId } : {}),
       ...(branchId ? { branchId } : {}),
       ...(warehouseId ? { warehouseId } : {}),
       ...(status ? { status } : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -68,7 +85,10 @@ export class ReportsService {
       this.prisma.reportJob.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
@@ -115,11 +135,17 @@ export class ReportsService {
     return created;
   }
 
-  async updateStatus(id: string, dto: UpdateReportJobStatusDto, userId?: string) {
+  async updateStatus(
+    id: string,
+    dto: UpdateReportJobStatusDto,
+    userId?: string,
+  ) {
     const existing = await this.findOne(id);
     const completedAt =
       dto.status === ReportJobStatus.COMPLETED
-        ? (dto.completedAt ? new Date(dto.completedAt) : new Date())
+        ? dto.completedAt
+          ? new Date(dto.completedAt)
+          : new Date()
         : dto.status === ReportJobStatus.FAILED
           ? existing.completedAt
           : null;
@@ -141,7 +167,10 @@ export class ReportsService {
       action: 'update_status',
       entityType: 'ReportJob',
       entityId: updated.id,
-      beforeData: { status: existing.status, completedAt: existing.completedAt },
+      beforeData: {
+        status: existing.status,
+        completedAt: existing.completedAt,
+      },
       afterData: { status: updated.status, completedAt: updated.completedAt },
     });
 
@@ -150,7 +179,11 @@ export class ReportsService {
 
   async process(
     id: string,
-    options: { fileType?: string; fileName?: string; includeMetadata?: boolean } = {},
+    options: {
+      fileType?: string;
+      fileName?: string;
+      includeMetadata?: boolean;
+    } = {},
     userId?: string,
   ) {
     await this.findOne(id);
@@ -178,7 +211,7 @@ export class ReportsService {
     const where: Prisma.ReportJobWhereInput = {
       ...(query.branchId ? { branchId: query.branchId } : {}),
       ...(query.warehouseId ? { warehouseId: query.warehouseId } : {}),
-      ...((query.dateFrom || query.dateTo)
+      ...(query.dateFrom || query.dateTo
         ? {
             createdAt: {
               ...(query.dateFrom ? { gte: new Date(query.dateFrom) } : {}),
@@ -188,20 +221,39 @@ export class ReportsService {
         : {}),
     };
 
-    const [totalJobs, queuedJobs, processingJobs, completedJobs, failedJobs, totalExports, latest] =
-      await this.prisma.$transaction([
-        this.prisma.reportJob.count({ where }),
-        this.prisma.reportJob.count({ where: { ...where, status: ReportJobStatus.QUEUED } }),
-        this.prisma.reportJob.count({ where: { ...where, status: ReportJobStatus.PROCESSING } }),
-        this.prisma.reportJob.count({ where: { ...where, status: ReportJobStatus.COMPLETED } }),
-        this.prisma.reportJob.count({ where: { ...where, status: ReportJobStatus.FAILED } }),
-        this.prisma.reportExport.count({
-          where: {
-            reportJob: where,
-          },
-        }),
-        this.prisma.reportJob.findFirst({ where, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
-      ]);
+    const [
+      totalJobs,
+      queuedJobs,
+      processingJobs,
+      completedJobs,
+      failedJobs,
+      totalExports,
+      latest,
+    ] = await this.prisma.$transaction([
+      this.prisma.reportJob.count({ where }),
+      this.prisma.reportJob.count({
+        where: { ...where, status: ReportJobStatus.QUEUED },
+      }),
+      this.prisma.reportJob.count({
+        where: { ...where, status: ReportJobStatus.PROCESSING },
+      }),
+      this.prisma.reportJob.count({
+        where: { ...where, status: ReportJobStatus.COMPLETED },
+      }),
+      this.prisma.reportJob.count({
+        where: { ...where, status: ReportJobStatus.FAILED },
+      }),
+      this.prisma.reportExport.count({
+        where: {
+          reportJob: where,
+        },
+      }),
+      this.prisma.reportJob.findFirst({
+        where,
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      }),
+    ]);
 
     return {
       totalJobs,

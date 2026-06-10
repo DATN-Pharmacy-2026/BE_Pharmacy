@@ -1,5 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { NotificationChannel, NotificationEventType } from '.prisma/client/reporting';
+import {
+  NotificationChannel,
+  NotificationEventType,
+} from '.prisma/client/reporting';
 import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class RenderNotificationTemplateDto {

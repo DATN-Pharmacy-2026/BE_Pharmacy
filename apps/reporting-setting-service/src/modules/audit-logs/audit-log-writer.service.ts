@@ -56,11 +56,15 @@ export class AuditLogWriterService {
           beforeData:
             params.beforeData === undefined
               ? undefined
-              : (this.maskSensitiveData(params.beforeData) as Prisma.InputJsonValue),
+              : (this.maskSensitiveData(
+                  params.beforeData,
+                ) as Prisma.InputJsonValue),
           afterData:
             params.afterData === undefined
               ? undefined
-              : (this.maskSensitiveData(params.afterData) as Prisma.InputJsonValue),
+              : (this.maskSensitiveData(
+                  params.afterData,
+                ) as Prisma.InputJsonValue),
           ipAddress: params.ipAddress ?? null,
           userAgent: params.userAgent ?? null,
         },

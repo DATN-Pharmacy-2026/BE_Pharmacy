@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBody, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { CreateKpiSnapshotDto } from './dto/create-kpi-snapshot.dto';
 import { QueryKpiSnapshotsDto } from './dto/query-kpi-snapshots.dto';
@@ -25,7 +34,10 @@ export class KpisController {
   }
 
   @Get('metric/:metricCode')
-  findByMetric(@Param('metricCode') metricCode: string, @Query() query: QueryKpiSnapshotsDto) {
+  findByMetric(
+    @Param('metricCode') metricCode: string,
+    @Query() query: QueryKpiSnapshotsDto,
+  ) {
     return this.kpisService.findByMetric(metricCode, query);
   }
 

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
@@ -28,7 +38,10 @@ export class FefoController {
   @Get('allocations/order/:orderType/:orderId')
   @UseGuards(PermissionsGuard)
   @Permissions('inventory.view')
-  findAllocationsByOrder(@Param('orderType') orderType: string, @Param('orderId', new ParseUUIDPipe()) orderId: string) {
+  findAllocationsByOrder(
+    @Param('orderType') orderType: string,
+    @Param('orderId', new ParseUUIDPipe()) orderId: string,
+  ) {
     return this.fefoService.findAllocationsByOrder(orderType, orderId);
   }
 
@@ -56,7 +69,10 @@ export class FefoController {
   @Post('allocations/:id/release')
   @UseGuards(PermissionsGuard)
   @Permissions('inventory.adjust')
-  releaseAllocation(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: ReleaseFefoAllocationDto) {
+  releaseAllocation(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ReleaseFefoAllocationDto,
+  ) {
     return this.fefoService.releaseAllocation(id, dto);
   }
 

@@ -31,12 +31,16 @@ export class EmbeddingService {
       'openai'
     ).toLowerCase();
     this.openAiApiKey = process.env.OPENAI_API_KEY;
-    this.openAiModel = process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small';
-    this.openAiBaseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+    this.openAiModel =
+      process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small';
+    this.openAiBaseUrl =
+      process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
     this.geminiApiKey = process.env.GEMINI_API_KEY;
-    this.geminiModel = process.env.GEMINI_EMBEDDING_MODEL || 'text-embedding-004';
+    this.geminiModel =
+      process.env.GEMINI_EMBEDDING_MODEL || 'text-embedding-004';
     this.geminiBaseUrl =
-      process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
+      process.env.GEMINI_BASE_URL ||
+      'https://generativelanguage.googleapis.com/v1beta';
   }
 
   hasApiKey(): boolean {
@@ -62,20 +66,25 @@ export class EmbeddingService {
 
   private async createOpenAiEmbedding(text: string): Promise<number[]> {
     if (!this.hasApiKey()) {
-      throw new Error('OPENAI_API_KEY is missing. Set it before running embedding ingest.');
+      throw new Error(
+        'OPENAI_API_KEY is missing. Set it before running embedding ingest.',
+      );
     }
 
-    const response = await fetch(`${this.openAiBaseUrl.replace(/\/+$/, '')}/embeddings`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.openAiApiKey}`,
+    const response = await fetch(
+      `${this.openAiBaseUrl.replace(/\/+$/, '')}/embeddings`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.openAiApiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.openAiModel,
+          input: text,
+        }),
       },
-      body: JSON.stringify({
-        model: this.openAiModel,
-        input: text,
-      }),
-    });
+    );
 
     if (!response.ok) {
       const errText = await response.text();
@@ -96,7 +105,9 @@ export class EmbeddingService {
     taskType: EmbeddingTaskType,
   ): Promise<number[]> {
     if (!this.hasApiKey()) {
-      throw new Error('GEMINI_API_KEY is missing. Set it before running embedding ingest.');
+      throw new Error(
+        'GEMINI_API_KEY is missing. Set it before running embedding ingest.',
+      );
     }
 
     const modelForPath = this.normalizeGeminiModelForPath(this.geminiModel);
@@ -118,7 +129,9 @@ export class EmbeddingService {
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Gemini embedding API failed (${response.status}): ${errText}`);
+      throw new Error(
+        `Gemini embedding API failed (${response.status}): ${errText}`,
+      );
     }
 
     const payload = (await response.json()) as GeminiEmbeddingResponse;

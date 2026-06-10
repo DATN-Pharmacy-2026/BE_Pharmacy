@@ -69,7 +69,9 @@ export class IngestService {
     }
 
     const base = this.ingestKnowledgeBase(baseDir, outputFile);
-    const chunks = JSON.parse(fs.readFileSync(outputFile, 'utf-8')) as IngestChunk[];
+    const chunks = JSON.parse(
+      fs.readFileSync(outputFile, 'utf-8'),
+    ) as IngestChunk[];
 
     let vectorDimensions = 0;
     for (let i = 0; i < chunks.length; i += 1) {

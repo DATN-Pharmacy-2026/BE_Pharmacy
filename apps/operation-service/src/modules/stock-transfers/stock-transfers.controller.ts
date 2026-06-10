@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
@@ -56,7 +67,10 @@ export class StockTransfersController {
   @Patch(':id/status')
   @UseGuards(PermissionsGuard)
   @Permissions('inventory.transfer')
-  updateStatus(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateStockTransferStatusDto) {
+  updateStatus(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateStockTransferStatusDto,
+  ) {
     return this.stockTransfersService.updateStatus(id, dto);
   }
 
@@ -70,14 +84,22 @@ export class StockTransfersController {
   @Post(':id/ship')
   @UseGuards(PermissionsGuard)
   @Permissions('stock_transfer.ship')
-  ship(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: Request, @Body() dto: ShipStockTransferDto) {
+  ship(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: Request,
+    @Body() dto: ShipStockTransferDto,
+  ) {
     return this.stockTransfersService.ship(id, req, dto);
   }
 
   @Post(':id/receive')
   @UseGuards(PermissionsGuard)
   @Permissions('stock_transfer.receive')
-  receive(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: Request, @Body() dto: ReceiveStockTransferDto) {
+  receive(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: Request,
+    @Body() dto: ReceiveStockTransferDto,
+  ) {
     return this.stockTransfersService.receive(id, req, dto);
   }
 

@@ -1,7 +1,17 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventPublisherService } from '@app/event-bus';
 import { EVENT_TYPES } from '@app/event-contracts';
-import { PaymentGatewayProvider, PaymentGatewayTransactionStatus, PaymentStatus, Prisma } from '.prisma/client/commerce';
+import {
+  PaymentGatewayProvider,
+  PaymentGatewayTransactionStatus,
+  PaymentStatus,
+  Prisma,
+} from '.prisma/client/commerce';
 import { CommercePrismaService } from '../../prisma/commerce-prisma.service';
 import { PAYMENT_GATEWAY_CURRENCY } from './constants/payment-gateway.constants';
 import { InitiatePaymentGatewayDto } from './dto/initiate-payment-gateway.dto';
@@ -17,7 +27,10 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class PaymentGatewaysService {
-  private readonly adapters: Record<PaymentGatewayProvider, PaymentGatewayAdapter>;
+  private readonly adapters: Record<
+    PaymentGatewayProvider,
+    PaymentGatewayAdapter
+  >;
 
   constructor(
     private readonly prisma: CommercePrismaService,
@@ -39,14 +52,30 @@ export class PaymentGatewaysService {
     return {
       providers: Object.values(PaymentGatewayProvider).map((provider) => ({
         provider,
-        enabled: this.config.isGatewayEnabled() && this.config.isProviderEnabled(provider),
+        enabled:
+          this.config.isGatewayEnabled() &&
+          this.config.isProviderEnabled(provider),
         sandbox: this.config.isSandbox(),
       })),
     };
   }
 
   async findTransactions(query: QueryPaymentGatewayTransactionsDto) {
-    const { page = 1, limit = 20, provider, status, paymentId, orderId, branchId, warehouseId, customerUserId, dateFrom, dateTo, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+    const {
+      page = 1,
+      limit = 20,
+      provider,
+      status,
+      paymentId,
+      orderId,
+      branchId,
+      warehouseId,
+      customerUserId,
+      dateFrom,
+      dateTo,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
     const allowedSortFields = ['createdAt', 'updatedAt', 'status', 'provider'];
     if (!allowedSortFields.includes(sortBy)) {
       throw new BadRequestException('Invalid sort field');
@@ -59,7 +88,7 @@ export class PaymentGatewaysService {
       ...(branchId ? { branchId } : {}),
       ...(warehouseId ? { warehouseId } : {}),
       ...(customerUserId ? { customerUserId } : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -101,52 +130,99 @@ export class PaymentGatewaysService {
       this.prisma.paymentGatewayTransaction.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findTransactionById(id: string) {
-    const tx = await this.prisma.paymentGatewayTransaction.findUnique({ where: { id } });
+    const tx = await this.prisma.paymentGatewayTransaction.findUnique({
+      where: { id },
+    });
     if (!tx) throw new NotFoundException('transaction not found');
     return tx;
   }
 
-  async initiate(dto: InitiatePaymentGatewayDto, context?: { branchId?: string; warehouseId?: string }) {
-    if (!this.config.isGatewayEnabled() || !this.config.isProviderEnabled(dto.provider)) {
+  async initiate(
+    dto: InitiatePaymentGatewayDto,
+    context?: { branchId?: string; warehouseId?: string },
+  ) {
+    if (
+      !this.config.isGatewayEnabled() ||
+      !this.config.isProviderEnabled(dto.provider)
+    ) {
       throw new BadRequestException('provider disabled');
     }
-    if (!dto.paymentId && !dto.orderId) throw new BadRequestException('paymentId or orderId is required');
-    if ((dto.currency ?? PAYMENT_GATEWAY_CURRENCY) !== PAYMENT_GATEWAY_CURRENCY) throw new BadRequestException('invalid currency');
+    if (!dto.paymentId && !dto.orderId)
+      throw new BadRequestException('paymentId or orderId is required');
+    if ((dto.currency ?? PAYMENT_GATEWAY_CURRENCY) !== PAYMENT_GATEWAY_CURRENCY)
+      throw new BadRequestException('invalid currency');
 
     if (dto.idempotencyKey) {
-      const found = await this.prisma.paymentGatewayTransaction.findFirst({ where: { idempotencyKey: dto.idempotencyKey } });
+      const found = await this.prisma.paymentGatewayTransaction.findFirst({
+        where: { idempotencyKey: dto.idempotencyKey },
+      });
       if (found) {
-        return { transaction: found, paymentUrl: found.paymentUrl, qrCodeUrl: found.qrCodeUrl, deeplink: found.deeplink, appLink: found.appLink };
+        return {
+          transaction: found,
+          paymentUrl: found.paymentUrl,
+          qrCodeUrl: found.qrCodeUrl,
+          deeplink: found.deeplink,
+          appLink: found.appLink,
+        };
       }
     }
 
-    const payment = dto.paymentId ? await this.prisma.payment.findUnique({ where: { id: dto.paymentId } }) : null;
-    const order = dto.orderId ? await this.prisma.onlineOrder.findUnique({ where: { id: dto.orderId } }) : payment ? await this.prisma.onlineOrder.findUnique({ where: { id: payment.onlineOrderId } }) : null;
+    const payment = dto.paymentId
+      ? await this.prisma.payment.findUnique({ where: { id: dto.paymentId } })
+      : null;
+    const order = dto.orderId
+      ? await this.prisma.onlineOrder.findUnique({ where: { id: dto.orderId } })
+      : payment
+        ? await this.prisma.onlineOrder.findUnique({
+            where: { id: payment.onlineOrderId },
+          })
+        : null;
 
-    if (dto.paymentId && !payment) throw new NotFoundException('payment not found');
-    if ((dto.orderId || payment) && !order) throw new NotFoundException('order not found');
+    if (dto.paymentId && !payment)
+      throw new NotFoundException('payment not found');
+    if ((dto.orderId || payment) && !order)
+      throw new NotFoundException('order not found');
 
-    const amount = payment ? Number(payment.amount) : order ? Number(order.grandTotal) : dto.amount;
+    const amount = payment
+      ? Number(payment.amount)
+      : order
+        ? Number(order.grandTotal)
+        : dto.amount;
     if (!amount || amount <= 0) throw new BadRequestException('invalid amount');
-    if (payment && payment.status !== PaymentStatus.PENDING) throw new BadRequestException('payment/order not payable');
+    if (payment && payment.status !== PaymentStatus.PENDING)
+      throw new BadRequestException('payment/order not payable');
 
-    const existingActive = await this.prisma.paymentGatewayTransaction.findFirst({
-      where: {
-        paymentId: payment?.id ?? null,
-        status: { in: [PaymentGatewayTransactionStatus.INITIATED, PaymentGatewayTransactionStatus.PENDING] },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (existingActive && !dto.idempotencyKey) throw new ConflictException('duplicate active transaction');
+    const existingActive =
+      await this.prisma.paymentGatewayTransaction.findFirst({
+        where: {
+          paymentId: payment?.id ?? null,
+          status: {
+            in: [
+              PaymentGatewayTransactionStatus.INITIATED,
+              PaymentGatewayTransactionStatus.PENDING,
+            ],
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    if (existingActive && !dto.idempotencyKey)
+      throw new ConflictException('duplicate active transaction');
 
     const requestId = dto.requestId ?? `${dto.provider}-${Date.now()}`;
     const providerOrderId = `${dto.provider}-${(order?.orderNo ?? order?.id ?? payment?.id ?? Date.now().toString()).replace(/[^A-Za-z0-9]/g, '').slice(0, 24)}-${Date.now()}`;
-    const returnUrl = dto.returnUrl ?? `${process.env.PAYMENT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/api/payment-gateways/${dto.provider.toLowerCase()}/return`;
-    const ipnUrl = dto.ipnUrl ?? `${process.env.PAYMENT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/api/payment-gateways/${dto.provider.toLowerCase()}/ipn`;
+    const returnUrl =
+      dto.returnUrl ??
+      `${process.env.PAYMENT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/api/payment-gateways/${dto.provider.toLowerCase()}/return`;
+    const ipnUrl =
+      dto.ipnUrl ??
+      `${process.env.PAYMENT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/api/payment-gateways/${dto.provider.toLowerCase()}/ipn`;
 
     const adapter = this.adapters[dto.provider];
     const createdTx = await this.prisma.paymentGatewayTransaction.create({
@@ -163,7 +239,11 @@ export class PaymentGatewaysService {
         returnUrl,
         ipnUrl,
         branchId: order?.branchId ?? context?.branchId ?? dto.branchId ?? null,
-        warehouseId: order?.assignedWarehouseId ?? context?.warehouseId ?? dto.warehouseId ?? null,
+        warehouseId:
+          order?.assignedWarehouseId ??
+          context?.warehouseId ??
+          dto.warehouseId ??
+          null,
         customerUserId: order?.userId ?? dto.customerUserId ?? null,
       },
     });
@@ -221,9 +301,22 @@ export class PaymentGatewaysService {
         },
       });
 
-      return { transaction: updated, paymentUrl: updated.paymentUrl, qrCodeUrl: updated.qrCodeUrl, deeplink: updated.deeplink, appLink: updated.appLink };
+      return {
+        transaction: updated,
+        paymentUrl: updated.paymentUrl,
+        qrCodeUrl: updated.qrCodeUrl,
+        deeplink: updated.deeplink,
+        appLink: updated.appLink,
+      };
     } catch {
-      await this.prisma.paymentGatewayTransaction.update({ where: { id: createdTx.id }, data: { status: PaymentGatewayTransactionStatus.FAILED, failedAt: new Date(), errorMessage: 'payment gateway create failed' } });
+      await this.prisma.paymentGatewayTransaction.update({
+        where: { id: createdTx.id },
+        data: {
+          status: PaymentGatewayTransactionStatus.FAILED,
+          failedAt: new Date(),
+          errorMessage: 'payment gateway create failed',
+        },
+      });
       throw new BadRequestException('payment gateway create failed');
     }
   }
@@ -231,16 +324,31 @@ export class PaymentGatewaysService {
   async syncTransaction(id: string, dto: SyncPaymentGatewayTransactionDto) {
     const tx = await this.findTransactionById(id);
     const adapter = this.adapters[tx.provider];
-    if (!adapter.queryTransaction) throw new BadRequestException('provider query is not implemented yet');
-    const result = await adapter.queryTransaction({ providerOrderId: tx.providerOrderId, requestId: tx.requestId });
-    return this.callbackService.processCallback(tx.id, 'QUERY', result, result.rawPayload as Record<string, unknown>);
+    if (!adapter.queryTransaction)
+      throw new BadRequestException('provider query is not implemented yet');
+    const result = await adapter.queryTransaction({
+      providerOrderId: tx.providerOrderId,
+      requestId: tx.requestId,
+    });
+    return this.callbackService.processCallback(
+      tx.id,
+      'QUERY',
+      result,
+      result.rawPayload as Record<string, unknown>,
+    );
   }
 
-  async handleProviderReturn(provider: PaymentGatewayProvider, payload: Record<string, any>) {
+  async handleProviderReturn(
+    provider: PaymentGatewayProvider,
+    payload: Record<string, any>,
+  ) {
     const adapter = this.adapters[provider];
     const verification = await adapter.verifyReturnPayload(payload);
-    const tx = await this.prisma.paymentGatewayTransaction.findFirst({ where: { provider, providerOrderId: verification.providerOrderId ?? '' } });
-    if (!tx) return { provider, valid: verification.valid, status: 'NOT_FOUND' };
+    const tx = await this.prisma.paymentGatewayTransaction.findFirst({
+      where: { provider, providerOrderId: verification.providerOrderId ?? '' },
+    });
+    if (!tx)
+      return { provider, valid: verification.valid, status: 'NOT_FOUND' };
     await this.prisma.paymentGatewayCallbackLog.create({
       data: {
         transactionId: tx.id,
@@ -249,19 +357,40 @@ export class PaymentGatewaysService {
         payload: payload as Prisma.InputJsonValue,
         signatureValid: verification.valid,
         processed: true,
-        processingResult: { status: verification.status } as Prisma.InputJsonValue,
+        processingResult: {
+          status: verification.status,
+        },
       },
     });
-    return { provider, valid: verification.valid, transactionId: tx.id, status: tx.status, mappedStatus: verification.status };
+    return {
+      provider,
+      valid: verification.valid,
+      transactionId: tx.id,
+      status: tx.status,
+      mappedStatus: verification.status,
+    };
   }
 
-  async handleProviderIpn(provider: PaymentGatewayProvider, payload: Record<string, any>, headers?: Record<string, any>) {
+  async handleProviderIpn(
+    provider: PaymentGatewayProvider,
+    payload: Record<string, any>,
+    headers?: Record<string, any>,
+  ) {
     const adapter = this.adapters[provider];
     const verification = await adapter.verifyCallbackPayload(payload, headers);
-    if (!verification.providerOrderId) throw new BadRequestException('invalid provider order id');
-    const tx = await this.prisma.paymentGatewayTransaction.findFirst({ where: { provider, providerOrderId: verification.providerOrderId } });
+    if (!verification.providerOrderId)
+      throw new BadRequestException('invalid provider order id');
+    const tx = await this.prisma.paymentGatewayTransaction.findFirst({
+      where: { provider, providerOrderId: verification.providerOrderId },
+    });
     if (!tx) throw new NotFoundException('transaction not found');
-    const processed = await this.callbackService.processCallback(tx.id, 'IPN', verification, payload, headers);
+    const processed = await this.callbackService.processCallback(
+      tx.id,
+      'IPN',
+      verification,
+      payload,
+      headers,
+    );
     const nextStatus = (processed as any).status ?? tx.status;
     if (nextStatus === PaymentGatewayTransactionStatus.PAID) {
       await this.enqueueOutboxEvent({
@@ -279,7 +408,8 @@ export class PaymentGatewaysService {
           transactionId: tx.id,
           provider: tx.provider,
           providerOrderId: tx.providerOrderId,
-          providerTransactionId: verification.providerTransactionId ?? tx.providerTransactionId,
+          providerTransactionId:
+            verification.providerTransactionId ?? tx.providerTransactionId,
           amount: Number(tx.amount),
           currency: tx.currency,
           paidAt: new Date().toISOString(),
@@ -288,7 +418,10 @@ export class PaymentGatewaysService {
           customerUserId: tx.customerUserId,
         },
       });
-    } else if (nextStatus === PaymentGatewayTransactionStatus.FAILED || nextStatus === PaymentGatewayTransactionStatus.CANCELED) {
+    } else if (
+      nextStatus === PaymentGatewayTransactionStatus.FAILED ||
+      nextStatus === PaymentGatewayTransactionStatus.CANCELED
+    ) {
       await this.enqueueOutboxEvent({
         eventType: EVENT_TYPES.COMMERCE_PAYMENT_GATEWAY_FAILED,
         aggregateType: 'PaymentGatewayTransaction',
@@ -313,7 +446,11 @@ export class PaymentGatewaysService {
         },
       });
     }
-    return { success: true, transactionId: tx.id, status: (processed as any).status ?? tx.status };
+    return {
+      success: true,
+      transactionId: tx.id,
+      status: (processed as any).status ?? tx.status,
+    };
   }
 
   private async enqueueOutboxEvent(input: {

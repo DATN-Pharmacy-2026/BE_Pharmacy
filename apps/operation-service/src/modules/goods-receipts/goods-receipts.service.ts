@@ -1,5 +1,15 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { BatchStatus, GoodsReceiptStatus, InventoryMovementType, Prisma } from '.prisma/client/operation';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  BatchStatus,
+  GoodsReceiptStatus,
+  InventoryMovementType,
+  Prisma,
+} from '.prisma/client/operation';
 import { Request } from 'express';
 import { BranchesService } from '../branches/branches.service';
 import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
@@ -22,17 +32,34 @@ export class GoodsReceiptsService {
   ) {}
 
   async findAll(query: QueryGoodsReceiptsDto) {
-    const { page = 1, limit = 20, search, receiptNo, purchaseOrderId, supplierId, warehouseId, branchId, status, receivedByUserId, receivedDateFrom, receivedDateTo, dateFrom, dateTo } = query;
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      receiptNo,
+      purchaseOrderId,
+      supplierId,
+      warehouseId,
+      branchId,
+      status,
+      receivedByUserId,
+      receivedDateFrom,
+      receivedDateTo,
+      dateFrom,
+      dateTo,
+    } = query;
 
     const where: Prisma.GoodsReceiptWhereInput = {
-      ...(receiptNo ? { receiptNo: { contains: receiptNo, mode: 'insensitive' } } : {}),
+      ...(receiptNo
+        ? { receiptNo: { contains: receiptNo, mode: 'insensitive' } }
+        : {}),
       ...(purchaseOrderId ? { purchaseOrderId } : {}),
       ...(supplierId ? { supplierId } : {}),
       ...(warehouseId ? { warehouseId } : {}),
       ...(branchId ? { branchId } : {}),
       ...(status ? { status } : {}),
       ...(receivedByUserId ? { receivedByUserId } : {}),
-      ...((receivedDateFrom || receivedDateTo)
+      ...(receivedDateFrom || receivedDateTo
         ? {
             receivedAt: {
               ...(receivedDateFrom ? { gte: new Date(receivedDateFrom) } : {}),
@@ -40,7 +67,7 @@ export class GoodsReceiptsService {
             },
           }
         : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -53,7 +80,11 @@ export class GoodsReceiptsService {
             OR: [
               { receiptNo: { contains: search, mode: 'insensitive' } },
               { note: { contains: search, mode: 'insensitive' } },
-              { items: { some: { batchNo: { contains: search, mode: 'insensitive' } } } },
+              {
+                items: {
+                  some: { batchNo: { contains: search, mode: 'insensitive' } },
+                },
+              },
             ],
           }
         : {}),
@@ -106,10 +137,15 @@ export class GoodsReceiptsService {
     return receipt;
   }
 
-  async create(req: Request & { user?: { id?: string } }, dto: CreateGoodsReceiptDto) {
-    if (!dto.items?.length) throw new BadRequestException('Empty goods receipt items');
+  async create(
+    req: Request & { user?: { id?: string } },
+    dto: CreateGoodsReceiptDto,
+  ) {
+    if (!dto.items?.length)
+      throw new BadRequestException('Empty goods receipt items');
 
-    const warehouseId = dto.warehouseId ?? this.getHeader(req, 'x-warehouse-id');
+    const warehouseId =
+      dto.warehouseId ?? this.getHeader(req, 'x-warehouse-id');
     const branchId = dto.branchId ?? this.getHeader(req, 'x-branch-id');
 
     if (!warehouseId) throw new BadRequestException('warehouseId is required');
@@ -124,11 +160,14 @@ export class GoodsReceiptsService {
       const po = await this.purchaseOrdersService.findOne(dto.purchaseOrderId);
       supplierId = supplierId ?? po.supplierId;
       if (po.warehouseId !== warehouseId) {
-        throw new ConflictException('Warehouse does not match purchase order warehouse');
+        throw new ConflictException(
+          'Warehouse does not match purchase order warehouse',
+        );
       }
     }
 
-    const receivedByUserId = req.user?.id ?? '00000000-0000-0000-0000-000000000000';
+    const receivedByUserId =
+      req.user?.id ?? '00000000-0000-0000-0000-000000000000';
 
     return this.prisma.$transaction(async (tx) => {
       const receiptNo = await this.generateReceiptNo(tx);
@@ -155,7 +194,12 @@ export class GoodsReceiptsService {
           if (!batch) throw new NotFoundException('Batch not found');
         } else {
           const existingBatch = await tx.batch.findUnique({
-            where: { productId_batchNo: { productId: item.productId, batchNo: item.batchNo } },
+            where: {
+              productId_batchNo: {
+                productId: item.productId,
+                batchNo: item.batchNo,
+              },
+            },
           });
           if (existingBatch) {
             batchId = existingBatch.id;
@@ -164,7 +208,9 @@ export class GoodsReceiptsService {
               data: {
                 productId: item.productId,
                 batchNo: item.batchNo,
-                manufactureDate: item.manufactureDate ? new Date(item.manufactureDate) : null,
+                manufactureDate: item.manufactureDate
+                  ? new Date(item.manufactureDate)
+                  : null,
                 expiryDate: new Date(item.expiryDate),
                 supplierId,
                 status: BatchStatus.ACTIVE,
@@ -181,7 +227,9 @@ export class GoodsReceiptsService {
             batchId,
             batchNo: item.batchNo,
             expiryDate: new Date(item.expiryDate),
-            manufactureDate: item.manufactureDate ? new Date(item.manufactureDate) : null,
+            manufactureDate: item.manufactureDate
+              ? new Date(item.manufactureDate)
+              : null,
             quantity: item.quantity,
             unitCost: item.unitCost,
           },
@@ -205,17 +253,20 @@ export class GoodsReceiptsService {
   async update(id: string, dto: UpdateGoodsReceiptDto) {
     const existing = await this.findOne(id);
     if (existing.status !== GoodsReceiptStatus.DRAFT) {
-      throw new ConflictException('Goods receipt is not editable in current status');
+      throw new ConflictException(
+        'Goods receipt is not editable in current status',
+      );
     }
 
-    const nextSupplierId = dto.supplierId ?? (existing.supplierId ?? undefined);
+    const nextSupplierId = dto.supplierId ?? existing.supplierId ?? undefined;
     const nextWarehouseId = dto.warehouseId ?? existing.warehouseId;
-    const nextBranchId = dto.branchId ?? (existing.branchId ?? undefined);
+    const nextBranchId = dto.branchId ?? existing.branchId ?? undefined;
 
     await this.warehousesService.findOne(nextWarehouseId);
     if (nextBranchId) await this.branchesService.findOne(nextBranchId);
     if (nextSupplierId) await this.suppliersService.findOne(nextSupplierId);
-    if (dto.purchaseOrderId) await this.purchaseOrdersService.findOne(dto.purchaseOrderId);
+    if (dto.purchaseOrderId)
+      await this.purchaseOrdersService.findOne(dto.purchaseOrderId);
 
     return this.prisma.$transaction(async (tx) => {
       await tx.goodsReceipt.update({
@@ -225,13 +276,19 @@ export class GoodsReceiptsService {
           warehouseId: nextWarehouseId,
           branchId: nextBranchId,
           purchaseOrderId: dto.purchaseOrderId ?? existing.purchaseOrderId,
-          receivedAt: dto.receivedAt !== undefined ? (dto.receivedAt ? new Date(dto.receivedAt) : null) : existing.receivedAt,
+          receivedAt:
+            dto.receivedAt !== undefined
+              ? dto.receivedAt
+                ? new Date(dto.receivedAt)
+                : null
+              : existing.receivedAt,
           note: dto.note !== undefined ? dto.note : existing.note,
         },
       });
 
       if (dto.items) {
-        if (dto.items.length === 0) throw new BadRequestException('Empty goods receipt items');
+        if (dto.items.length === 0)
+          throw new BadRequestException('Empty goods receipt items');
         await tx.goodsReceiptItem.deleteMany({ where: { goodsReceiptId: id } });
 
         for (const item of dto.items) {
@@ -242,7 +299,12 @@ export class GoodsReceiptsService {
             if (!batch) throw new NotFoundException('Batch not found');
           } else {
             const existingBatch = await tx.batch.findUnique({
-              where: { productId_batchNo: { productId: item.productId, batchNo: item.batchNo } },
+              where: {
+                productId_batchNo: {
+                  productId: item.productId,
+                  batchNo: item.batchNo,
+                },
+              },
             });
             if (existingBatch) {
               batchId = existingBatch.id;
@@ -251,7 +313,9 @@ export class GoodsReceiptsService {
                 data: {
                   productId: item.productId,
                   batchNo: item.batchNo,
-                  manufactureDate: item.manufactureDate ? new Date(item.manufactureDate) : null,
+                  manufactureDate: item.manufactureDate
+                    ? new Date(item.manufactureDate)
+                    : null,
                   expiryDate: new Date(item.expiryDate),
                   supplierId: nextSupplierId,
                   status: BatchStatus.ACTIVE,
@@ -268,7 +332,9 @@ export class GoodsReceiptsService {
               batchId,
               batchNo: item.batchNo,
               expiryDate: new Date(item.expiryDate),
-              manufactureDate: item.manufactureDate ? new Date(item.manufactureDate) : null,
+              manufactureDate: item.manufactureDate
+                ? new Date(item.manufactureDate)
+                : null,
               quantity: item.quantity,
               unitCost: item.unitCost,
             },
@@ -294,11 +360,21 @@ export class GoodsReceiptsService {
       const receipt = await tx.goodsReceipt.findUnique({ where: { id } });
       if (!receipt) throw new NotFoundException('Goods receipt not found');
 
-      if (receipt.status === GoodsReceiptStatus.CANCELLED && dto.status !== GoodsReceiptStatus.CANCELLED) {
-        throw new ConflictException('Cancelled goods receipt cannot transition');
+      if (
+        receipt.status === GoodsReceiptStatus.CANCELLED &&
+        dto.status !== GoodsReceiptStatus.CANCELLED
+      ) {
+        throw new ConflictException(
+          'Cancelled goods receipt cannot transition',
+        );
       }
-      if (receipt.status === GoodsReceiptStatus.RECEIVED && dto.status !== GoodsReceiptStatus.RECEIVED) {
-        throw new ConflictException('Received goods receipt cannot transition backward');
+      if (
+        receipt.status === GoodsReceiptStatus.RECEIVED &&
+        dto.status !== GoodsReceiptStatus.RECEIVED
+      ) {
+        throw new ConflictException(
+          'Received goods receipt cannot transition backward',
+        );
       }
 
       const updated = await tx.goodsReceipt.update({
@@ -309,7 +385,7 @@ export class GoodsReceiptsService {
             dto.status === GoodsReceiptStatus.RECEIVED
               ? dto.receivedAt
                 ? new Date(dto.receivedAt)
-                : receipt.receivedAt ?? new Date()
+                : (receipt.receivedAt ?? new Date())
               : receipt.receivedAt,
         },
       });
@@ -338,13 +414,18 @@ export class GoodsReceiptsService {
       throw new ConflictException('Received goods receipt cannot be deleted');
     }
 
-    return this.prisma.goodsReceipt.update({ where: { id }, data: { status: GoodsReceiptStatus.CANCELLED } });
+    return this.prisma.goodsReceipt.update({
+      where: { id },
+      data: { status: GoodsReceiptStatus.CANCELLED },
+    });
   }
 
   async postInventory(id: string, req: Request & { user?: { id?: string } }) {
     const receipt = await this.findOne(id);
     if (receipt.status !== GoodsReceiptStatus.RECEIVED) {
-      throw new ConflictException('Goods receipt must be RECEIVED before posting inventory');
+      throw new ConflictException(
+        'Goods receipt must be RECEIVED before posting inventory',
+      );
     }
 
     const createdByUserId = req.user?.id ?? receipt.receivedByUserId;
@@ -352,14 +433,26 @@ export class GoodsReceiptsService {
     return this.prisma.$transaction(async (tx) => {
       await this.postInventoryTx(tx, receipt, createdByUserId);
 
-      const items = await tx.goodsReceiptItem.findMany({ where: { goodsReceiptId: receipt.id } });
-      return { goodsReceiptId: receipt.id, posted: true, itemCount: items.length };
+      const items = await tx.goodsReceiptItem.findMany({
+        where: { goodsReceiptId: receipt.id },
+      });
+      return {
+        goodsReceiptId: receipt.id,
+        posted: true,
+        itemCount: items.length,
+      };
     });
   }
 
   private async postInventoryTx(
     tx: Prisma.TransactionClient,
-    receipt: { id: string; warehouseId: string; branchId: string | null; receivedByUserId: string; status: GoodsReceiptStatus },
+    receipt: {
+      id: string;
+      warehouseId: string;
+      branchId: string | null;
+      receivedByUserId: string;
+      status: GoodsReceiptStatus;
+    },
     createdByUserId: string,
   ) {
     const posted = await tx.stockMovement.findFirst({
@@ -375,7 +468,8 @@ export class GoodsReceiptsService {
     });
 
     for (const item of items) {
-      if (!item.batchId) throw new BadRequestException('Goods receipt item missing batchId');
+      if (!item.batchId)
+        throw new BadRequestException('Goods receipt item missing batchId');
       const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
       if (!batch) throw new NotFoundException('Batch not found');
 
@@ -440,14 +534,21 @@ export class GoodsReceiptsService {
     }
   }
 
-  private validateItemDates(manufactureDate: string | undefined, expiryDate: string) {
+  private validateItemDates(
+    manufactureDate: string | undefined,
+    expiryDate: string,
+  ) {
     if (!expiryDate) throw new BadRequestException('expiryDate is required');
     if (manufactureDate && new Date(manufactureDate) >= new Date(expiryDate)) {
-      throw new BadRequestException('manufactureDate must be before expiryDate');
+      throw new BadRequestException(
+        'manufactureDate must be before expiryDate',
+      );
     }
   }
 
-  private async generateReceiptNo(tx: Prisma.TransactionClient): Promise<string> {
+  private async generateReceiptNo(
+    tx: Prisma.TransactionClient,
+  ): Promise<string> {
     for (let i = 0; i < 5; i++) {
       const now = new Date();
       const y = now.getFullYear();

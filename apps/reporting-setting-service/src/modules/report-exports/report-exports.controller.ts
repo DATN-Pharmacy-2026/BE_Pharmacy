@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { CreateReportExportDto } from './dto/create-report-export.dto';
@@ -32,7 +42,10 @@ export class ReportExportsController {
   }
 
   @Post()
-  create(@Req() req: Request & { user?: { id?: string } }, @Body() dto: CreateReportExportDto) {
+  create(
+    @Req() req: Request & { user?: { id?: string } },
+    @Body() dto: CreateReportExportDto,
+  ) {
     return this.reportExportsService.create(dto, req.user?.id);
   }
 
@@ -55,14 +68,13 @@ export class ReportExportsController {
     @Req() req: Request & { user?: { id?: string } },
     @Res() res: Response,
   ) {
-    const { exportItem, filePath } = await this.reportExportsService.resolveDownloadByExportId(id);
-    const contentType = exportItem.fileType?.toUpperCase() === 'CSV'
-      ? 'text/csv; charset=utf-8'
-      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    res.setHeader(
-      'Content-Type',
-      contentType,
-    );
+    const { exportItem, filePath } =
+      await this.reportExportsService.resolveDownloadByExportId(id);
+    const contentType =
+      exportItem.fileType?.toUpperCase() === 'CSV'
+        ? 'text/csv; charset=utf-8'
+        : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    res.setHeader('Content-Type', contentType);
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="${exportItem.fileName}"`,

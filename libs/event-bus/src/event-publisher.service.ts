@@ -24,7 +24,9 @@ export class EventPublisherService {
     await this.broker().publish(event);
   }
 
-  buildEnvelope<T>(input: Omit<EventEnvelope<T>, 'schemaVersion' | 'publishedAt'>): EventEnvelope<T> {
+  buildEnvelope<T>(
+    input: Omit<EventEnvelope<T>, 'schemaVersion' | 'publishedAt'>,
+  ): EventEnvelope<T> {
     return { ...input, schemaVersion: EVENT_SCHEMA_VERSION, publishedAt: null };
   }
 }

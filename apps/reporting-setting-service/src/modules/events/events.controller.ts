@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { EventFailureType } from '@app/event-bus';
 import { EventsService } from './events.service';
@@ -46,24 +54,42 @@ export class EventsController {
   @Post('failures/:id/replay')
   replay(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() body: { mode: 'REPLAY_ORIGINAL' | 'REPLAY_AS_NEW_EVENT' | 'MARK_RESOLVED' | 'IGNORE'; reason: string; dryRun?: boolean },
+    @Body()
+    body: {
+      mode:
+        | 'REPLAY_ORIGINAL'
+        | 'REPLAY_AS_NEW_EVENT'
+        | 'MARK_RESOLVED'
+        | 'IGNORE';
+      reason: string;
+      dryRun?: boolean;
+    },
   ) {
     return this.service.replayFailure(id, body);
   }
 
   @Post('failures/:id/resolve')
-  resolve(@Param('id', new ParseUUIDPipe()) id: string, @Body() body: { reason?: string }) {
+  resolve(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: { reason?: string },
+  ) {
     return this.service.resolveFailure(id, body.reason);
   }
 
   @Post('failures/:id/ignore')
-  ignore(@Param('id', new ParseUUIDPipe()) id: string, @Body() body: { reason?: string }) {
+  ignore(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: { reason?: string },
+  ) {
     return this.service.ignoreFailure(id, body.reason);
   }
 
   @Get('replay-audits')
   replayAudits(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.service.listReplayAudits(Number(page ?? 1), Number(limit ?? 20));
+    return this.service.listReplayAudits(
+      Number(page ?? 1),
+      Number(limit ?? 20),
+    );
   }
 
   @Get('retry-policy')
@@ -72,7 +98,14 @@ export class EventsController {
   }
 
   @Post('retry-policy/evaluate')
-  retryPolicyEvaluate(@Body() body: { eventType: string; failureType: EventFailureType; attempt: number }) {
+  retryPolicyEvaluate(
+    @Body()
+    body: {
+      eventType: string;
+      failureType: EventFailureType;
+      attempt: number;
+    },
+  ) {
     return this.service.evaluateRetryPolicy(body);
   }
 
@@ -82,7 +115,14 @@ export class EventsController {
   }
 
   @Post('publish-test')
-  publishTest(@Body() body: { eventType: string; aggregateId: string; payload: Record<string, unknown> }) {
+  publishTest(
+    @Body()
+    body: {
+      eventType: string;
+      aggregateId: string;
+      payload: Record<string, unknown>;
+    },
+  ) {
     return this.service.publishTest(body);
   }
 }

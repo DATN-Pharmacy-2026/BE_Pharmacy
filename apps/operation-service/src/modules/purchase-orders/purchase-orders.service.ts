@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, PurchaseOrderStatus } from '.prisma/client/operation';
 import { Request } from 'express';
 import { BranchesService } from '../branches/branches.service';
@@ -43,7 +48,7 @@ export class PurchaseOrdersService {
       ...(status ? { status } : {}),
       ...(orderedByUserId ? { orderedByUserId } : {}),
       ...(approvedByUserId ? { approvedByUserId } : {}),
-      ...((expectedDateFrom || expectedDateTo)
+      ...(expectedDateFrom || expectedDateTo
         ? {
             expectedDate: {
               ...(expectedDateFrom ? { gte: new Date(expectedDateFrom) } : {}),
@@ -51,7 +56,7 @@ export class PurchaseOrdersService {
             },
           }
         : {}),
-      ...((dateFrom || dateTo)
+      ...(dateFrom || dateTo
         ? {
             createdAt: {
               ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
@@ -65,7 +70,16 @@ export class PurchaseOrdersService {
               { poNo: { contains: search, mode: 'insensitive' } },
               { supplier: { code: { contains: search, mode: 'insensitive' } } },
               { supplier: { name: { contains: search, mode: 'insensitive' } } },
-              { items: { some: { productNameSnapshot: { contains: search, mode: 'insensitive' } } } },
+              {
+                items: {
+                  some: {
+                    productNameSnapshot: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              },
             ],
           }
         : {}),
@@ -118,10 +132,15 @@ export class PurchaseOrdersService {
     return po;
   }
 
-  async create(req: Request & { user?: { id?: string } }, dto: CreatePurchaseOrderDto) {
-    if (!dto.items?.length) throw new BadRequestException('Empty purchase order items');
+  async create(
+    req: Request & { user?: { id?: string } },
+    dto: CreatePurchaseOrderDto,
+  ) {
+    if (!dto.items?.length)
+      throw new BadRequestException('Empty purchase order items');
 
-    const warehouseId = dto.warehouseId ?? this.getHeader(req, 'x-warehouse-id');
+    const warehouseId =
+      dto.warehouseId ?? this.getHeader(req, 'x-warehouse-id');
     const branchId = dto.branchId ?? this.getHeader(req, 'x-branch-id');
 
     if (!warehouseId) throw new BadRequestException('warehouseId is required');
@@ -131,11 +150,17 @@ export class PurchaseOrdersService {
     if (branchId) await this.branchesService.findOne(branchId);
 
     if (branchId && warehouse.branchId && warehouse.branchId !== branchId) {
-      throw new ConflictException('Warehouse does not belong to provided branch');
+      throw new ConflictException(
+        'Warehouse does not belong to provided branch',
+      );
     }
 
-    const orderedByUserId = req.user?.id ?? '00000000-0000-0000-0000-000000000000';
-    const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
+    const orderedByUserId =
+      req.user?.id ?? '00000000-0000-0000-0000-000000000000';
+    const totalAmount = dto.items.reduce(
+      (sum, item) => sum + item.quantity * item.unitCost,
+      0,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       const poNo = await this.generatePoNo(tx);
@@ -182,27 +207,41 @@ export class PurchaseOrdersService {
       existing.status !== PurchaseOrderStatus.DRAFT &&
       existing.status !== PurchaseOrderStatus.PENDING_APPROVAL
     ) {
-      throw new ConflictException('Purchase order is not editable in current status');
+      throw new ConflictException(
+        'Purchase order is not editable in current status',
+      );
     }
 
     const nextSupplierId = dto.supplierId ?? existing.supplierId;
     const nextWarehouseId = dto.warehouseId ?? existing.warehouseId;
-    const nextBranchId = dto.branchId ?? (existing.branchId ?? undefined);
+    const nextBranchId = dto.branchId ?? existing.branchId ?? undefined;
 
     await this.suppliersService.findOne(nextSupplierId);
     const warehouse = await this.warehousesService.findOne(nextWarehouseId);
     if (nextBranchId) await this.branchesService.findOne(nextBranchId);
-    if (nextBranchId && warehouse.branchId && warehouse.branchId !== nextBranchId) {
-      throw new ConflictException('Warehouse does not belong to provided branch');
+    if (
+      nextBranchId &&
+      warehouse.branchId &&
+      warehouse.branchId !== nextBranchId
+    ) {
+      throw new ConflictException(
+        'Warehouse does not belong to provided branch',
+      );
     }
 
     return this.prisma.$transaction(async (tx) => {
       let totalAmount = Number(existing.totalAmount);
       if (dto.items) {
-        if (dto.items.length === 0) throw new BadRequestException('Empty purchase order items');
-        totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
+        if (dto.items.length === 0)
+          throw new BadRequestException('Empty purchase order items');
+        totalAmount = dto.items.reduce(
+          (sum, item) => sum + item.quantity * item.unitCost,
+          0,
+        );
 
-        await tx.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: id } });
+        await tx.purchaseOrderItem.deleteMany({
+          where: { purchaseOrderId: id },
+        });
         await tx.purchaseOrderItem.createMany({
           data: dto.items.map((item) => ({
             purchaseOrderId: id,
@@ -236,13 +275,25 @@ export class PurchaseOrdersService {
     });
   }
 
-  async updateStatus(id: string, req: Request & { user?: { id?: string } }, dto: UpdatePurchaseOrderStatusDto) {
+  async updateStatus(
+    id: string,
+    req: Request & { user?: { id?: string } },
+    dto: UpdatePurchaseOrderStatusDto,
+  ) {
     const po = await this.findOne(id);
-    if (po.status === PurchaseOrderStatus.CANCELLED && dto.status !== PurchaseOrderStatus.CANCELLED) {
+    if (
+      po.status === PurchaseOrderStatus.CANCELLED &&
+      dto.status !== PurchaseOrderStatus.CANCELLED
+    ) {
       throw new ConflictException('Cancelled purchase order cannot transition');
     }
-    if (po.status === PurchaseOrderStatus.RECEIVED && dto.status !== PurchaseOrderStatus.RECEIVED) {
-      throw new ConflictException('Received purchase order cannot transition backward');
+    if (
+      po.status === PurchaseOrderStatus.RECEIVED &&
+      dto.status !== PurchaseOrderStatus.RECEIVED
+    ) {
+      throw new ConflictException(
+        'Received purchase order cannot transition backward',
+      );
     }
 
     const approveStatuses = new Set<PurchaseOrderStatus>([
@@ -256,7 +307,7 @@ export class PurchaseOrdersService {
       data: {
         status: dto.status,
         approvedByUserId: approveStatuses.has(dto.status)
-          ? req.user?.id ?? dto.approvedByUserId ?? po.approvedByUserId
+          ? (req.user?.id ?? dto.approvedByUserId ?? po.approvedByUserId)
           : po.approvedByUserId,
       },
     });
@@ -269,7 +320,9 @@ export class PurchaseOrdersService {
       po.status === PurchaseOrderStatus.PARTIALLY_RECEIVED ||
       po.status === PurchaseOrderStatus.RECEIVED
     ) {
-      throw new ConflictException('Approved/received purchase order cannot be deleted');
+      throw new ConflictException(
+        'Approved/received purchase order cannot be deleted',
+      );
     }
 
     return this.prisma.purchaseOrder.update({

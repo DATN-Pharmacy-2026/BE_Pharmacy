@@ -108,14 +108,18 @@ export class ConversationService implements OnModuleInit {
     if (!this.isUuid(conversationId)) {
       return { conversation: null, messages: [] };
     }
-    const conversations = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+    const conversations = await this.prisma.$queryRawUnsafe<
+      Array<Record<string, unknown>>
+    >(
       `SELECT id, user_id, title, created_at, updated_at
        FROM chatbot_conversation
        WHERE id = $1::uuid
        LIMIT 1`,
       conversationId,
     );
-    const messages = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+    const messages = await this.prisma.$queryRawUnsafe<
+      Array<Record<string, unknown>>
+    >(
       `SELECT id, conversation_id, sender, content, metadata, created_at
        FROM chatbot_message
        WHERE conversation_id = $1::uuid
