@@ -35,4 +35,6 @@ if ($RunDemoTests) {
 
 Write-Host "`nDone. Full demo data is ready."
 Write-Host "Admin: admin / $AdminPassword"
+Write-Host "Staff: nhanvien / $UserPassword"
+Write-Host "Customer: khachhang / $UserPassword"
 Write-Host "Other users: */ $UserPassword"

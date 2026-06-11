@@ -7,6 +7,7 @@ import {
 import {
   PaymentMethod,
   PaymentStatus,
+  POSOrderStatus,
   POSSessionStatus,
   Prisma,
 } from '.prisma/client/operation';
@@ -14,11 +15,205 @@ import { Request } from 'express';
 import { OperationPrismaService } from '../../prisma/operation-prisma.service';
 import { ClosePosSessionDto } from './dto/close-pos-session.dto';
 import { OpenPosSessionDto } from './dto/open-pos-session.dto';
+import { QueryMyPosDashboardDto } from './dto/query-my-pos-dashboard.dto';
 import { QueryPosSessionsDto } from './dto/query-pos-sessions.dto';
 
 @Injectable()
 export class PosSessionsService {
   constructor(private readonly prisma: OperationPrismaService) {}
+
+  async myDashboard(
+    req: Request & { user?: { id?: string } },
+    query: QueryMyPosDashboardDto,
+  ) {
+    const cashierUserId = this.getUserId(req.user?.id);
+    const branchId = query.branchId ?? this.getHeader(req, 'x-branch-id');
+
+    const currentSession = await this.prisma.pOSSession.findFirst({
+      where: {
+        cashierUserId,
+        status: POSSessionStatus.OPEN,
+        ...(branchId ? { branchId } : {}),
+        ...(query.storeId ? { storeId: query.storeId } : {}),
+        ...(query.posTerminalId ? { posTerminalId: query.posTerminalId } : {}),
+      },
+      orderBy: { openedAt: 'desc' },
+      include: {
+        branch: { select: { id: true, code: true, name: true } },
+        store: { select: { id: true, code: true, name: true } },
+        posTerminal: { select: { id: true, code: true, name: true } },
+      },
+    });
+
+    if (!currentSession) {
+      return {
+        revenue: 0,
+        orderCount: 0,
+        openingCash: 0,
+        cashPaidAmount: 0,
+        nonCashAmount: 0,
+        codAmount: 0,
+        cashRefundAmount: 0,
+        expectedCash: 0,
+        currentSessionStatus: 'NO_OPEN_SESSION',
+        currentSession: null,
+        paymentBreakdown: {
+          cash: 0,
+          card: 0,
+          bankTransfer: 0,
+          eWallet: 0,
+          cod: 0,
+          other: 0,
+        },
+      };
+    }
+
+    const orderWhere: Prisma.POSOrderWhereInput = {
+      cashierUserId,
+      posSessionId: currentSession.id,
+      branchId: currentSession.branchId,
+      ...(query.dateFrom || query.dateTo
+        ? {
+            createdAt: {
+              ...(query.dateFrom ? { gte: new Date(query.dateFrom) } : {}),
+              ...(query.dateTo ? { lte: new Date(query.dateTo) } : {}),
+            },
+          }
+        : {}),
+    };
+
+    const paymentWhere: Prisma.POSPaymentWhereInput = {
+      posOrder: {
+        cashierUserId,
+        posSessionId: currentSession.id,
+        branchId: currentSession.branchId,
+      },
+      ...(query.dateFrom || query.dateTo
+        ? {
+            paidAt: {
+              ...(query.dateFrom ? { gte: new Date(query.dateFrom) } : {}),
+              ...(query.dateTo ? { lte: new Date(query.dateTo) } : {}),
+            },
+          }
+        : {}),
+    };
+
+    const [orderCount, payments] = await this.prisma.$transaction([
+      this.prisma.pOSOrder.count({
+        where: {
+          ...orderWhere,
+          status: {
+            in: [
+              POSOrderStatus.CREATED,
+              POSOrderStatus.COMPLETED,
+              POSOrderStatus.REFUNDED,
+            ],
+          },
+        },
+      }),
+      this.prisma.pOSPayment.findMany({
+        where: paymentWhere,
+        select: {
+          id: true,
+          posOrderId: true,
+          method: true,
+          amount: true,
+          status: true,
+          posOrder: {
+            select: {
+              grandTotal: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const paymentBreakdown = {
+      cash: 0,
+      card: 0,
+      bankTransfer: 0,
+      eWallet: 0,
+      cod: 0,
+      other: 0,
+    };
+
+    let revenue = 0;
+    let cashPaidAmount = 0;
+    let cashRefundAmount = 0;
+    let codAmount = 0;
+
+    for (const payment of payments) {
+      const amount = Number(payment.posOrder?.grandTotal ?? payment.amount ?? 0);
+
+      if (payment.status === PaymentStatus.PAID) {
+        revenue += amount;
+        switch (payment.method) {
+          case PaymentMethod.CASH:
+            paymentBreakdown.cash += amount;
+            cashPaidAmount += amount;
+            break;
+          case PaymentMethod.CARD:
+            paymentBreakdown.card += amount;
+            break;
+          case PaymentMethod.BANK_TRANSFER:
+            paymentBreakdown.bankTransfer += amount;
+            break;
+          case PaymentMethod.E_WALLET:
+            paymentBreakdown.eWallet += amount;
+            break;
+          case PaymentMethod.COD:
+            paymentBreakdown.cod += amount;
+            codAmount += amount;
+            break;
+          default:
+            paymentBreakdown.other += amount;
+            break;
+        }
+      }
+
+      if (
+        payment.status === PaymentStatus.REFUNDED &&
+        payment.method === PaymentMethod.CASH
+      ) {
+        cashRefundAmount += amount;
+      }
+    }
+
+    const nonCashAmount =
+      paymentBreakdown.card +
+      paymentBreakdown.bankTransfer +
+      paymentBreakdown.eWallet +
+      paymentBreakdown.other;
+    const openingCash = Number(currentSession.openingCash ?? 0);
+    const expectedCash = openingCash + cashPaidAmount - cashRefundAmount;
+
+    return {
+      revenue,
+      orderCount,
+      openingCash,
+      cashPaidAmount,
+      nonCashAmount,
+      codAmount,
+      cashRefundAmount,
+      expectedCash,
+      currentSessionStatus: currentSession.status,
+      currentSession: {
+        id: currentSession.id,
+        branchId: currentSession.branchId,
+        storeId: currentSession.storeId,
+        posTerminalId: currentSession.posTerminalId,
+        cashierUserId: currentSession.cashierUserId,
+        openedAt: currentSession.openedAt,
+        closedAt: currentSession.closedAt,
+        openingCash,
+        status: currentSession.status,
+        branch: currentSession.branch,
+        store: currentSession.store,
+        posTerminal: currentSession.posTerminal,
+      },
+      paymentBreakdown,
+    };
+  }
 
   async findAll(query: QueryPosSessionsDto) {
     const {

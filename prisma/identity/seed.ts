@@ -22,6 +22,7 @@ const ROLES: Array<{ code: RoleCode; name: string; scope: RoleScope; isSystemRol
 const PERMISSIONS = [
   { code: 'admin.access', name: 'Access Admin Area', module: 'admin', action: 'access' },
   { code: 'pos.access', name: 'Access POS Area', module: 'pos', action: 'access' },
+  { code: 'pos.dashboard.view', name: 'View Own POS Dashboard', module: 'pos.dashboard', action: 'view' },
 
   { code: 'permission.manage', name: 'Manage Permissions', module: 'permission', action: 'manage' },
   { code: 'role.manage', name: 'Manage Roles', module: 'role', action: 'manage' },
@@ -100,6 +101,7 @@ const ROLE_PERMISSIONS: Record<RoleCode, string[]> = {
   SUPER_ADMIN: PERMISSIONS.map((p) => p.code),
   PHARMACIST: [
     'pos.access',
+    'pos.dashboard.view',
     'pos.sell',
     'pos.refund',
     'pos_order.view',
@@ -200,7 +202,9 @@ async function upsertDemoUsers(passwordHash: string, adminPasswordHash: string) 
     warehouseIds: string[];
   }> = [
     { id: '60000000-0000-0000-0000-000000000001', username: 'admin', email: 'admin@pharmplus.local', fullName: 'Super Admin Demo', phone: '0900000000', roleCode: 'SUPER_ADMIN', isSystemAdmin: true, passwordHash: adminPasswordHash, branchIds: [BRANCH_1_ID, BRANCH_2_ID], warehouseIds: [WAREHOUSE_1_ID, WAREHOUSE_2_ID] },
+    { id: '60000000-0000-0000-0000-000000000009', username: 'nhanvien', email: 'nhanvien@pharmplus.local', fullName: 'Nhan Vien Demo', phone: '0900000009', roleCode: 'PHARMACIST', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
     { id: '60000000-0000-0000-0000-000000000008', username: 'pharmacist.branch1', email: 'pharmacist.branch1@pharmplus.local', fullName: 'Pharmacist Branch 1 Demo', phone: '0900000008', roleCode: 'PHARMACIST', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
+    { id: '70000000-0000-0000-0000-000000000009', username: 'khachhang', email: 'khachhang@pharmplus.local', fullName: 'Khach Hang Demo', phone: '0900000019', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
     { id: '70000000-0000-0000-0000-000000000001', username: 'customer1', email: 'customer1@pharmplus.local', fullName: 'Customer Demo 1', phone: '0900000007', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
     { id: '70000000-0000-0000-0000-000000000002', username: 'customer2', email: 'customer2@pharmplus.local', fullName: 'Customer Demo 2', phone: '0900000018', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
     { id: '70000000-0000-0000-0000-000000000003', username: 'nguyenvanan', email: 'nguyen.van.an@pharmplus.local', fullName: 'Nguyen Van An', phone: '0901111222', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
@@ -294,7 +298,9 @@ async function main(): Promise<void> {
   console.log(`Permissions upserted: ${permissionsUpdated}`);
   console.log(`Role-permission links synced: ${rolePermissionLinksCreated}`);
   console.log(`Demo users upserted: ${usersUpdated}`);
-  console.log(`Admin account: admin@pharmplus.local / ${adminPassword}`);
+  console.log(`Admin account: admin / ${adminPassword}`);
+  console.log(`Staff account: nhanvien / ${defaultPassword}`);
+  console.log(`Customer account: khachhang / ${defaultPassword}`);
   console.log(`Other demo accounts password: ${defaultPassword}`);
 }
 

@@ -164,6 +164,66 @@ export class UsersService {
       },
     });
 
+    let resolvedRoleId: string | undefined;
+    let resolvedRoleCode: string | undefined;
+    if (dto.roleCode || dto.roleIds?.length) {
+      const assignedRoles = await this.assignRoles(id, {
+        roleCode: dto.roleCode,
+        roleIds: dto.roleIds,
+      });
+      resolvedRoleId = assignedRoles[0]?.roleId;
+      resolvedRoleCode = assignedRoles[0]?.role?.code;
+    }
+
+    if (dto.branchId) {
+      if (resolvedRoleId) {
+        await this.prisma.userBranchAccess.updateMany({
+          where: { userId: id, isDefaultBranch: true, branchId: { not: dto.branchId } },
+          data: { isDefaultBranch: false },
+        });
+      }
+
+      await this.prisma.userBranchAccess.upsert({
+        where: { userId_branchId: { userId: id, branchId: dto.branchId } },
+        create: {
+          userId: id,
+          branchId: dto.branchId,
+          roleId: resolvedRoleId,
+          canAccessPOS:
+            resolvedRoleCode === 'SUPER_ADMIN' ||
+            resolvedRoleCode === 'PHARMACIST',
+          isDefaultBranch: true,
+          status: AccessStatus.ACTIVE,
+        },
+        update: {
+          roleId: resolvedRoleId,
+          canAccessPOS:
+            resolvedRoleCode === 'SUPER_ADMIN' ||
+            resolvedRoleCode === 'PHARMACIST',
+          isDefaultBranch: true,
+          status: AccessStatus.ACTIVE,
+        },
+      });
+    }
+
+    if (dto.warehouseId) {
+      await this.prisma.userWarehouseAccess.upsert({
+        where: {
+          userId_warehouseId: { userId: id, warehouseId: dto.warehouseId },
+        },
+        create: {
+          userId: id,
+          warehouseId: dto.warehouseId,
+          roleId: resolvedRoleId,
+          status: AccessStatus.ACTIVE,
+        },
+        update: {
+          roleId: resolvedRoleId,
+          status: AccessStatus.ACTIVE,
+        },
+      });
+    }
+
     return this.toSafeUser(user);
   }
 

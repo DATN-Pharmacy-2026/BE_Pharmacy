@@ -14,6 +14,7 @@ import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { Request } from 'express';
 import { ClosePosSessionDto } from './dto/close-pos-session.dto';
 import { OpenPosSessionDto } from './dto/open-pos-session.dto';
+import { QueryMyPosDashboardDto } from './dto/query-my-pos-dashboard.dto';
 import { QueryPosSessionsDto } from './dto/query-pos-sessions.dto';
 import { PosSessionsService } from './pos-sessions.service';
 
@@ -46,6 +47,13 @@ export class PosSessionsController {
       storeId,
       posTerminalId,
     });
+  }
+
+  @Get('my-dashboard')
+  @UseGuards(PermissionsGuard)
+  @Permissions('pos.access', 'pos.dashboard.view')
+  myDashboard(@Req() req: Request, @Query() query: QueryMyPosDashboardDto) {
+    return this.posSessionsService.myDashboard(req, query);
   }
 
   @Get(':id')
