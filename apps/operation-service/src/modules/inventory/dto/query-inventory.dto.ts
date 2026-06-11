@@ -31,9 +31,19 @@ export class QueryInventoryDto {
   @IsOptional()
   productId?: string;
 
+  @ApiPropertyOptional({
+    description: 'Comma-separated product IDs resolved by the frontend lookup',
+  })
+  @IsOptional()
+  productIds?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   batchId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  batchCode?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

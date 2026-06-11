@@ -20,7 +20,9 @@ export class InventoryService {
       page = 1,
       limit = 20,
       productId,
+      productIds,
       batchId,
+      batchCode,
       warehouseId,
       locationId,
       branchId,
@@ -31,13 +33,33 @@ export class InventoryService {
       sortBy = 'updatedAt',
       sortOrder = 'desc',
     } = query;
+    const resolvedProductIds = productId
+      ? [productId]
+      : (productIds ?? '')
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean);
     const allowedSortFields = ['updatedAt', 'expiryDate', 'quantityAvailable'];
     if (!allowedSortFields.includes(sortBy)) {
       throw new BadRequestException('Invalid sort field');
     }
     const where: Prisma.InventoryItemWhereInput = {
-      ...(productId ? { productId } : {}),
+      ...(resolvedProductIds.length > 0
+        ? {
+            productId:
+              resolvedProductIds.length === 1
+                ? resolvedProductIds[0]
+                : { in: resolvedProductIds },
+          }
+        : {}),
       ...(batchId ? { batchId } : {}),
+      ...(batchCode
+        ? {
+            batch: {
+              batchNo: { contains: batchCode, mode: 'insensitive' },
+            },
+          }
+        : {}),
       ...(warehouseId ? { warehouseId } : {}),
       ...(locationId ? { locationId } : {}),
       ...(branchId ? { branchId } : {}),
