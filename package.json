@@ -39,6 +39,7 @@
     "prisma:seed:operation": "npx ts-node prisma/operation/seed.ts",
     "prisma:seed:reporting": "npx ts-node prisma/reporting/seed.ts",
     "prisma:seed:notification": "npx ts-node prisma/notification/seed.ts",
+    "seed:products": "npx ts-node scripts/seed-products.ts",
     "import:longchau": "npx ts-node scripts/import-longchau-products.ts",
     "products:replace-demo": "npx ts-node scripts/replace-demo-products.ts",
     "sync:pos-inventory": "npx ts-node scripts/sync-pos-inventory.ts",
