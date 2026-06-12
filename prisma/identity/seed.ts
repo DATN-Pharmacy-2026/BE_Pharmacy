@@ -9,15 +9,20 @@ const WAREHOUSE_1_ID = '22222222-2222-2222-2222-222222222222';
 const WAREHOUSE_2_ID = '22222222-2222-2222-2222-222222222223';
 
 type RoleCode =
-  | 'SUPER_ADMIN'
-  | 'PHARMACIST'
+  | 'ADMIN'
+  | 'EMPLOYEE'
   | 'CUSTOMER';
 
 const ROLES: Array<{ code: RoleCode; name: string; scope: RoleScope; isSystemRole: boolean }> = [
-  { code: 'SUPER_ADMIN', name: 'Super Admin / Admin', scope: RoleScope.SYSTEM, isSystemRole: true },
-  { code: 'PHARMACIST', name: 'Pharmacist', scope: RoleScope.BRANCH, isSystemRole: false },
+  { code: 'ADMIN', name: 'Admin', scope: RoleScope.SYSTEM, isSystemRole: true },
+  { code: 'EMPLOYEE', name: 'Employee', scope: RoleScope.BRANCH, isSystemRole: false },
   { code: 'CUSTOMER', name: 'Customer', scope: RoleScope.SYSTEM, isSystemRole: false },
 ];
+
+const LEGACY_ROLE_ALIASES: Partial<Record<RoleCode, string[]>> = {
+  ADMIN: ['SUPER_ADMIN'],
+  EMPLOYEE: ['PHARMACIST'],
+};
 
 const PERMISSIONS = [
   { code: 'admin.access', name: 'Access Admin Area', module: 'admin', action: 'access' },
@@ -98,8 +103,8 @@ const PERMISSIONS = [
 ] as const;
 
 const ROLE_PERMISSIONS: Record<RoleCode, string[]> = {
-  SUPER_ADMIN: PERMISSIONS.map((p) => p.code),
-  PHARMACIST: [
+  ADMIN: PERMISSIONS.map((p) => p.code),
+  EMPLOYEE: [
     'pos.access',
     'pos.dashboard.view',
     'pos.sell',
@@ -169,18 +174,22 @@ async function syncRolePermissions() {
 
   let links = 0;
   for (const [roleCode, permissionCodes] of Object.entries(ROLE_PERMISSIONS) as Array<[RoleCode, string[]]>) {
-    const roleId = roleIdByCode.get(roleCode);
-    if (!roleId) continue;
+    const targetRoleCodes = [roleCode, ...(LEGACY_ROLE_ALIASES[roleCode] ?? [])];
 
-    await prisma.rolePermission.deleteMany({ where: { roleId } });
-    const data = permissionCodes
-      .map((code) => permissionIdByCode.get(code))
-      .filter((id): id is string => Boolean(id))
-      .map((permissionId) => ({ roleId, permissionId }));
+    for (const targetRoleCode of targetRoleCodes) {
+      const roleId = roleIdByCode.get(targetRoleCode);
+      if (!roleId) continue;
 
-    if (data.length > 0) {
-      const result = await prisma.rolePermission.createMany({ data, skipDuplicates: true });
-      links += result.count;
+      await prisma.rolePermission.deleteMany({ where: { roleId } });
+      const data = permissionCodes
+        .map((code) => permissionIdByCode.get(code))
+        .filter((id): id is string => Boolean(id))
+        .map((permissionId) => ({ roleId, permissionId }));
+
+      if (data.length > 0) {
+        const result = await prisma.rolePermission.createMany({ data, skipDuplicates: true });
+        links += result.count;
+      }
     }
   }
   return links;
@@ -201,9 +210,10 @@ async function upsertDemoUsers(passwordHash: string, adminPasswordHash: string) 
     branchIds: string[];
     warehouseIds: string[];
   }> = [
-    { id: '60000000-0000-0000-0000-000000000001', username: 'admin', email: 'admin@pharmplus.local', fullName: 'Super Admin Demo', phone: '0900000000', roleCode: 'SUPER_ADMIN', isSystemAdmin: true, passwordHash: adminPasswordHash, branchIds: [BRANCH_1_ID, BRANCH_2_ID], warehouseIds: [WAREHOUSE_1_ID, WAREHOUSE_2_ID] },
-    { id: '60000000-0000-0000-0000-000000000009', username: 'nhanvien', email: 'nhanvien@pharmplus.local', fullName: 'Nhan Vien Demo', phone: '0900000009', roleCode: 'PHARMACIST', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
-    { id: '60000000-0000-0000-0000-000000000008', username: 'pharmacist.branch1', email: 'pharmacist.branch1@pharmplus.local', fullName: 'Pharmacist Branch 1 Demo', phone: '0900000008', roleCode: 'PHARMACIST', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
+    { id: '60000000-0000-0000-0000-000000000001', username: 'admin', email: 'admin@pharmplus.local', fullName: 'Admin Demo', phone: '0900000000', roleCode: 'ADMIN', isSystemAdmin: true, passwordHash: adminPasswordHash, branchIds: [BRANCH_1_ID, BRANCH_2_ID], warehouseIds: [WAREHOUSE_1_ID, WAREHOUSE_2_ID] },
+    { id: '60000000-0000-0000-0000-000000000009', username: 'nhanvien', email: 'nhanvien@pharmplus.local', fullName: 'Nhan Vien Demo', phone: '0900000009', roleCode: 'EMPLOYEE', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
+    { id: '60000000-0000-0000-0000-000000000008', username: 'employee.branch1', email: 'employee.branch1@pharmplus.local', fullName: 'Employee Branch 1 Demo', phone: '0900000008', roleCode: 'EMPLOYEE', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
+    { id: '60000000-0000-0000-0000-000000000010', username: 'pharmacist.branch1', email: 'pharmacist.branch1@pharmplus.local', fullName: 'Pharmacist Branch 1 Demo', phone: '0900000010', roleCode: 'EMPLOYEE', branchIds: [BRANCH_1_ID], warehouseIds: [WAREHOUSE_1_ID] },
     { id: '70000000-0000-0000-0000-000000000009', username: 'khachhang', email: 'khachhang@pharmplus.local', fullName: 'Khach Hang Demo', phone: '0900000019', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
     { id: '70000000-0000-0000-0000-000000000001', username: 'customer1', email: 'customer1@pharmplus.local', fullName: 'Customer Demo 1', phone: '0900000007', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
     { id: '70000000-0000-0000-0000-000000000002', username: 'customer2', email: 'customer2@pharmplus.local', fullName: 'Customer Demo 2', phone: '0900000018', roleCode: 'CUSTOMER', branchIds: [], warehouseIds: [] },
@@ -252,9 +262,9 @@ async function upsertDemoUsers(passwordHash: string, adminPasswordHash: string) 
           userId: user.id,
           branchId,
           roleId,
-          canAccessPOS: ['SUPER_ADMIN', 'PHARMACIST'].includes(demoUser.roleCode),
-          canManageInventory: ['SUPER_ADMIN'].includes(demoUser.roleCode),
-          canApproveTransfer: ['SUPER_ADMIN'].includes(demoUser.roleCode),
+          canAccessPOS: ['ADMIN', 'EMPLOYEE'].includes(demoUser.roleCode),
+          canManageInventory: ['ADMIN'].includes(demoUser.roleCode),
+          canApproveTransfer: ['ADMIN'].includes(demoUser.roleCode),
           isDefaultBranch: idx === 0,
           status: AccessStatus.ACTIVE,
         })),
@@ -268,9 +278,9 @@ async function upsertDemoUsers(passwordHash: string, adminPasswordHash: string) 
           userId: user.id,
           warehouseId,
           roleId,
-          canReceiveStock: ['SUPER_ADMIN'].includes(demoUser.roleCode),
-          canTransferStock: ['SUPER_ADMIN'].includes(demoUser.roleCode),
-          canAdjustStock: ['SUPER_ADMIN'].includes(demoUser.roleCode),
+          canReceiveStock: ['ADMIN'].includes(demoUser.roleCode),
+          canTransferStock: ['ADMIN'].includes(demoUser.roleCode),
+          canAdjustStock: ['ADMIN'].includes(demoUser.roleCode),
           status: AccessStatus.ACTIVE,
         })),
         skipDuplicates: true,
@@ -299,7 +309,7 @@ async function main(): Promise<void> {
   console.log(`Role-permission links synced: ${rolePermissionLinksCreated}`);
   console.log(`Demo users upserted: ${usersUpdated}`);
   console.log(`Admin account: admin / ${adminPassword}`);
-  console.log(`Staff account: nhanvien / ${defaultPassword}`);
+  console.log(`Employee account: nhanvien / ${defaultPassword}`);
   console.log(`Customer account: khachhang / ${defaultPassword}`);
   console.log(`Other demo accounts password: ${defaultPassword}`);
 }

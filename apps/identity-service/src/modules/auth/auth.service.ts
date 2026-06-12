@@ -29,6 +29,21 @@ interface RequestMeta {
 
 type ScopeMode = 'ALL' | 'ASSIGNED' | 'NONE';
 
+const ADMIN_ROLE_ALIASES = new Set([
+  ROLE_CODES.ADMIN,
+  ROLE_CODES.SUPER_ADMIN,
+  ROLE_CODES.COMPANY_ADMIN,
+]);
+
+const EMPLOYEE_ROLE_ALIASES = new Set([
+  ROLE_CODES.EMPLOYEE,
+  ROLE_CODES.PHARMACIST,
+  ROLE_CODES.BRANCH_MANAGER,
+  ROLE_CODES.CASHIER,
+  ROLE_CODES.INVENTORY_MANAGER,
+  ROLE_CODES.CUSTOMER_SERVICE,
+]);
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -536,7 +551,7 @@ export class AuthService {
   ): boolean {
     return (
       user.isSystemAdmin ||
-      user.roles.includes(ROLE_CODES.SUPER_ADMIN) ||
+      user.roles.some((roleCode) => ADMIN_ROLE_ALIASES.has(roleCode)) ||
       user.permissions.includes('*') ||
       user.permissions.includes(permissionCode)
     );
@@ -546,15 +561,16 @@ export class AuthService {
     roles: string[],
     branchCount: number,
   ): ScopeMode {
-    if (
-      roles.includes(ROLE_CODES.SUPER_ADMIN) ||
-      roles.includes(ROLE_CODES.COMPANY_ADMIN)
-    ) {
+    if (roles.some((roleCode) => ADMIN_ROLE_ALIASES.has(roleCode))) {
       return 'ALL';
     }
 
     if (roles.includes(ROLE_CODES.CUSTOMER)) {
       return 'NONE';
+    }
+
+    if (roles.some((roleCode) => EMPLOYEE_ROLE_ALIASES.has(roleCode))) {
+      return branchCount > 0 ? 'ASSIGNED' : 'NONE';
     }
 
     if (branchCount > 0) {
@@ -568,15 +584,16 @@ export class AuthService {
     roles: string[],
     warehouseCount: number,
   ): ScopeMode {
-    if (
-      roles.includes(ROLE_CODES.SUPER_ADMIN) ||
-      roles.includes(ROLE_CODES.COMPANY_ADMIN)
-    ) {
+    if (roles.some((roleCode) => ADMIN_ROLE_ALIASES.has(roleCode))) {
       return 'ALL';
     }
 
     if (roles.includes(ROLE_CODES.CUSTOMER)) {
       return 'NONE';
+    }
+
+    if (roles.some((roleCode) => EMPLOYEE_ROLE_ALIASES.has(roleCode))) {
+      return warehouseCount > 0 ? 'ASSIGNED' : 'NONE';
     }
 
     if (warehouseCount > 0) {

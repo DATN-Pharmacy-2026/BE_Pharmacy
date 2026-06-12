@@ -13,6 +13,16 @@ import { QueryUsersDto } from './dto/query-users.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+const ADMIN_ROLE_CODES = new Set(['ADMIN', 'SUPER_ADMIN']);
+const EMPLOYEE_ROLE_CODES = new Set([
+  'EMPLOYEE',
+  'PHARMACIST',
+  'BRANCH_MANAGER',
+  'CASHIER',
+  'INVENTORY_MANAGER',
+  'CUSTOMER_SERVICE',
+]);
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -190,16 +200,20 @@ export class UsersService {
           branchId: dto.branchId,
           roleId: resolvedRoleId,
           canAccessPOS:
-            resolvedRoleCode === 'SUPER_ADMIN' ||
-            resolvedRoleCode === 'PHARMACIST',
+            (resolvedRoleCode
+              ? ADMIN_ROLE_CODES.has(resolvedRoleCode) ||
+                EMPLOYEE_ROLE_CODES.has(resolvedRoleCode)
+              : false),
           isDefaultBranch: true,
           status: AccessStatus.ACTIVE,
         },
         update: {
           roleId: resolvedRoleId,
           canAccessPOS:
-            resolvedRoleCode === 'SUPER_ADMIN' ||
-            resolvedRoleCode === 'PHARMACIST',
+            (resolvedRoleCode
+              ? ADMIN_ROLE_CODES.has(resolvedRoleCode) ||
+                EMPLOYEE_ROLE_CODES.has(resolvedRoleCode)
+              : false),
           isDefaultBranch: true,
           status: AccessStatus.ACTIVE,
         },
