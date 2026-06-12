@@ -29,13 +29,13 @@ interface RequestMeta {
 
 type ScopeMode = 'ALL' | 'ASSIGNED' | 'NONE';
 
-const ADMIN_ROLE_ALIASES = new Set([
+const ADMIN_ROLE_ALIASES: ReadonlySet<string> = new Set([
   ROLE_CODES.ADMIN,
   ROLE_CODES.SUPER_ADMIN,
   ROLE_CODES.COMPANY_ADMIN,
 ]);
 
-const EMPLOYEE_ROLE_ALIASES = new Set([
+const EMPLOYEE_ROLE_ALIASES: ReadonlySet<string> = new Set([
   ROLE_CODES.EMPLOYEE,
   ROLE_CODES.PHARMACIST,
   ROLE_CODES.BRANCH_MANAGER,
