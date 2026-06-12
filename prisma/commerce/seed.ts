@@ -9,6 +9,19 @@ import {
   PrismaClient,
   ProductStatus,
 } from '../../node_modules/.prisma/client/commerce';
+import {
+  REAL_PRODUCT_CATALOG,
+  buildDescription,
+  buildRealProductSku,
+  buildRealProductSlug,
+  inferBrandName,
+  inferBrandSlug,
+  inferCategoryName,
+  inferCategorySlug,
+  inferDosageForm,
+  inferRequiresPrescription,
+  inferUnit,
+} from '../../scripts/data/real-product-catalog';
 
 const prisma = new PrismaClient();
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -76,6 +89,8 @@ async function seedCategories() {
     { name: 'Functional Food', slug: 'functional-food' },
     { name: 'Medical Equipment', slug: 'medical-equipment' },
     { name: 'Cosmetics', slug: 'cosmetics' },
+    { name: 'Chăm sóc cá nhân', slug: 'personal-care' },
+    { name: 'Thuốc', slug: 'medicine' },
   ];
 
   for (const category of categories) {
@@ -116,196 +131,75 @@ async function seedBrands() {
 }
 
 async function seedProducts() {
-  const medicineCategory = await prisma.category.findUniqueOrThrow({ where: { slug: 'medicine' } });
-  const functionalFoodCategory = await prisma.category.findUniqueOrThrow({ where: { slug: 'functional-food' } });
-  const equipmentCategory = await prisma.category.findUniqueOrThrow({ where: { slug: 'medical-equipment' } });
-
-  const internalBrand = await prisma.brand.findUniqueOrThrow({ where: { slug: 'internal-brand' } });
-  const defaultPharmaBrand = await prisma.brand.findUniqueOrThrow({ where: { slug: 'default-pharma' } });
-
-  const products = [
-    {
-      sku: 'PARA-500MG-TAB-01',
-      barcode: '8931001000001',
-      name: 'Paracetamol 500mg',
-      slug: 'paracetamol-500mg',
-      description: 'Pain reliever and fever reducer tablet',
-      indication: 'Cam sot, dau dau, dau nhuc co xuong khop',
-      activeIngredient: 'Paracetamol',
-      dosageForm: 'Tablet',
-      strength: '500mg',
-      registrationNumber: 'VN-REG-PARA-500',
-      requiresPrescription: false,
-      unit: 'box',
-      basePrice: '25000',
-      status: ProductStatus.ACTIVE,
-      categoryId: medicineCategory.id,
-      brandId: internalBrand.id,
-    },
-    {
-      sku: 'VITC-1000MG-EFF-01',
-      barcode: '8931001000002',
-      name: 'Vitamin C 1000mg',
-      slug: 'vitamin-c-1000mg',
-      description: 'Vitamin C supplement',
-      indication: 'Tang cuong de khang, ho tro hoi phuc sau om',
-      activeIngredient: 'Vitamin C',
-      dosageForm: 'Effervescent Tablet',
-      strength: '1000mg',
-      registrationNumber: 'VN-REG-VITC-1000',
-      requiresPrescription: false,
-      unit: 'tube',
-      basePrice: '85000',
-      status: ProductStatus.ACTIVE,
-      categoryId: functionalFoodCategory.id,
-      brandId: defaultPharmaBrand.id,
-    },
-    {
-      sku: 'BPM-DEVICE-ARM-01',
-      barcode: '8931001000003',
-      name: 'Blood Pressure Monitor',
-      slug: 'blood-pressure-monitor',
-      description: 'Digital upper-arm blood pressure monitor',
-      indication: 'Theo doi huyet ap tai nha',
-      activeIngredient: null,
-      dosageForm: 'Device',
-      strength: null,
-      registrationNumber: 'VN-REG-BPM-001',
-      requiresPrescription: false,
-      unit: 'piece',
-      basePrice: '950000',
-      status: ProductStatus.ACTIVE,
-      categoryId: equipmentCategory.id,
-      brandId: defaultPharmaBrand.id,
-    },
-    {
-      sku: 'SALINE-NASAL-01',
-      barcode: '8931001000004',
-      name: 'Saline Nasal Spray',
-      slug: 'saline-nasal-spray',
-      description: 'Sterile saline spray for nasal hygiene',
-      indication: 'Ve sinh mui, giam kho mui, ho tro cam lanh',
-      activeIngredient: 'Sodium Chloride',
-      dosageForm: 'Spray',
-      strength: '0.9%',
-      registrationNumber: 'VN-REG-SALINE-001',
-      requiresPrescription: false,
-      unit: 'bottle',
-      basePrice: '42000',
-      status: ProductStatus.ACTIVE,
-      categoryId: medicineCategory.id,
-      brandId: internalBrand.id,
-    },
-    {
-      sku: 'AMOX-500MG-CAP-01',
-      barcode: '8931001000005',
-      name: 'Amoxicillin 500mg',
-      slug: 'amoxicillin-500mg',
-      description: 'Broad-spectrum antibiotic capsule',
-      indication: 'Nhiem khuan duong ho hap, nhiem khuan tai mui hong',
-      activeIngredient: 'Amoxicillin',
-      dosageForm: 'Capsule',
-      strength: '500mg',
-      registrationNumber: 'VN-REG-AMOX-500',
-      requiresPrescription: true,
-      unit: 'box',
-      basePrice: '68000',
-      status: ProductStatus.ACTIVE,
-      categoryId: medicineCategory.id,
-      brandId: defaultPharmaBrand.id,
-    },
-  ];
-
-  for (const product of products) {
-    await prisma.product.upsert({
-      where: { sku: product.sku },
+  for (const [index, item] of REAL_PRODUCT_CATALOG.entries()) {
+    const category = await prisma.category.upsert({
+      where: { slug: inferCategorySlug(item) },
       update: {
-        ...product,
-        deletedAt: null,
+        name: inferCategoryName(item),
+        isActive: true,
       },
-      create: product,
+      create: {
+        slug: inferCategorySlug(item),
+        name: inferCategoryName(item),
+        isActive: true,
+      },
     });
-  }
 
-  await seedBulkProducts(medicineCategory.id, functionalFoodCategory.id, equipmentCategory.id, internalBrand.id, defaultPharmaBrand.id);
-  await seedProductImages();
-}
-
-async function seedBulkProducts(
-  medicineCategoryId: string,
-  functionalFoodCategoryId: string,
-  equipmentCategoryId: string,
-  internalBrandId: string,
-  defaultPharmaBrandId: string,
-) {
-  const useCases = [
-    'Cam sot',
-    'Dau dau',
-    'Dau xuong khop',
-    'Ho tro tieu hoa',
-    'Tang de khang',
-    'Ngu ngon',
-    'On dinh huyet ap',
-    'Cham soc da',
-    'Giam ho',
-    'Bo sung vitamin',
-  ];
-
-  for (let i = 1; i <= 100; i++) {
-    const isMedicine = i % 3 !== 0;
-    const categoryId = isMedicine
-      ? medicineCategoryId
-      : i % 2 === 0
-        ? functionalFoodCategoryId
-        : equipmentCategoryId;
-    const brandId = i % 2 === 0 ? internalBrandId : defaultPharmaBrandId;
-    const useCase = useCases[i % useCases.length];
-    const seq = String(i).padStart(3, '0');
-    const sku = `DEMO-PROD-${seq}`;
-    const slug = `demo-product-${seq}`;
-    const barcode = `8999000${String(1000 + i).padStart(4, '0')}`;
-    const basePrice = String(15000 + i * 3500);
+    const brand = await prisma.brand.upsert({
+      where: { slug: inferBrandSlug(item) },
+      update: {
+        name: inferBrandName(item),
+        isActive: true,
+      },
+      create: {
+        slug: inferBrandSlug(item),
+        name: inferBrandName(item),
+        isActive: true,
+      },
+    });
 
     await prisma.product.upsert({
-      where: { sku },
+      where: { sku: buildRealProductSku(item, index) },
       update: {
-        categoryId,
-        brandId,
-        barcode,
-        name: `Demo Product ${seq}`,
-        slug,
-        description: `San pham demo so ${seq} cho kiem thu tai luong lon`,
-        indication: `${useCase}, cham soc suc khoe hang ngay`,
-        activeIngredient: isMedicine ? `Active Ingredient ${seq}` : null,
-        dosageForm: isMedicine ? 'Tablet' : 'Supplement',
-        strength: isMedicine ? `${200 + i}mg` : null,
-        registrationNumber: `VN-DEMO-${seq}`,
-        requiresPrescription: isMedicine && i % 5 === 0,
-        unit: i % 4 === 0 ? 'bottle' : 'box',
-        basePrice,
+        name: item.name,
+        slug: buildRealProductSlug(item, index),
+        description: buildDescription(item),
+        indication: item.indication,
+        activeIngredient: item.activeIngredient,
+        dosageForm: inferDosageForm(item),
+        strength: null,
+        registrationNumber: null,
+        requiresPrescription: inferRequiresPrescription(item),
+        unit: inferUnit(item),
+        basePrice: 0,
         status: ProductStatus.ACTIVE,
+        categoryId: category.id,
+        brandId: brand.id,
+        barcode: null,
         deletedAt: null,
       },
       create: {
-        categoryId,
-        brandId,
-        sku,
-        barcode,
-        name: `Demo Product ${seq}`,
-        slug,
-        description: `San pham demo so ${seq} cho kiem thu tai luong lon`,
-        indication: `${useCase}, cham soc suc khoe hang ngay`,
-        activeIngredient: isMedicine ? `Active Ingredient ${seq}` : null,
-        dosageForm: isMedicine ? 'Tablet' : 'Supplement',
-        strength: isMedicine ? `${200 + i}mg` : null,
-        registrationNumber: `VN-DEMO-${seq}`,
-        requiresPrescription: isMedicine && i % 5 === 0,
-        unit: i % 4 === 0 ? 'bottle' : 'box',
-        basePrice,
+        sku: buildRealProductSku(item, index),
+        name: item.name,
+        slug: buildRealProductSlug(item, index),
+        description: buildDescription(item),
+        indication: item.indication,
+        activeIngredient: item.activeIngredient,
+        dosageForm: inferDosageForm(item),
+        strength: null,
+        registrationNumber: null,
+        requiresPrescription: inferRequiresPrescription(item),
+        unit: inferUnit(item),
+        basePrice: 0,
         status: ProductStatus.ACTIVE,
+        categoryId: category.id,
+        brandId: brand.id,
+        barcode: null,
       },
     });
   }
+
+  await seedProductImages();
 }
 
 async function seedCoupons() {

@@ -40,6 +40,7 @@
     "prisma:seed:reporting": "npx ts-node prisma/reporting/seed.ts",
     "prisma:seed:notification": "npx ts-node prisma/notification/seed.ts",
     "import:longchau": "npx ts-node scripts/import-longchau-products.ts",
+    "products:replace-demo": "npx ts-node scripts/replace-demo-products.ts",
     "sync:pos-inventory": "npx ts-node scripts/sync-pos-inventory.ts",
     "orders:payment-status:check": "npx ts-node scripts/backfill-order-payment-status.ts",
     "orders:payment-status:apply": "npx ts-node scripts/backfill-order-payment-status.ts --apply",
