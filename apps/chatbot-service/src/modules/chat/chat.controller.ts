@@ -15,6 +15,7 @@ export class ChatController {
       dto.userId.trim(),
       dto.message.trim(),
       dto.conversationId?.trim(),
+      dto.branchId?.trim(),
       5,
     );
   }

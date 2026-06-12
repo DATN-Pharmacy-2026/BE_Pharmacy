@@ -127,6 +127,8 @@ export class ProductsService {
           barcode: true,
           name: true,
           slug: true,
+          description: true,
+          activeIngredient: true,
           indication: true,
           status: true,
           requiresPrescription: true,

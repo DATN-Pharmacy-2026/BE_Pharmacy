@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class ChatRequestDto {
   @IsString()
@@ -7,7 +7,13 @@ export class ChatRequestDto {
   @IsString()
   message!: string;
 
+  @IsOptional()
+  @IsString()
   conversationId?: string;
+
+  @IsOptional()
+  @IsString()
+  branchId?: string;
 }
 
 export interface ChatSource {
@@ -15,9 +21,32 @@ export interface ChatSource {
   source: string;
 }
 
+export interface ChatProductAvailabilityBranch {
+  id: string;
+  name: string;
+  code?: string;
+  availableQty: number;
+}
+
+export interface ChatProductSummary {
+  id: string;
+  name: string;
+  slug?: string;
+  price: number;
+  category?: string;
+  activeIngredient?: string;
+  description?: string;
+  usage?: string;
+  imageUrl?: string;
+  requiresPrescription: boolean;
+  isAvailable: boolean;
+  availableBranches: ChatProductAvailabilityBranch[];
+}
+
 export interface ChatResponseDto {
   answer: string;
   sources: ChatSource[];
+  products?: ChatProductSummary[];
   handoffRequired: boolean;
   handoffReason?: 'MEDICAL_SAFETY' | 'INSUFFICIENT_CONTEXT';
   handoffTicketId?: string;
