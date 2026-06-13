@@ -46,6 +46,18 @@ const EMPLOYEE_ROLE_ALIASES: ReadonlySet<string> = new Set([
   ROLE_CODES.CUSTOMER_SERVICE,
 ]);
 
+const CUSTOMER_ROLE_PERMISSION_CODES: readonly string[] = [
+  'product.view',
+  'product.search',
+  PERMISSION_CODES.CUSTOMER_ORDER_CREATE,
+  PERMISSION_CODES.CUSTOMER_ORDER_VIEW_SELF,
+  'customer.order.cancel_self',
+  'customer.profile.view_self',
+  'customer.profile.update_self',
+  'customer.payment.create',
+  'customer.payment.view_self',
+];
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -807,6 +819,7 @@ export class AuthService {
       }));
 
     if (existingRole) {
+      await this.ensureCustomerRolePermissions(existingRole.id);
       return existingRole;
     }
 
@@ -814,11 +827,12 @@ export class AuthService {
       Prisma.sql`SELECT "id" FROM "Role" WHERE "code" = ${ROLE_CODES.CUSTOMER} LIMIT 1`,
     );
     if (rawRole[0]) {
+      await this.ensureCustomerRolePermissions(rawRole[0].id);
       return { id: rawRole[0].id };
     }
 
     try {
-      return await this.prisma.role.create({
+      const createdRole = await this.prisma.role.create({
         data: {
           code: ROLE_CODES.CUSTOMER,
           name: 'Customer',
@@ -827,15 +841,37 @@ export class AuthService {
         },
         select: { id: true },
       });
+      await this.ensureCustomerRolePermissions(createdRole.id);
+      return createdRole;
     } catch {
       const createdRole = await this.prisma.$queryRaw<Array<{ id: string }>>(
         Prisma.sql`SELECT "id" FROM "Role" WHERE "code" = ${ROLE_CODES.CUSTOMER} LIMIT 1`,
       );
       if (createdRole[0]) {
+        await this.ensureCustomerRolePermissions(createdRole[0].id);
         return { id: createdRole[0].id };
       }
       throw new BadRequestException('Customer role is not configured');
     }
+  }
+
+  private async ensureCustomerRolePermissions(roleId: string): Promise<void> {
+    const permissions = await this.prisma.permission.findMany({
+      where: { code: { in: [...CUSTOMER_ROLE_PERMISSION_CODES] } },
+      select: { id: true },
+    });
+
+    if (!permissions.length) {
+      return;
+    }
+
+    await this.prisma.rolePermission.createMany({
+      data: permissions.map((permission) => ({
+        roleId,
+        permissionId: permission.id,
+      })),
+      skipDuplicates: true,
+    });
   }
 
   private buildExpiryDate(seconds: number): Date {
