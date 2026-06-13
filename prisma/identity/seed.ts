@@ -230,9 +230,10 @@ async function upsertDemoUsers(passwordHash: string, adminPasswordHash: string) 
     const roleId = roleIdByCode.get(demoUser.roleCode);
     if (!roleId) continue;
 
+    const existingById = await prisma.user.findUnique({ where: { id: demoUser.id } });
     const existingByEmail = await prisma.user.findUnique({ where: { email: demoUser.email } });
     const existingByUsername = await prisma.user.findUnique({ where: { username: demoUser.username } });
-    const existing = existingByEmail ?? existingByUsername;
+    const existing = existingById ?? existingByEmail ?? existingByUsername;
 
     const payload = {
       username: demoUser.username,

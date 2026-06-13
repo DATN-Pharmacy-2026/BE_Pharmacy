@@ -10,7 +10,9 @@ import * as bcrypt from 'bcrypt';
 import { createHash, randomBytes } from 'crypto';
 import {
   AccessStatus,
+  Prisma,
   RefreshToken,
+  RoleScope,
   UserStatus,
 } from '.prisma/client/identity';
 import { AuthenticatedUser, JwtPayload } from '@app/auth';
@@ -156,13 +158,7 @@ export class AuthService {
       );
     }
 
-    const customerRole = await this.prisma.role.findUnique({
-      where: { code: ROLE_CODES.CUSTOMER },
-      select: { id: true },
-    });
-    if (!customerRole) {
-      throw new BadRequestException('Customer role is not configured');
-    }
+    const customerRole = await this.ensureCustomerRole();
 
     const passwordHash = await this.hashPassword(dto.password);
     const user = await this.prisma.$transaction(async (tx) => {
@@ -797,6 +793,49 @@ export class AuthService {
     }
 
     throw new BadRequestException('Cannot generate unique username');
+  }
+
+  private async ensureCustomerRole(): Promise<{ id: string }> {
+    const existingRole =
+      (await this.prisma.role.findUnique({
+        where: { code: ROLE_CODES.CUSTOMER },
+        select: { id: true },
+      })) ??
+      (await this.prisma.role.findFirst({
+        where: { code: ROLE_CODES.CUSTOMER },
+        select: { id: true },
+      }));
+
+    if (existingRole) {
+      return existingRole;
+    }
+
+    const rawRole = await this.prisma.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`SELECT "id" FROM "Role" WHERE "code" = ${ROLE_CODES.CUSTOMER} LIMIT 1`,
+    );
+    if (rawRole[0]) {
+      return { id: rawRole[0].id };
+    }
+
+    try {
+      return await this.prisma.role.create({
+        data: {
+          code: ROLE_CODES.CUSTOMER,
+          name: 'Customer',
+          scope: RoleScope.SYSTEM,
+          isSystemRole: false,
+        },
+        select: { id: true },
+      });
+    } catch {
+      const createdRole = await this.prisma.$queryRaw<Array<{ id: string }>>(
+        Prisma.sql`SELECT "id" FROM "Role" WHERE "code" = ${ROLE_CODES.CUSTOMER} LIMIT 1`,
+      );
+      if (createdRole[0]) {
+        return { id: createdRole[0].id };
+      }
+      throw new BadRequestException('Customer role is not configured');
+    }
   }
 
   private buildExpiryDate(seconds: number): Date {
