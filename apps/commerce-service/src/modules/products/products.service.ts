@@ -249,10 +249,21 @@ export class ProductsService {
   async addImage(productId: string, dto: CreateProductImageDto) {
     await this.findOne(productId);
 
-    const existingImages = await this.prisma.productImage.findMany({
+    let existingImages = await this.prisma.productImage.findMany({
       where: { productId },
       orderBy: { sortOrder: 'asc' },
     });
+
+    // If the only image is a generated placeholder, remove it
+    if (
+      existingImages.length === 1 &&
+      existingImages[0].url.includes('placehold.co')
+    ) {
+      await this.prisma.productImage.delete({
+        where: { id: existingImages[0].id },
+      });
+      existingImages = [];
+    }
 
     let sortOrder = dto.sortOrder;
 
