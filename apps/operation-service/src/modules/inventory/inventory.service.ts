@@ -30,6 +30,7 @@ export class InventoryService {
       expiryDateTo,
       expiringBefore,
       hasAvailableQuantity,
+      stockStatus,
       sortBy = 'updatedAt',
       sortOrder = 'desc',
     } = query;
@@ -72,11 +73,14 @@ export class InventoryService {
             },
           }
         : {}),
-      ...(typeof hasAvailableQuantity === 'boolean'
+      ...(typeof hasAvailableQuantity === 'boolean' && !stockStatus
         ? hasAvailableQuantity
           ? { quantityAvailable: { gt: 0 } }
           : { quantityAvailable: { lte: 0 } }
         : {}),
+      ...(stockStatus === 'IN_STOCK' ? { quantityAvailable: { gt: 0 } } : {}),
+      ...(stockStatus === 'OUT_OF_STOCK' ? { quantityAvailable: { lte: 0 } } : {}),
+      ...(stockStatus === 'LOW_STOCK' ? { quantityAvailable: { gt: 0, lte: 10 } } : {}),
     };
 
     const [items, total] = await this.prisma.$transaction([
@@ -261,7 +265,7 @@ export class InventoryService {
     const where: Prisma.InventoryItemWhereInput = {
       ...(query.warehouseId ? { warehouseId: query.warehouseId } : {}),
       ...(query.branchId ? { branchId: query.branchId } : {}),
-      quantityAvailable: { lte: threshold },
+      quantityAvailable: { gt: 0, lte: threshold },
     };
     const [items, total] = await this.prisma.$transaction([
       this.prisma.inventoryItem.findMany({

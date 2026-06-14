@@ -50,6 +50,8 @@ model User {
   passwordHash   String
   fullName       String
   avatarUrl      String?
+  birthday       DateTime?
+  gender         String?
   status         UserStatus
   isSystemAdmin  Boolean                  @default(false)
   lastLoginAt    DateTime?
@@ -63,6 +65,7 @@ model User {
   sessions       UserSession[]
   passwordResetTokens PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  addresses      UserAddress[]
 
   @@index([phone])
   @@index([status])
@@ -255,6 +258,29 @@ model EventOutbox {
   @@index([correlationId])
   @@index([branchId])
   @@index([warehouseId])
+}
+
+model UserAddress {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @db.Uuid
+  label          String
+  receiverName   String
+  phone          String
+  addressLine    String
+  provinceCode   String?
+  provinceName   String?
+  districtCode   String?
+  districtName   String?
+  wardCode       String?
+  wardName       String?
+  note           String?
+  isDefault      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model EventInbox {

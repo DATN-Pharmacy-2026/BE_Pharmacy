@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,10 @@ import { QueryUsersDto } from './dto/query-users.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
+import { CurrentUser } from '@app/auth/decorators/current-user.decorator';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CreateUserAddressDto } from './dto/create-user-address.dto';
+import { UpdateUserAddressDto } from './dto/update-user-address.dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -32,6 +37,59 @@ export class UsersController {
   findAll(@Query() query: QueryUsersDto) {
     return this.usersService.findAll(query);
   }
+
+  // --- Profile & Addresses (for the currently logged in user) ---
+  @Get('me')
+  getProfile(@CurrentUser() user: any) {
+    return this.usersService.getProfile(user.id);
+  }
+
+  @Put('me/profile')
+  updateProfile(
+    @CurrentUser() user: any,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(user.id, dto);
+  }
+
+  @Get('me/addresses')
+  getAddresses(@CurrentUser() user: any) {
+    return this.usersService.getAddresses(user.id);
+  }
+
+  @Post('me/addresses')
+  createAddress(
+    @CurrentUser() user: any,
+    @Body() dto: CreateUserAddressDto,
+  ) {
+    return this.usersService.createAddress(user.id, dto);
+  }
+
+  @Put('me/addresses/:id')
+  updateAddress(
+    @CurrentUser() user: any,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateUserAddressDto,
+  ) {
+    return this.usersService.updateAddress(user.id, id, dto);
+  }
+
+  @Delete('me/addresses/:id')
+  deleteAddress(
+    @CurrentUser() user: any,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.usersService.deleteAddress(user.id, id);
+  }
+
+  @Patch('me/addresses/:id/default')
+  setDefaultAddress(
+    @CurrentUser() user: any,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.usersService.setDefaultAddress(user.id, id);
+  }
+  // -----------------------------------------------------------------
 
   @Get(':id')
   @UseGuards(PermissionsGuard)

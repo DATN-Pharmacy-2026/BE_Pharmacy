@@ -25,6 +25,7 @@ async function bootstrap(): Promise<void> {
     .filter(Boolean);
   app.use(
     helmet({
+      crossOriginResourcePolicy: false,
       contentSecurityPolicy:
         nodeEnv === 'development'
           ? false

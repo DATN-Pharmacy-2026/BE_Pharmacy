@@ -78,6 +78,11 @@ export class QueryInventoryDto {
   @IsBoolean()
   hasAvailableQuantity?: boolean;
 
+  @ApiPropertyOptional({ enum: ['IN_STOCK', 'LOW_STOCK', 'OUT_OF_STOCK'] })
+  @IsOptional()
+  @IsIn(['IN_STOCK', 'LOW_STOCK', 'OUT_OF_STOCK'])
+  stockStatus?: string;
+
   @ApiPropertyOptional({
     enum: ['updatedAt', 'expiryDate', 'quantityAvailable'],
   })

@@ -32,6 +32,7 @@ export async function bootstrapHttpApp(
 
   app.use(
     helmet({
+      crossOriginResourcePolicy: false,
       contentSecurityPolicy:
         nodeEnv === 'development'
           ? false

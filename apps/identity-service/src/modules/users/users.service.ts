@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 import * as bcrypt from 'bcrypt';
 import { AccessStatus, Prisma, UserStatus } from '.prisma/client/identity';
 import { IdentityPrismaService } from '../../prisma/identity-prisma.service';
@@ -12,6 +13,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CreateUserAddressDto } from './dto/create-user-address.dto';
+import { UpdateUserAddressDto } from './dto/update-user-address.dto';
 
 const ADMIN_ROLE_CODES = new Set(['ADMIN', 'SUPER_ADMIN']);
 const EMPLOYEE_ROLE_CODES = new Set([
@@ -341,4 +345,108 @@ export class UsersService {
     const { passwordHash: _passwordHash, ...safeUser } = user;
     return safeUser;
   }
+
+  // --- Profile Management ---
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return this.toSafeUser(user);
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        fullName: dto.fullName,
+        phone: dto.phone,
+        avatarUrl: dto.avatarUrl,
+        birthday: dto.birthday ? new Date(dto.birthday) : undefined,
+        gender: dto.gender,
+      },
+    });
+    return this.toSafeUser(updated);
+  }
+
+  // --- Address Management ---
+  async getAddresses(userId: string) {
+    return this.prisma.userAddress.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createAddress(userId: string, dto: CreateUserAddressDto) {
+    if (dto.isDefault) {
+      await this.prisma.userAddress.updateMany({
+        where: { userId, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+
+    return this.prisma.userAddress.create({
+      data: {
+        userId,
+        ...dto,
+      },
+    });
+  }
+
+  async updateAddress(userId: string, addressId: string, dto: UpdateUserAddressDto) {
+    const address = await this.prisma.userAddress.findFirst({
+      where: { id: addressId, userId },
+    });
+    if (!address) throw new NotFoundException('Address not found');
+
+    if (dto.isDefault) {
+      await this.prisma.userAddress.updateMany({
+        where: { userId, isDefault: true, id: { not: addressId } },
+        data: { isDefault: false },
+      });
+    }
+
+    return this.prisma.userAddress.update({
+      where: { id: addressId },
+      data: dto,
+    });
+  }
+
+  async deleteAddress(userId: string, addressId: string) {
+    const address = await this.prisma.userAddress.findFirst({
+      where: { id: addressId, userId },
+    });
+    if (!address) throw new NotFoundException('Address not found');
+
+    await this.prisma.userAddress.delete({
+      where: { id: addressId },
+    });
+    return { message: 'Address deleted successfully' };
+  }
+
+  async setDefaultAddress(userId: string, addressId: string) {
+    const address = await this.prisma.userAddress.findFirst({
+      where: { id: addressId, userId },
+    });
+    if (!address) throw new NotFoundException('Address not found');
+
+    await this.prisma.$transaction([
+      this.prisma.userAddress.updateMany({
+        where: { userId, isDefault: true },
+        data: { isDefault: false },
+      }),
+      this.prisma.userAddress.update({
+        where: { id: addressId },
+        data: { isDefault: true },
+      }),
+    ]);
+
+    return { message: 'Default address updated successfully' };
+  }
 }
+

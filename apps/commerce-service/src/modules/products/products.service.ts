@@ -227,7 +227,11 @@ export class ProductsService {
     await this.assertUniqueProductFields(dto, id);
 
     try {
-      return await this.prisma.product.update({ where: { id }, data: dto });
+      return await this.prisma.product.update({
+        where: { id },
+        data: dto,
+        include: { images: { orderBy: { sortOrder: 'asc' } } },
+      });
     } catch (error) {
       this.handleProductUniqueError(error);
       throw error;
@@ -244,28 +248,41 @@ export class ProductsService {
 
   async addImage(productId: string, dto: CreateProductImageDto) {
     await this.findOne(productId);
-    const sortOrder = dto.sortOrder ?? 0;
-    const data = {
-      url: dto.url,
-      alt: dto.alt,
-      sortOrder,
-    };
-    const existingImage = await this.prisma.productImage.findFirst({
-      where: { productId, sortOrder },
-      select: { id: true },
+
+    const existingImages = await this.prisma.productImage.findMany({
+      where: { productId },
+      orderBy: { sortOrder: 'asc' },
     });
 
-    if (existingImage) {
-      return this.prisma.productImage.update({
-        where: { id: existingImage.id },
-        data,
-      });
+    let sortOrder = dto.sortOrder;
+
+    if (existingImages.length === 0) {
+      sortOrder = 0;
+    } else {
+      if (sortOrder === undefined || sortOrder === null) {
+        const maxSortOrder = Math.max(...existingImages.map(img => img.sortOrder));
+        sortOrder = maxSortOrder + 1;
+      } else if (sortOrder === 0) {
+        // Shift all existing images up
+        await this.prisma.productImage.updateMany({
+          where: { productId },
+          data: { sortOrder: { increment: 1 } },
+        });
+      } else {
+        // Shift existing images >= sortOrder up
+        await this.prisma.productImage.updateMany({
+          where: { productId, sortOrder: { gte: sortOrder } },
+          data: { sortOrder: { increment: 1 } },
+        });
+      }
     }
 
     return this.prisma.productImage.create({
       data: {
         productId,
-        ...data,
+        url: dto.url,
+        alt: dto.alt,
+        sortOrder,
       },
     });
   }
