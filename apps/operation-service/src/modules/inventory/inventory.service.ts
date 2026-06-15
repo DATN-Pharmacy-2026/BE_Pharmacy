@@ -109,10 +109,13 @@ export class InventoryService {
   async getPublicAvailability(query: PublicProductAvailabilityQueryDto) {
     const warehouses = await this.prisma.warehouse.findMany({
       where: {
-        branchId: query.branchId,
+        OR: [
+          { branchId: query.branchId },
+          { isCentral: true }
+        ],
         status: 'ACTIVE',
       },
-      select: { id: true, code: true, name: true },
+      select: { id: true, code: true, name: true, isCentral: true },
     });
 
     if (warehouses.length === 0) {
@@ -166,10 +169,13 @@ export class InventoryService {
   async verifyPublicCart(dto: PublicCartAvailabilityDto) {
     const warehouses = await this.prisma.warehouse.findMany({
       where: {
-        branchId: dto.branchId,
+        OR: [
+          { branchId: dto.branchId },
+          { isCentral: true }
+        ],
         status: 'ACTIVE',
       },
-      select: { id: true, code: true, name: true },
+      select: { id: true, code: true, name: true, isCentral: true },
     });
 
     for (const warehouse of warehouses) {
