@@ -195,6 +195,11 @@ export class CartService {
                 slug: true,
                 unit: true,
                 status: true,
+                images: {
+                  orderBy: { sortOrder: 'asc' },
+                  take: 1,
+                  select: { url: true, alt: true, sortOrder: true }
+                },
               },
             },
             variant: {
