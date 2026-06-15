@@ -153,7 +153,7 @@ export class GoodsReceiptsService {
     await this.warehousesService.findOne(warehouseId);
     if (branchId) await this.branchesService.findOne(branchId);
 
-    let supplierId = dto.supplierId;
+    let supplierId = dto.supplierId?.trim() || undefined;
     if (supplierId) await this.suppliersService.findOne(supplierId);
 
     if (dto.purchaseOrderId) {
@@ -258,9 +258,9 @@ export class GoodsReceiptsService {
       );
     }
 
-    const nextSupplierId = dto.supplierId ?? existing.supplierId ?? undefined;
-    const nextWarehouseId = dto.warehouseId ?? existing.warehouseId;
-    const nextBranchId = dto.branchId ?? existing.branchId ?? undefined;
+    const nextSupplierId = (dto.supplierId?.trim() || existing.supplierId) ?? undefined;
+    const nextWarehouseId = dto.warehouseId?.trim() || existing.warehouseId;
+    const nextBranchId = (dto.branchId?.trim() || existing.branchId) ?? undefined;
 
     await this.warehousesService.findOne(nextWarehouseId);
     if (nextBranchId) await this.branchesService.findOne(nextBranchId);
