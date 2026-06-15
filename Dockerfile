@@ -25,9 +25,11 @@ COPY --from=build /app/prisma ./prisma
 
 RUN npm run prisma:generate:all
 
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+
 ARG APP_NAME=gateway
 ENV APP_NAME=${APP_NAME}
 ENV PORT=3000
 
 EXPOSE 3000
-CMD ["sh", "-c", "node dist/apps/${APP_NAME}/main.js"]
+CMD ["sh", "docker-entrypoint.sh"]
