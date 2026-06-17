@@ -21,6 +21,7 @@ export const PERMISSION_CODES = {
   POS_REFUND: 'pos.refund',
   REPORT_VIEW: 'report.view',
   REPORT_EXPORT: 'report.export',
+  CHATBOT_INTERNAL_READ: 'chatbot.internal.read',
   CUSTOMER_ORDER_CREATE: 'customer.order.create',
   CUSTOMER_ORDER_VIEW_SELF: 'customer.order.view_self',
 } as const;

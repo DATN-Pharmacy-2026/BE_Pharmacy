@@ -10,6 +10,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, Permissions, PermissionsGuard } from '@app/auth';
 import { InventoryService } from './inventory.service';
 import { QueryInventoryDto } from './dto/query-inventory.dto';
+import { QueryLowStockInventoryDto } from './dto/query-low-stock-inventory.dto';
+import { QueryExpiringInventoryDto } from './dto/query-expiring-inventory.dto';
 
 @ApiTags('inventory')
 @ApiBearerAuth()
@@ -48,16 +50,14 @@ export class InventoryController {
   @Get('low-stock')
   @UseGuards(PermissionsGuard)
   @Permissions('inventory.view')
-  lowStock(@Query() query: QueryInventoryDto & { threshold?: number }) {
+  lowStock(@Query() query: QueryLowStockInventoryDto) {
     return this.inventoryService.lowStock(query);
   }
 
   @Get('expiring')
   @UseGuards(PermissionsGuard)
   @Permissions('inventory.view')
-  expiring(
-    @Query() query: QueryInventoryDto & { beforeDate?: string; days?: number },
-  ) {
+  expiring(@Query() query: QueryExpiringInventoryDto) {
     return this.inventoryService.expiring(query);
   }
 

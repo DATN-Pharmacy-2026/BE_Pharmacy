@@ -26,11 +26,18 @@ export class ProxyService {
   }
 
   resolveTarget(path: string): ProxyRouteTarget | undefined {
-    return this.routeTargets.find((target) =>
-      target.prefixes.some(
-        (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-      ),
+    const matches = this.routeTargets.flatMap((target) =>
+      target.prefixes
+        .filter((prefix) => path === prefix || path.startsWith(`${prefix}/`))
+        .map((prefix) => ({ target, prefixLength: prefix.length })),
     );
+
+    if (matches.length === 0) {
+      return undefined;
+    }
+
+    matches.sort((left, right) => right.prefixLength - left.prefixLength);
+    return matches[0].target;
   }
 
   async forward(input: ForwardRequestInput): Promise<AxiosResponse> {

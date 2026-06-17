@@ -79,6 +79,7 @@ describe('Identity Demo API', () => {
       ),
     ).toBe(true);
     expect(Array.isArray(data?.permissions)).toBe(true);
+    expect(data?.permissions).toContain('chatbot.internal.read');
     expect(data?.scope?.branchScopeMode).toBe('ALL');
     expect(data?.scope?.warehouseScopeMode).toBe('ALL');
     expect(data?.access?.canAccessAdmin).toBe(true);

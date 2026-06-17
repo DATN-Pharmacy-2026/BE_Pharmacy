@@ -94,6 +94,13 @@ const PERMISSIONS = [
   { code: 'report.shift_revenue', name: 'View Shift Revenue Report', module: 'report', action: 'shift_revenue' },
   { code: 'report.export', name: 'Export Reports', module: 'report', action: 'export' },
   { code: 'audit.view', name: 'View Audit Logs', module: 'audit', action: 'view' },
+  {
+    code: 'chatbot.internal.read',
+    name: 'Tra cuu chatbot noi bo',
+    module: 'chatbot',
+    action: 'internal.read',
+    description: 'Cho phep tra cuu chatbot noi bo de doc du lieu van hanh.',
+  },
 
   { code: 'customer.order.create', name: 'Create Customer Order', module: 'customer.order', action: 'create' },
   { code: 'customer.order.view_self', name: 'View Own Customer Orders', module: 'customer.order', action: 'view_self' },
@@ -125,6 +132,7 @@ const ROLE_PERMISSIONS: Record<RoleCode, string[]> = {
     'customer.view',
     'customer.create',
     'report.shift_revenue',
+    'chatbot.internal.read',
   ],
   CUSTOMER: [
     'product.view',

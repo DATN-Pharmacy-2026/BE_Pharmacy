@@ -1,5 +1,6 @@
 import {
   AUTH_ROUTES,
+  CHATBOT_ROUTES,
   COMMERCE_ROUTES,
   IDENTITY_EVENT_ROUTES,
   IDENTITY_ROUTES,
@@ -17,7 +18,8 @@ export interface ApiGroupContract {
     | 'commerce-service'
     | 'operation-service'
     | 'reporting-setting-service'
-    | 'notification-service';
+    | 'notification-service'
+    | 'chatbot-service';
   authRequired: boolean;
 }
 
@@ -73,6 +75,14 @@ export const API_GROUPS: ApiGroupContract[] = [
     description: 'Notification routes proxied to notification-service.',
     routes: NOTIFICATION_ROUTES,
     targetService: 'notification-service',
+    authRequired: true,
+  },
+  {
+    group: 'chatbot proxy',
+    description:
+      'Internal chat, RAG and handoff routes proxied to chatbot-service.',
+    routes: CHATBOT_ROUTES,
+    targetService: 'chatbot-service',
     authRequired: true,
   },
 ];

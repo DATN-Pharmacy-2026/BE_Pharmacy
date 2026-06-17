@@ -73,6 +73,7 @@ export const NOTIFICATION_ROUTES = ['/api/notifications/*'] as const;
 
 export const CHATBOT_ROUTES = [
   '/api/chat/*',
+  '/api/chatbot/internal/*',
   '/api/rag/*',
   '/api/handoff/*',
   '/api/health/*',
