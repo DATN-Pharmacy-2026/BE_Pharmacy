@@ -1,534 +1,844 @@
 [
   {
-    "id": "readme_001",
-    "title": "Knowledge Base Chatbot PharmPlus",
-    "category": "general",
-    "source": "fordel/knowledge-base/README.md",
-    "chunkIndex": 1,
-    "content": "Knowledge Base Chatbot PharmPlus\n\nKho tri thức này dùng cho chatbot RAG của hệ thống PharmPlus. Nội dung được viết để chatbot trả lời ngắn gọn, đúng phạm vi, có nguồn và không thay thế tư vấn chuyên môn y tế.\n\nPhạm vi trả lời\n\nChatbot được phép hỗ trợ:\nChính sách đổi trả sản phẩm.\nChính sách giao hàng.\nPhương thức thanh toán và hoàn tiền.\nHướng dẫn đặt hàng, theo dõi đơn hàng, tài khoản.\nThông tin cơ bản về nhóm sản phẩm, bảo quản sản phẩm.\nNhận diện câu hỏi cần chuyển dược sĩ hoặc nhân viên hỗ trợ.\n\nChatbot không được:\nChẩn đoán bệnh.\nKê đơn thuốc.\nTư vấn liều dùng chi tiết.\nKhẳng định thuốc phù hợp với một bệnh cụ thể khi chưa có dược sĩ xác nhận.\nTự bịa dữ liệu ngoài context.",
-    "metadata": {
-      "title": "Knowledge Base Chatbot PharmPlus",
-      "category": "general",
-      "source": "fordel/knowledge-base/README.md",
-      "chunkIndex": 1
-    }
+    "id": "knowledge-policy-chinh-sach-bao-mat-thong-tin-001",
+    "type": "knowledge",
+    "category": "policies",
+    "title": "Chính Sách Bảo Mật Thông Tin",
+    "section": "Tóm tắt | Nguyên tắc áp dụng",
+    "content": "Tóm tắt\n\nPharmPlus ưu tiên bảo mật thông tin tài khoản, thông tin liên hệ và thông tin đơn hàng của khách hàng. Chatbot chỉ nên cung cấp hướng dẫn chung, không yêu cầu khách chia sẻ thông tin nhạy cảm không cần thiết trong khung chat.\n\nNguyên tắc áp dụng\n\n- Chỉ thu thập thông tin cần thiết cho mục đích hỗ trợ đơn hàng, tài khoản hoặc liên hệ.\n- Không yêu cầu khách cung cấp OTP, mật khẩu, mã xác thực giao dịch hoặc thông tin thẻ đầy đủ.\n- Khi cần xác minh tài khoản hoặc đơn hàng, chatbot nên hướng khách sang kênh hỗ trợ chính thức.\n- Nếu khách lo ngại về quyền riêng tư, chatbot nên trả lời theo hướng thông tin sẽ được xử lý để phục vụ vận hành và hỗ trợ khách hàng theo chính sách của hệ thống.",
+    "tags": [
+      "bảo mật thông tin",
+      "quyền riêng tư",
+      "dữ liệu cá nhân",
+      "OTP",
+      "mật khẩu",
+      "thông tin thẻ",
+      "xác minh tài khoản"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-bao-mat-thong-tin.md"
   },
   {
-    "id": "readme_002",
-    "title": "Knowledge Base Chatbot PharmPlus",
-    "category": "general",
-    "source": "fordel/knowledge-base/README.md",
-    "chunkIndex": 2,
-    "content": "ốc phù hợp với một bệnh cụ thể khi chưa có dược sĩ xác nhận.\nTự bịa dữ liệu ngoài context.\n\nCấu trúc\nfaq/: câu hỏi thường gặp.\npolicies/: chính sách vận hành.\nmedicines/: thông tin sản phẩm mức cơ bản.\nsafety/: quy tắc an toàn và handoff.\n\nCách trả lời mong muốn\nTrả lời bằng tiếng Việt.\nƯu tiên gạch đầu dòng khi có nhiều điều kiện.\nNếu thiếu dữ liệu, nói rõ hệ thống chưa có đủ thông tin.\nNếu câu hỏi có rủi ro y tế, yêu cầu người dùng liên hệ dược sĩ/bác sĩ.",
-    "metadata": {
-      "title": "Knowledge Base Chatbot PharmPlus",
-      "category": "general",
-      "source": "fordel/knowledge-base/README.md",
-      "chunkIndex": 2
-    }
+    "id": "knowledge-policy-chinh-sach-bao-mat-thong-tin-002",
+    "type": "knowledge",
+    "category": "policies",
+    "title": "Chính Sách Bảo Mật Thông Tin",
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Nhà thuốc có lưu thông tin của tôi không?\n**Đáp:** Hệ thống có thể lưu thông tin cần thiết để xử lý đơn hàng, chăm sóc khách hàng và vận hành tài khoản.\n\n**Hỏi:** Tôi có nên gửi OTP cho chatbot không?\n**Đáp:** Không. Khách không nên chia sẻ OTP, mật khẩu hay thông tin thẻ.\n\n**Hỏi:** Nếu tôi cần cập nhật thông tin tài khoản thì sao?\n**Đáp:** Chatbot nên hướng khách thực hiện trong hệ thống hoặc liên hệ kênh hỗ trợ chính thức để xác minh.\n\nCâu trả lời mẫu chatbot\n\nPharmPlus ưu tiên bảo mật thông tin cá nhân và thông tin giao dịch của khách hàng. Bạn không nên chia sẻ OTP, mật khẩu hay thông tin thẻ trong khung chat. Nếu cần cập nhật hoặc xác minh thông tin tài khoản, vui lòng sử dụng kênh hỗ trợ chính thức để được hỗ trợ an toàn hơn.",
+    "tags": [
+      "bảo mật thông tin",
+      "quyền riêng tư",
+      "dữ liệu cá nhân",
+      "OTP",
+      "mật khẩu",
+      "thông tin thẻ",
+      "xác minh tài khoản"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-bao-mat-thong-tin.md"
   },
   {
-    "id": "faq_dat_hang_giao_hang_001",
-    "title": "FAQ Đặt Hàng Và Giao Hàng",
-    "category": "faq",
-    "source": "fordel/knowledge-base/faq/faq-dat-hang-giao-hang.md",
-    "chunkIndex": 1,
-    "content": "FAQ Đặt Hàng Và Giao Hàng\n\nTôi đặt hàng như thế nào?\n\nBạn chọn sản phẩm, thêm vào giỏ hàng, kiểm tra số lượng, nhập thông tin nhận hàng và xác nhận đơn. Nếu hệ thống yêu cầu đăng nhập, bạn cần đăng nhập hoặc tạo tài khoản trước khi hoàn tất đơn hàng.\n\nTôi có cần tài khoản để mua hàng không?\n\nTùy cấu hình hệ thống. Một số luồng có thể cho phép khách thêm sản phẩm vào giỏ hàng trước, nhưng để theo dõi đơn hàng hoặc quản lý lịch sử mua hàng, khách nên đăng nhập tài khoản.\n\nTôi có thể đặt hàng qua điện thoại không?\n\nNếu hệ thống có tổng đài hoặc nhân viên hỗ trợ, khách có thể liên hệ để được hướng dẫn đặt hàng. Chatbot chỉ nên hướng dẫn chung và khuyến nghị khách liên hệ kênh hỗ trợ chính thức.",
-    "metadata": {
-      "title": "FAQ Đặt Hàng Và Giao Hàng",
-      "category": "faq",
-      "source": "fordel/knowledge-base/faq/faq-dat-hang-giao-hang.md",
-      "chunkIndex": 1
-    }
-  },
-  {
-    "id": "faq_dat_hang_giao_hang_002",
-    "title": "FAQ Đặt Hàng Và Giao Hàng",
-    "category": "faq",
-    "source": "fordel/knowledge-base/faq/faq-dat-hang-giao-hang.md",
-    "chunkIndex": 2,
-    "content": "hàng. Chatbot chỉ nên hướng dẫn chung và khuyến nghị khách liên hệ kênh hỗ trợ chính thức.\n\nLàm sao biết đơn hàng đang ở trạng thái nào?\n\nKhách có thể vào mục đơn hàng để xem trạng thái. Các trạng thái thường gặp gồm chờ xác nhận, đang xử lý, đang chuẩn bị hàng, đang giao, đã giao hoặc đã hủy.\n\nTôi có thể sửa địa chỉ sau khi đặt đơn không?\n\nKhách có thể yêu cầu sửa địa chỉ nếu đơn hàng chưa được bàn giao cho đơn vị vận chuyển. Nếu đơn đang giao, việc sửa địa chỉ có thể bị giới hạn hoặc phát sinh phí.\n\nTôi có thể hủy đơn hàng không?",
-    "metadata": {
-      "title": "FAQ Đặt Hàng Và Giao Hàng",
-      "category": "faq",
-      "source": "fordel/knowledge-base/faq/faq-dat-hang-giao-hang.md",
-      "chunkIndex": 2
-    }
-  },
-  {
-    "id": "faq_dat_hang_giao_hang_003",
-    "title": "FAQ Đặt Hàng Và Giao Hàng",
-    "category": "faq",
-    "source": "fordel/knowledge-base/faq/faq-dat-hang-giao-hang.md",
-    "chunkIndex": 3,
-    "content": "o, việc sửa địa chỉ có thể bị giới hạn hoặc phát sinh phí.\n\nTôi có thể hủy đơn hàng không?\n\nKhách có thể hủy đơn nếu đơn chưa được xử lý quá sâu hoặc chưa bàn giao cho đơn vị vận chuyển. Nếu đơn đã giao hoặc đang giao, việc hủy đơn phụ thuộc chính sách hiện hành.\n\nPhí giao hàng tính như thế nào?\n\nPhí giao hàng phụ thuộc khu vực nhận, chi nhánh xử lý đơn, giá trị đơn hàng, kích thước sản phẩm và chương trình ưu đãi tại thời điểm đặt hàng.\n\nĐơn hàng giao thất bại thì sao?\n\nNếu giao thất bại, nhân viên có thể liên hệ lại để xác nhận thông tin nhận hàng, sắp xếp giao lại hoặc hỗ trợ hủy đơn theo chính sách.\n\nTôi có được kiểm tra hàng trước khi nhận không?",
-    "metadata": {
-      "title": "FAQ Đặt Hàng Và Giao Hàng",
-      "category": "faq",
-      "source": "fordel/knowledge-base/faq/faq-dat-hang-giao-hang.md",
-      "chunkIndex": 3
-    }
-  },
-  {
-    "id": "faq_dat_hang_giao_hang_004",
-    "title": "FAQ Đặt Hàng Và Giao Hàng",
-    "category": "faq",
-    "source": "fordel/knowledge-base/faq/faq-dat-hang-giao-hang.md",
-    "chunkIndex": 4,
-    "content": "lại hoặc hỗ trợ hủy đơn theo chính sách.\n\nTôi có được kiểm tra hàng trước khi nhận không?\n\nKhách có thể kiểm tra thông tin cơ bản của kiện hàng theo quy định giao nhận. Với sản phẩm y tế hoặc thuốc, khách không nên tự ý mở niêm phong nếu điều này ảnh hưởng điều kiện đổi trả.\n\nCâu trả lời mẫu\n\nNếu khách hỏi: “Tôi muốn theo dõi đơn hàng thì làm thế nào?”\n\nChatbot nên trả lời:\n\nBạn có thể vào mục đơn hàng để xem trạng thái xử lý như chờ xác nhận, đang chuẩn bị hàng, đang giao hoặc đã giao. Nếu trạng thái không cập nhật trong thời gian dài, bạn hãy cung cấp mã đơn hàng để nhân viên kiểm tra giúp bạn.",
-    "metadata": {
-      "title": "FAQ Đặt Hàng Và Giao Hàng",
-      "category": "faq",
-      "source": "fordel/knowledge-base/faq/faq-dat-hang-giao-hang.md",
-      "chunkIndex": 4
-    }
-  },
-  {
-    "id": "faq_thanh_toan_doi_tra_tai_khoan_001",
-    "title": "FAQ Thanh Toán, Đổi Trả Và Tài Khoản",
-    "category": "faq",
-    "source": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
-    "chunkIndex": 1,
-    "content": "FAQ Thanh Toán, Đổi Trả Và Tài Khoản\n\nNhà thuốc hỗ trợ phương thức thanh toán nào?\n\nPharmPlus có thể hỗ trợ COD, chuyển khoản ngân hàng, thẻ ngân hàng và ví điện tử tùy theo cấu hình hệ thống tại thời điểm đặt hàng.\n\nTôi thanh toán online nhưng đơn chưa cập nhật thì làm gì?\n\nKhách nên chờ vài phút để hệ thống đồng bộ. Nếu trạng thái vẫn chưa cập nhật, khách cần cung cấp mã đơn hàng và bằng chứng giao dịch cho bộ phận hỗ trợ.\n\nTôi có thể xuất hóa đơn không?\n\nKhách có thể yêu cầu hóa đơn nếu hệ thống hoặc nhân viên hỗ trợ chức năng này. Khách cần cung cấp thông tin xuất hóa đơn theo hướng dẫn.\n\nTôi có thể hủy đơn khi nào?",
-    "metadata": {
-      "title": "FAQ Thanh Toán, Đổi Trả Và Tài Khoản",
-      "category": "faq",
-      "source": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
-      "chunkIndex": 1
-    }
-  },
-  {
-    "id": "faq_thanh_toan_doi_tra_tai_khoan_002",
-    "title": "FAQ Thanh Toán, Đổi Trả Và Tài Khoản",
-    "category": "faq",
-    "source": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
-    "chunkIndex": 2,
-    "content": "ày. Khách cần cung cấp thông tin xuất hóa đơn theo hướng dẫn.\n\nTôi có thể hủy đơn khi nào?\n\nKhách có thể yêu cầu hủy khi đơn chưa bàn giao cho đơn vị vận chuyển hoặc chưa hoàn tất xử lý. Nếu đơn đã giao, khách cần thực hiện theo chính sách đổi trả.\n\nĐiều kiện đổi trả sản phẩm là gì?\n\nSản phẩm cần còn nguyên trạng, có chứng từ mua hàng, chưa thuộc nhóm hạn chế đổi trả và còn trong thời gian cho phép theo chính sách.\n\nThuốc đã mua có đổi trả được không?\n\nThuốc và sản phẩm y tế có thể bị hạn chế đổi trả vì lý do an toàn, vệ sinh và điều kiện bảo quản. Khách nên cung cấp mã đơn hàng để nhân viên hoặc dược sĩ kiểm tra chính sách cụ thể.\n\nTôi quên mật khẩu tài khoản thì làm sao?",
-    "metadata": {
-      "title": "FAQ Thanh Toán, Đổi Trả Và Tài Khoản",
-      "category": "faq",
-      "source": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
-      "chunkIndex": 2
-    }
-  },
-  {
-    "id": "faq_thanh_toan_doi_tra_tai_khoan_003",
-    "title": "FAQ Thanh Toán, Đổi Trả Và Tài Khoản",
-    "category": "faq",
-    "source": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
-    "chunkIndex": 3,
-    "content": "ân viên hoặc dược sĩ kiểm tra chính sách cụ thể.\n\nTôi quên mật khẩu tài khoản thì làm sao?\n\nKhách có thể dùng chức năng quên mật khẩu nếu hệ thống hỗ trợ. Nếu không thao tác được, khách nên liên hệ hỗ trợ và xác minh thông tin tài khoản.\n\nTôi muốn đổi số điện thoại tài khoản thì làm sao?\n\nKhách có thể cập nhật trong hồ sơ tài khoản nếu hệ thống hỗ trợ hoặc liên hệ nhân viên để được xác minh và hỗ trợ thay đổi.\n\nMã khuyến mãi không dùng được vì sao?\n\nMã khuyến mãi có thể không dùng được do hết hạn, sai điều kiện đơn hàng, không áp dụng cho sản phẩm đang mua hoặc đã vượt giới hạn sử dụng.\n\nCâu trả lời mẫu\n\nNếu khách hỏi: “Tôi thanh toán rồi nhưng đơn chưa báo thành công?”\n\nChatbot nên trả lời:",
-    "metadata": {
-      "title": "FAQ Thanh Toán, Đổi Trả Và Tài Khoản",
-      "category": "faq",
-      "source": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
-      "chunkIndex": 3
-    }
-  },
-  {
-    "id": "faq_thanh_toan_doi_tra_tai_khoan_004",
-    "title": "FAQ Thanh Toán, Đổi Trả Và Tài Khoản",
-    "category": "faq",
-    "source": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
-    "chunkIndex": 4,
-    "content": "Nếu khách hỏi: “Tôi thanh toán rồi nhưng đơn chưa báo thành công?”\n\nChatbot nên trả lời:\n\nBạn vui lòng chờ vài phút để hệ thống đồng bộ trạng thái thanh toán. Nếu đơn vẫn chưa cập nhật, hãy cung cấp mã đơn hàng và bằng chứng giao dịch để nhân viên kiểm tra. Bạn không nên chia sẻ OTP, mật khẩu hoặc thông tin thẻ cho bất kỳ ai.",
-    "metadata": {
-      "title": "FAQ Thanh Toán, Đổi Trả Và Tài Khoản",
-      "category": "faq",
-      "source": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md",
-      "chunkIndex": 4
-    }
-  },
-  {
-    "id": "thong_tin_thuoc_otc_co_ban_001",
-    "title": "Thông Tin Thuốc OTC Cơ Bản",
-    "category": "medicine",
-    "source": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
-    "chunkIndex": 1,
-    "content": "Thông Tin Thuốc OTC Cơ Bản\n\nTài liệu này chỉ cung cấp thông tin chung về nhóm thuốc không kê đơn và sản phẩm chăm sóc sức khỏe. Chatbot không được dùng nội dung này để chẩn đoán bệnh, kê đơn hoặc hướng dẫn liều dùng chi tiết.\n\nThuốc OTC là gì?\n\nThuốc OTC là nhóm thuốc có thể bán không cần đơn trong một số trường hợp theo quy định. Tuy nhiên, người dùng vẫn cần đọc kỹ hướng dẫn sử dụng, cảnh báo và hỏi dược sĩ nếu có bệnh nền, đang dùng thuốc khác hoặc thuộc nhóm nhạy cảm.\n\nKhi nào nên hỏi dược sĩ?",
-    "metadata": {
-      "title": "Thông Tin Thuốc OTC Cơ Bản",
-      "category": "medicine",
-      "source": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
-      "chunkIndex": 1
-    }
-  },
-  {
-    "id": "thong_tin_thuoc_otc_co_ban_002",
-    "title": "Thông Tin Thuốc OTC Cơ Bản",
-    "category": "medicine",
-    "source": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
-    "chunkIndex": 2,
-    "content": "nếu có bệnh nền, đang dùng thuốc khác hoặc thuộc nhóm nhạy cảm.\n\nKhi nào nên hỏi dược sĩ?\n\nKhách nên hỏi dược sĩ nếu:\nKhông chắc sản phẩm có phù hợp với tình trạng của mình.\nĐang mang thai hoặc cho con bú.\nLà trẻ em, người cao tuổi hoặc người có bệnh nền.\nĐang dùng nhiều thuốc cùng lúc.\nCó tiền sử dị ứng thuốc hoặc dị ứng thành phần.\nTriệu chứng kéo dài, nặng lên hoặc xuất hiện dấu hiệu nguy hiểm.\n\nChatbot được phép trả lời gì?\n\nChatbot có thể trả lời:\nSản phẩm thuộc nhóm chăm sóc sức khỏe nào nếu context có dữ liệu.\nCách bảo quản chung được ghi trong tài liệu.\nKhuyến nghị đọc nhãn, hướng dẫn sử dụng và hỏi dược sĩ.\nNhắc khách không tự ý dùng thuốc nếu có triệu chứng nghiêm trọng.",
-    "metadata": {
-      "title": "Thông Tin Thuốc OTC Cơ Bản",
-      "category": "medicine",
-      "source": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
-      "chunkIndex": 2
-    }
-  },
-  {
-    "id": "thong_tin_thuoc_otc_co_ban_003",
-    "title": "Thông Tin Thuốc OTC Cơ Bản",
-    "category": "medicine",
-    "source": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
-    "chunkIndex": 3,
-    "content": "sử dụng và hỏi dược sĩ.\nNhắc khách không tự ý dùng thuốc nếu có triệu chứng nghiêm trọng.\n\nChatbot không được trả lời gì?\n\nChatbot không được:\nChỉ định thuốc cho một bệnh cụ thể.\nTư vấn liều lượng chi tiết.\nSo sánh thuốc để khẳng định thuốc nào tốt hơn cho bệnh của khách.\nKết luận khách đang mắc bệnh gì.\n\nCâu trả lời mẫu\n\nNếu khách hỏi: “Tôi nên dùng thuốc gì khi bị đau đầu?”\n\nChatbot nên trả lời:",
-    "metadata": {
-      "title": "Thông Tin Thuốc OTC Cơ Bản",
-      "category": "medicine",
-      "source": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
-      "chunkIndex": 3
-    }
-  },
-  {
-    "id": "thong_tin_thuoc_otc_co_ban_004",
-    "title": "Thông Tin Thuốc OTC Cơ Bản",
-    "category": "medicine",
-    "source": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
-    "chunkIndex": 4,
-    "content": "trả lời mẫu\n\nNếu khách hỏi: “Tôi nên dùng thuốc gì khi bị đau đầu?”\n\nChatbot nên trả lời:\n\nTôi chưa thể chẩn đoán nguyên nhân đau đầu hoặc đề xuất thuốc cụ thể cho bạn. Bạn nên trao đổi với dược sĩ hoặc bác sĩ, đặc biệt nếu đau đầu kéo dài, đau dữ dội, kèm sốt, nôn ói, yếu liệt, khó thở hoặc có bệnh nền. Nếu bạn muốn tìm sản phẩm trong hệ thống, tôi có thể hỗ trợ tra cứu thông tin chung.",
-    "metadata": {
-      "title": "Thông Tin Thuốc OTC Cơ Bản",
-      "category": "medicine",
-      "source": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md",
-      "chunkIndex": 4
-    }
-  },
-  {
-    "id": "vitamin_tpcn_va_bao_quan_001",
-    "title": "Vitamin, Thực Phẩm Chức Năng Và Bảo Quản",
-    "category": "medicine",
-    "source": "fordel/knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md",
-    "chunkIndex": 1,
-    "content": "Vitamin, Thực Phẩm Chức Năng Và Bảo Quản\n\nVitamin và thực phẩm chức năng là nhóm sản phẩm hỗ trợ sức khỏe. Chúng không thay thế thuốc chữa bệnh và không thay thế chỉ định của bác sĩ hoặc dược sĩ.\n\nNguyên tắc tư vấn chung\n\nChatbot có thể nói:\nSản phẩm vitamin hoặc thực phẩm chức năng thường dùng để hỗ trợ sức khỏe theo thông tin nhà sản xuất.\nNgười dùng nên đọc kỹ nhãn, thành phần, hướng dẫn sử dụng và cảnh báo.\nNgười có bệnh nền, phụ nữ mang thai, trẻ em hoặc người đang dùng thuốc khác nên hỏi dược sĩ/bác sĩ trước khi dùng.\n\nChatbot không được nói:\nSản phẩm chắc chắn chữa khỏi bệnh.\nSản phẩm thay thế thuốc điều trị.\nLiều dùng cụ thể cho từng bệnh.\nCam kết hiệu quả điều trị.",
-    "metadata": {
-      "title": "Vitamin, Thực Phẩm Chức Năng Và Bảo Quản",
-      "category": "medicine",
-      "source": "fordel/knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md",
-      "chunkIndex": 1
-    }
-  },
-  {
-    "id": "vitamin_tpcn_va_bao_quan_002",
-    "title": "Vitamin, Thực Phẩm Chức Năng Và Bảo Quản",
-    "category": "medicine",
-    "source": "fordel/knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md",
-    "chunkIndex": 2,
-    "content": "n phẩm thay thế thuốc điều trị.\nLiều dùng cụ thể cho từng bệnh.\nCam kết hiệu quả điều trị.\n\nBảo quản sản phẩm\n\nNguyên tắc bảo quản thường gặp:\nĐể nơi khô ráo, thoáng mát.\nTránh ánh nắng trực tiếp.\nTránh nơi có độ ẩm cao.\nĐóng kín nắp sau khi sử dụng nếu bao bì yêu cầu.\nĐể xa tầm tay trẻ em.\nKhông dùng sản phẩm quá hạn hoặc có dấu hiệu biến đổi màu, mùi, dạng bào chế.\n\nKhi nào cần liên hệ dược sĩ?\n\nKhách nên liên hệ dược sĩ nếu:\nKhông chắc sản phẩm có phù hợp.\nĐang dùng thuốc điều trị.\nCó tiền sử dị ứng.\nMuốn dùng sản phẩm cho trẻ em, phụ nữ mang thai hoặc người cao tuổi.\nSau khi dùng có biểu hiện bất thường.\n\nCâu trả lời mẫu\n\nNếu khách hỏi: “Vitamin có thay thuốc điều trị được không?”",
-    "metadata": {
-      "title": "Vitamin, Thực Phẩm Chức Năng Và Bảo Quản",
-      "category": "medicine",
-      "source": "fordel/knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md",
-      "chunkIndex": 2
-    }
-  },
-  {
-    "id": "vitamin_tpcn_va_bao_quan_003",
-    "title": "Vitamin, Thực Phẩm Chức Năng Và Bảo Quản",
-    "category": "medicine",
-    "source": "fordel/knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md",
-    "chunkIndex": 3,
-    "content": "bất thường.\n\nCâu trả lời mẫu\n\nNếu khách hỏi: “Vitamin có thay thuốc điều trị được không?”\n\nChatbot nên trả lời:\n\nVitamin và thực phẩm chức năng chỉ có vai trò hỗ trợ sức khỏe, không thay thế thuốc điều trị hoặc chỉ định của bác sĩ. Nếu bạn đang có bệnh nền, đang dùng thuốc khác hoặc muốn dùng cho trẻ em/phụ nữ mang thai, bạn nên hỏi dược sĩ hoặc bác sĩ trước khi sử dụng.",
-    "metadata": {
-      "title": "Vitamin, Thực Phẩm Chức Năng Và Bảo Quản",
-      "category": "medicine",
-      "source": "fordel/knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md",
-      "chunkIndex": 3
-    }
-  },
-  {
-    "id": "chinh_sach_doi_tra_001",
+    "id": "knowledge-policy-chinh-sach-doi-tra-001",
+    "type": "knowledge",
+    "category": "policies",
     "title": "Chính Sách Đổi Trả",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-    "chunkIndex": 1,
-    "content": "Chính Sách Đổi Trả\n\nPharmPlus hỗ trợ đổi trả sản phẩm khi sản phẩm đáp ứng điều kiện đổi trả và còn trong thời gian cho phép.\n\nĐiều kiện đổi trả chung\n\nSản phẩm có thể được xem xét đổi trả khi:\nSản phẩm còn nguyên trạng, chưa qua sử dụng nếu là sản phẩm yêu cầu niêm phong.\nBao bì, tem nhãn, mã vạch và phụ kiện đi kèm còn đầy đủ.\nCó hóa đơn, mã đơn hàng hoặc chứng từ mua hàng hợp lệ.\nSản phẩm không thuộc nhóm bị hạn chế đổi trả theo quy định an toàn.\nLý do đổi trả được ghi nhận rõ ràng.\n\nCác trường hợp được ưu tiên hỗ trợ",
-    "metadata": {
-      "title": "Chính Sách Đổi Trả",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-      "chunkIndex": 1
-    }
+    "section": "Tóm tắt | Nguyên tắc áp dụng",
+    "content": "Tóm tắt\n\nPharmPlus hỗ trợ đổi trả trong các trường hợp hợp lệ như giao sai hàng, sản phẩm hư hỏng khi giao, thiếu hàng hoặc lỗi rõ ràng từ khâu đóng gói. Việc đổi trả còn phụ thuộc tình trạng sản phẩm, chứng từ mua hàng và quy định an toàn của từng nhóm hàng.\n\nNguyên tắc áp dụng\n\n- Khách cần cung cấp mã đơn hàng hoặc thông tin mua hàng để đối chiếu.\n- Sản phẩm cần còn nguyên trạng nếu thuộc nhóm yêu cầu niêm phong hoặc bảo quản đặc biệt.\n- Thuốc và sản phẩm y tế có thể bị hạn chế đổi trả vì lý do an toàn, vệ sinh và điều kiện bảo quản.\n- Yêu cầu đổi trả cần được kiểm tra theo tình trạng thực tế của đơn hàng và sản phẩm.",
+    "tags": [
+      "đổi trả",
+      "trả hàng",
+      "hoàn hàng",
+      "giao sai hàng",
+      "hàng hư",
+      "thuốc có đổi được không",
+      "mã đơn hàng",
+      "sản phẩm niêm phong"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md"
   },
   {
-    "id": "chinh_sach_doi_tra_002",
+    "id": "knowledge-policy-chinh-sach-doi-tra-002",
+    "type": "knowledge",
+    "category": "policies",
     "title": "Chính Sách Đổi Trả",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-    "chunkIndex": 2,
-    "content": "quy định an toàn.\nLý do đổi trả được ghi nhận rõ ràng.\n\nCác trường hợp được ưu tiên hỗ trợ\n\nPharmPlus ưu tiên xử lý đổi trả trong các trường hợp:\nGiao sai sản phẩm so với đơn hàng.\nSản phẩm bị hư hỏng trong quá trình vận chuyển.\nSản phẩm có lỗi do nhà sản xuất.\nSản phẩm bị thiếu số lượng hoặc thiếu phụ kiện đi kèm.\nBao bì bị ảnh hưởng nghiêm trọng trước khi khách nhận hàng.\n\nCác trường hợp có thể bị từ chối",
-    "metadata": {
-      "title": "Chính Sách Đổi Trả",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-      "chunkIndex": 2
-    }
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Nhà thuốc có hỗ trợ đổi trả không?\n**Đáp:** Có hỗ trợ kiểm tra yêu cầu đổi trả nếu sản phẩm còn đáp ứng điều kiện và có thông tin mua hàng hợp lệ.\n\n**Hỏi:** Thuốc đã nhận rồi có đổi trả được không?\n**Đáp:** Có thể bị hạn chế tùy loại thuốc, tình trạng niêm phong và quy định an toàn. Chatbot nên khuyên khách cung cấp mã đơn để nhân viên kiểm tra.\n\n**Hỏi:** Cần chuẩn bị gì khi yêu cầu đổi trả?\n**Đáp:** Khách nên chuẩn bị mã đơn, hình ảnh sản phẩm và mô tả lý do đổi trả.\n\nCâu trả lời mẫu chatbot\n\nPharmPlus có hỗ trợ tiếp nhận yêu cầu đổi trả khi đơn hàng và sản phẩm đáp ứng điều kiện kiểm tra. Với thuốc và sản phẩm y tế, chính sách có thể bị giới hạn để đảm bảo an toàn. Bạn vui lòng cung cấp mã đơn hàng và mô tả tình trạng sản phẩm để nhân viên hỗ trợ chính xác hơn.",
+    "tags": [
+      "đổi trả",
+      "trả hàng",
+      "hoàn hàng",
+      "giao sai hàng",
+      "hàng hư",
+      "thuốc có đổi được không",
+      "mã đơn hàng",
+      "sản phẩm niêm phong"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md"
   },
   {
-    "id": "chinh_sach_doi_tra_003",
-    "title": "Chính Sách Đổi Trả",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-    "chunkIndex": 3,
-    "content": "bì bị ảnh hưởng nghiêm trọng trước khi khách nhận hàng.\n\nCác trường hợp có thể bị từ chối\n\nYêu cầu đổi trả có thể bị từ chối khi:\nSản phẩm đã qua sử dụng hoặc không còn nguyên trạng.\nKhông có bằng chứng mua hàng từ hệ thống PharmPlus.\nSản phẩm đã quá thời gian đổi trả cho phép.\nSản phẩm bị hư hỏng do bảo quản sai hướng dẫn.\nSản phẩm thuộc nhóm không được đổi trả vì lý do an toàn, vệ sinh hoặc quy định ngành dược.\n\nLưu ý với thuốc và sản phẩm y tế\n\nMột số thuốc hoặc sản phẩm y tế có thể không được đổi trả sau khi khách đã nhận hàng, đặc biệt nếu sản phẩm đã mở niêm phong hoặc cần điều kiện bảo quản nghiêm ngặt.",
-    "metadata": {
-      "title": "Chính Sách Đổi Trả",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-      "chunkIndex": 3
-    }
-  },
-  {
-    "id": "chinh_sach_doi_tra_004",
-    "title": "Chính Sách Đổi Trả",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-    "chunkIndex": 4,
-    "content": "nhận hàng, đặc biệt nếu sản phẩm đã mở niêm phong hoặc cần điều kiện bảo quản nghiêm ngặt.\n\nNếu khách hỏi về một sản phẩm cụ thể, chatbot cần khuyến nghị khách cung cấp mã đơn hàng và liên hệ nhân viên hoặc dược sĩ để kiểm tra chính sách áp dụng.\n\nQuy trình đổi trả\n\nKhách hàng có thể yêu cầu đổi trả theo các bước:\nCung cấp mã đơn hàng hoặc số điện thoại đặt hàng.\nMô tả lý do đổi trả.\nGửi hình ảnh sản phẩm, bao bì, tem nhãn nếu cần.\nNhân viên kiểm tra điều kiện đổi trả.\nNếu hợp lệ, hệ thống hướng dẫn đổi sản phẩm, hoàn tiền hoặc xử lý theo chính sách hiện hành.\n\nCâu trả lời mẫu\n\nNếu khách hỏi: “Nhà thuốc có cho đổi trả sản phẩm không?”\n\nChatbot nên trả lời:",
-    "metadata": {
-      "title": "Chính Sách Đổi Trả",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-      "chunkIndex": 4
-    }
-  },
-  {
-    "id": "chinh_sach_doi_tra_005",
-    "title": "Chính Sách Đổi Trả",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-    "chunkIndex": 5,
-    "content": "ả lời mẫu\n\nNếu khách hỏi: “Nhà thuốc có cho đổi trả sản phẩm không?”\n\nChatbot nên trả lời:\n\nPharmPlus có hỗ trợ đổi trả sản phẩm nếu sản phẩm đáp ứng điều kiện đổi trả, còn chứng từ mua hàng và chưa thuộc nhóm hạn chế đổi trả. Các trường hợp như giao sai sản phẩm, sản phẩm lỗi, hư hỏng khi vận chuyển hoặc thiếu số lượng sẽ được ưu tiên kiểm tra. Với thuốc và sản phẩm y tế, chính sách có thể phụ thuộc từng loại sản phẩm, bạn nên cung cấp mã đơn hàng để nhân viên hỗ trợ chính xác hơn.",
-    "metadata": {
-      "title": "Chính Sách Đổi Trả",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-doi-tra.md",
-      "chunkIndex": 5
-    }
-  },
-  {
-    "id": "chinh_sach_giao_hang_001",
+    "id": "knowledge-policy-chinh-sach-giao-hang-001",
+    "type": "knowledge",
+    "category": "policies",
     "title": "Chính Sách Giao Hàng",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-    "chunkIndex": 1,
-    "content": "Chính Sách Giao Hàng\n\nPharmPlus hỗ trợ giao hàng theo khu vực phục vụ của hệ thống. Thời gian và phí giao hàng phụ thuộc vào địa chỉ nhận hàng, chi nhánh xử lý đơn, tình trạng tồn kho và phương thức vận chuyển.\n\nPhạm vi giao hàng\n\nPharmPlus có thể hỗ trợ:\nGiao hàng nội thành tại khu vực có chi nhánh phục vụ.\nGiao hàng ngoại thành hoặc tỉnh thành khác nếu đơn vị vận chuyển hỗ trợ.\nNhận hàng tại chi nhánh nếu khách chọn hình thức tự đến lấy.\n\nNếu khu vực chưa được hỗ trợ, hệ thống hoặc nhân viên sẽ thông báo cho khách trong quá trình đặt hàng.\n\nThời gian giao hàng",
-    "metadata": {
-      "title": "Chính Sách Giao Hàng",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-      "chunkIndex": 1
-    }
+    "section": "Tóm tắt | Nguyên tắc áp dụng",
+    "content": "Tóm tắt\n\nPharmPlus hỗ trợ giao hàng theo khu vực phục vụ, tồn kho và đơn vị vận chuyển. Thời gian giao và phí giao hàng phụ thuộc địa chỉ nhận, tình trạng sản phẩm và chương trình áp dụng tại thời điểm đặt hàng.\n\nNguyên tắc áp dụng\n\n- Đơn hàng được xử lý khi sản phẩm còn tồn và khu vực nhận hàng được hỗ trợ.\n- Thời gian giao hàng là dự kiến và có thể thay đổi do giao thông, thời tiết, tồn kho hoặc nhà vận chuyển.\n- Phí giao hàng có thể thay đổi theo khu vực, giá trị đơn hàng và ưu đãi hiện hành.\n- Thay đổi địa chỉ giao hàng thường chỉ hỗ trợ khi đơn chưa bàn giao cho đơn vị vận chuyển.",
+    "tags": [
+      "giao hàng",
+      "ship",
+      "phí ship",
+      "thời gian giao hàng",
+      "đổi địa chỉ giao hàng",
+      "theo dõi đơn hàng",
+      "khu vực giao hàng"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md"
   },
   {
-    "id": "chinh_sach_giao_hang_002",
+    "id": "knowledge-policy-chinh-sach-giao-hang-002",
+    "type": "knowledge",
+    "category": "policies",
     "title": "Chính Sách Giao Hàng",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-    "chunkIndex": 2,
-    "content": "thống hoặc nhân viên sẽ thông báo cho khách trong quá trình đặt hàng.\n\nThời gian giao hàng\n\nThời gian giao hàng phụ thuộc vào:\nKhoảng cách từ chi nhánh đến địa chỉ nhận.\nTình trạng tồn kho sản phẩm.\nThời điểm đặt hàng.\nĐiều kiện thời tiết, giao thông hoặc quy định vận chuyển.\n\nĐơn nội thành thường được xử lý nhanh hơn đơn ngoại thành. Thời gian dự kiến có thể hiển thị khi khách xác nhận đơn hàng.\n\nPhí giao hàng\n\nPhí giao hàng được tính theo:\nKhu vực nhận hàng.\nGiá trị đơn hàng.\nKhối lượng hoặc kích thước sản phẩm.\nChương trình ưu đãi giao hàng tại thời điểm đặt đơn.\n\nMột số đơn hàng có thể được miễn phí giao hàng nếu đáp ứng điều kiện khuyến mãi.\n\nTheo dõi đơn hàng",
-    "metadata": {
-      "title": "Chính Sách Giao Hàng",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-      "chunkIndex": 2
-    }
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Bao lâu tôi nhận được hàng?\n**Đáp:** Thời gian giao hàng phụ thuộc khu vực, tồn kho và nhà vận chuyển; chatbot nên trả lời theo hướng dự kiến chung.\n\n**Hỏi:** Phí ship tính như thế nào?\n**Đáp:** Phí giao hàng phụ thuộc địa chỉ nhận, giá trị đơn hàng và chương trình ưu đãi tại thời điểm đặt.\n\n**Hỏi:** Tôi có thể đổi địa chỉ giao hàng không?\n**Đáp:** Có thể hỗ trợ nếu đơn chưa chuyển sang giai đoạn giao thực tế.\n\nCâu trả lời mẫu chatbot\n\nPharmPlus hỗ trợ giao hàng theo khu vực phục vụ của hệ thống. Thời gian và phí giao hàng phụ thuộc địa chỉ nhận, tồn kho sản phẩm và nhà vận chuyển tại thời điểm đặt hàng. Nếu bạn cần đổi địa chỉ hoặc kiểm tra trạng thái đơn, vui lòng cung cấp mã đơn hàng để được hỗ trợ nhanh hơn.",
+    "tags": [
+      "giao hàng",
+      "ship",
+      "phí ship",
+      "thời gian giao hàng",
+      "đổi địa chỉ giao hàng",
+      "theo dõi đơn hàng",
+      "khu vực giao hàng"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md"
   },
   {
-    "id": "chinh_sach_giao_hang_003",
-    "title": "Chính Sách Giao Hàng",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-    "chunkIndex": 3,
-    "content": "n hàng có thể được miễn phí giao hàng nếu đáp ứng điều kiện khuyến mãi.\n\nTheo dõi đơn hàng\n\nKhách có thể theo dõi trạng thái đơn hàng trong hệ thống. Các trạng thái phổ biến:\nChờ xác nhận.\nĐang xử lý.\nĐang chuẩn bị hàng.\nĐang giao.\nĐã giao.\nĐã hủy.\n\nNếu trạng thái không cập nhật trong thời gian dài, khách nên liên hệ hỗ trợ và cung cấp mã đơn hàng.\n\nThay đổi địa chỉ nhận hàng\n\nKhách có thể yêu cầu thay đổi địa chỉ nếu đơn hàng chưa bàn giao cho đơn vị vận chuyển. Khi đơn đã chuyển sang trạng thái đang giao, việc thay đổi địa chỉ có thể bị giới hạn hoặc phát sinh thêm phí.\n\nGiao hàng thất bại",
-    "metadata": {
-      "title": "Chính Sách Giao Hàng",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-      "chunkIndex": 3
-    }
-  },
-  {
-    "id": "chinh_sach_giao_hang_004",
-    "title": "Chính Sách Giao Hàng",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-    "chunkIndex": 4,
-    "content": "iao, việc thay đổi địa chỉ có thể bị giới hạn hoặc phát sinh thêm phí.\n\nGiao hàng thất bại\n\nGiao hàng có thể thất bại khi:\nKhông liên hệ được người nhận.\nĐịa chỉ không chính xác.\nKhách từ chối nhận hàng.\nKhu vực giao hàng phát sinh hạn chế.\n\nTrong trường hợp này, nhân viên có thể liên hệ lại để xác nhận giao lại, đổi địa chỉ hoặc hủy đơn theo chính sách.\n\nCâu trả lời mẫu\n\nNếu khách hỏi: “Chính sách giao hàng như thế nào?”\n\nChatbot nên trả lời:",
-    "metadata": {
-      "title": "Chính Sách Giao Hàng",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-      "chunkIndex": 4
-    }
-  },
-  {
-    "id": "chinh_sach_giao_hang_005",
-    "title": "Chính Sách Giao Hàng",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-    "chunkIndex": 5,
-    "content": "Câu trả lời mẫu\n\nNếu khách hỏi: “Chính sách giao hàng như thế nào?”\n\nChatbot nên trả lời:\n\nPharmPlus hỗ trợ giao hàng theo khu vực phục vụ của hệ thống. Thời gian và phí giao hàng phụ thuộc vào địa chỉ nhận, chi nhánh xử lý đơn, tồn kho và chương trình ưu đãi hiện hành. Bạn có thể theo dõi trạng thái đơn hàng trong hệ thống. Nếu muốn đổi địa chỉ, hãy yêu cầu trước khi đơn được bàn giao cho đơn vị vận chuyển.",
-    "metadata": {
-      "title": "Chính Sách Giao Hàng",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-giao-hang.md",
-      "chunkIndex": 5
-    }
-  },
-  {
-    "id": "chinh_sach_thanh_toan_001",
+    "id": "knowledge-policy-chinh-sach-thanh-toan-001",
+    "type": "knowledge",
+    "category": "policies",
     "title": "Chính Sách Thanh Toán",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-thanh-toan.md",
-    "chunkIndex": 1,
-    "content": "Chính Sách Thanh Toán\n\nPharmPlus hỗ trợ nhiều phương thức thanh toán để khách hàng lựa chọn khi đặt hàng.\n\nPhương thức thanh toán\n\nCác phương thức có thể được hỗ trợ:\nThanh toán khi nhận hàng, còn gọi là COD.\nChuyển khoản ngân hàng.\nThanh toán bằng thẻ ngân hàng nếu hệ thống khả dụng.\nVí điện tử hoặc cổng thanh toán trực tuyến nếu được tích hợp tại thời điểm đặt hàng.\n\nPhương thức thanh toán thực tế có thể thay đổi theo cấu hình hệ thống, khu vực giao hàng và chương trình vận hành.\n\nXác nhận thanh toán\n\nĐơn hàng được xem là thanh toán thành công khi hệ thống ghi nhận giao dịch hợp lệ. Với thanh toán online, trạng thái có thể cần vài phút để đồng bộ.",
-    "metadata": {
-      "title": "Chính Sách Thanh Toán",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-thanh-toan.md",
-      "chunkIndex": 1
-    }
+    "section": "Tóm tắt | Nguyên tắc áp dụng",
+    "content": "Tóm tắt\n\nPharmPlus có thể hỗ trợ nhiều hình thức thanh toán tùy theo cấu hình hệ thống và khu vực giao hàng, bao gồm thanh toán khi nhận hàng và các hình thức thanh toán điện tử nếu đang được kích hoạt.\n\nNguyên tắc áp dụng\n\n- Phương thức thanh toán hiển thị tại bước đặt hàng mới là thông tin ưu tiên.\n- Giao dịch online cần được hệ thống ghi nhận thành công mới xem là đã thanh toán.\n- Hoàn tiền, nếu có, phụ thuộc kết quả xử lý đơn hàng và phương thức thanh toán ban đầu.\n- Khách không nên chia sẻ OTP, mật khẩu, mã xác thực hay thông tin thẻ cho bất kỳ ai.",
+    "tags": [
+      "thanh toán",
+      "COD",
+      "chuyển khoản",
+      "ví điện tử",
+      "thẻ ngân hàng",
+      "giao dịch lỗi",
+      "hoàn tiền",
+      "OTP"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-thanh-toan.md"
   },
   {
-    "id": "chinh_sach_thanh_toan_002",
+    "id": "knowledge-policy-chinh-sach-thanh-toan-002",
+    "type": "knowledge",
+    "category": "policies",
     "title": "Chính Sách Thanh Toán",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-thanh-toan.md",
-    "chunkIndex": 2,
-    "content": "i nhận giao dịch hợp lệ. Với thanh toán online, trạng thái có thể cần vài phút để đồng bộ.\n\nNếu khách đã thanh toán nhưng đơn chưa cập nhật:\nKiểm tra lại mã đơn hàng.\nChờ hệ thống đồng bộ trong ít phút.\nLiên hệ hỗ trợ và cung cấp bằng chứng giao dịch nếu trạng thái vẫn chưa cập nhật.\n\nHoàn tiền\n\nHoàn tiền được xử lý khi yêu cầu đổi trả, hủy đơn hoặc giao dịch lỗi đáp ứng điều kiện hoàn tiền.\n\nThời gian hoàn tiền phụ thuộc vào:\nPhương thức thanh toán ban đầu.\nNgân hàng hoặc ví điện tử xử lý giao dịch.\nQuy trình đối soát của hệ thống.\n\nBảo mật thanh toán\n\nKhách hàng không nên chia sẻ:\nMã OTP.\nMật khẩu tài khoản.\nThông tin thẻ ngân hàng.\nMã bảo mật giao dịch.",
-    "metadata": {
-      "title": "Chính Sách Thanh Toán",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-thanh-toan.md",
-      "chunkIndex": 2
-    }
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Có những cách thanh toán nào?\n**Đáp:** Thường có COD và có thể có chuyển khoản, thẻ hoặc ví điện tử nếu hệ thống đang hỗ trợ.\n\n**Hỏi:** Tôi thanh toán rồi nhưng đơn chưa cập nhật thì sao?\n**Đáp:** Khách nên chờ hệ thống đồng bộ trong ít phút, sau đó liên hệ hỗ trợ nếu trạng thái vẫn chưa thay đổi.\n\n**Hỏi:** Bao giờ được hoàn tiền?\n**Đáp:** Thời gian hoàn tiền phụ thuộc quy trình đối soát và phương thức thanh toán ban đầu.\n\nCâu trả lời mẫu chatbot\n\nPharmPlus hỗ trợ các hình thức thanh toán theo cấu hình hệ thống tại thời điểm đặt hàng. Nếu bạn đã thanh toán online nhưng đơn chưa cập nhật, vui lòng chờ hệ thống đồng bộ thêm một lúc và giữ lại chứng từ giao dịch để nhân viên kiểm tra khi cần. Bạn không nên chia sẻ OTP hay mật khẩu thanh toán.",
+    "tags": [
+      "thanh toán",
+      "COD",
+      "chuyển khoản",
+      "ví điện tử",
+      "thẻ ngân hàng",
+      "giao dịch lỗi",
+      "hoàn tiền",
+      "OTP"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-thanh-toan.md"
   },
   {
-    "id": "chinh_sach_thanh_toan_003",
-    "title": "Chính Sách Thanh Toán",
-    "category": "policy",
-    "source": "fordel/knowledge-base/policies/chinh-sach-thanh-toan.md",
-    "chunkIndex": 3,
-    "content": "ng nên chia sẻ:\nMã OTP.\nMật khẩu tài khoản.\nThông tin thẻ ngân hàng.\nMã bảo mật giao dịch.\n\nNhân viên PharmPlus không yêu cầu khách cung cấp mật khẩu hoặc OTP.\n\nCâu trả lời mẫu\n\nNếu khách hỏi: “Có những phương thức thanh toán nào?”\n\nChatbot nên trả lời:\n\nPharmPlus có thể hỗ trợ thanh toán khi nhận hàng, chuyển khoản ngân hàng, thẻ ngân hàng và ví điện tử nếu hệ thống đang khả dụng. Với thanh toán online, đơn hàng được ghi nhận khi hệ thống xác nhận giao dịch thành công. Bạn không nên chia sẻ OTP, mật khẩu hoặc thông tin thẻ cho bất kỳ ai.",
-    "metadata": {
-      "title": "Chính Sách Thanh Toán",
-      "category": "policy",
-      "source": "fordel/knowledge-base/policies/chinh-sach-thanh-toan.md",
-      "chunkIndex": 3
-    }
+    "id": "knowledge-policy-chinh-sach-tu-van-duoc-si-001",
+    "type": "knowledge",
+    "category": "policies",
+    "title": "Chính Sách Tư Vấn Dược Sĩ",
+    "section": "Tóm tắt | Nguyên tắc áp dụng",
+    "content": "Tóm tắt\n\nPublic chatbot PharmPlus chỉ hỗ trợ thông tin chung và định hướng an toàn. Các câu hỏi vượt quá phạm vi thông tin cơ bản sẽ được khuyến nghị chuyển sang dược sĩ hoặc bác sĩ.\n\nNguyên tắc áp dụng\n\n- Chatbot không chẩn đoán bệnh.\n- Chatbot không kê đơn và không hướng dẫn liều dùng cụ thể.\n- Chatbot không khẳng định sản phẩm nào chắc chắn phù hợp cho tình trạng của từng người.\n- Các trường hợp phụ nữ mang thai, trẻ em, người cao tuổi, bệnh nền, dị ứng, nghi quá liều, khó thở, đau ngực, đau bụng dữ dội, sốt cao cần gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "tư vấn dược sĩ",
+      "giới hạn chatbot",
+      "hỏi dược sĩ",
+      "kê đơn",
+      "liều dùng",
+      "mang thai",
+      "trẻ em",
+      "bệnh nền"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-tu-van-duoc-si.md"
   },
   {
-    "id": "quy_tac_an_toan_y_khoa_001",
-    "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
+    "id": "knowledge-policy-chinh-sach-tu-van-duoc-si-002",
+    "type": "knowledge",
+    "category": "policies",
+    "title": "Chính Sách Tư Vấn Dược Sĩ",
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Chatbot có thể tư vấn thuốc cho tôi không?\n**Đáp:** Chatbot chỉ hỗ trợ thông tin chung, không thay thế dược sĩ.\n\n**Hỏi:** Khi nào tôi cần gặp dược sĩ?\n**Đáp:** Khi có triệu chứng nặng, dùng nhiều thuốc, có bệnh nền, mang thai, cho con bú, trẻ em, người cao tuổi hoặc cần hỏi về liều dùng.\n\n**Hỏi:** Chatbot có thể nói thuốc nào hợp với tôi không?\n**Đáp:** Không. Chatbot không thể khẳng định thuốc nào chắc chắn phù hợp cho từng tình trạng cá nhân.\n\nCâu trả lời mẫu chatbot\n\nTôi chỉ có thể cung cấp thông tin chung và định hướng an toàn, không thể chẩn đoán, kê đơn hay hướng dẫn liều dùng cụ thể. Nếu bạn thuộc nhóm nhạy cảm hoặc đang có triệu chứng nghiêm trọng, bạn nên liên hệ dược sĩ hoặc bác sĩ để được tư vấn phù hợp.",
+    "tags": [
+      "tư vấn dược sĩ",
+      "giới hạn chatbot",
+      "hỏi dược sĩ",
+      "kê đơn",
+      "liều dùng",
+      "mang thai",
+      "trẻ em",
+      "bệnh nền"
+    ],
+    "sourcePath": "fordel/knowledge-base/policies/chinh-sach-tu-van-duoc-si.md"
+  },
+  {
+    "id": "knowledge-faq-faq-dat-hang-giao-hang-001",
+    "type": "knowledge",
+    "category": "faq",
+    "title": "FAQ Đặt Hàng Giao Hàng",
+    "section": "Tóm tắt | Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Tóm tắt\n\nTài liệu này tổng hợp các câu hỏi phổ biến về đặt hàng, theo dõi đơn, giao hàng và thay đổi thông tin nhận hàng.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Tôi đặt hàng như thế nào?\n**Đáp:** Khách chọn sản phẩm, nhập thông tin nhận hàng, chọn thanh toán và xác nhận đơn theo luồng của hệ thống.\n\n**Hỏi:** Tôi theo dõi đơn hàng ở đâu?\n**Đáp:** Khách có thể xem trạng thái đơn trong hệ thống hoặc cung cấp mã đơn để được hỗ trợ kiểm tra.\n\n**Hỏi:** Tôi có thể hủy hoặc đổi địa chỉ giao hàng không?\n**Đáp:** Có thể hỗ trợ nếu đơn chưa vào giai đoạn giao thực tế.\n\n**Hỏi:** Nếu giao hàng thất bại thì sao?\n**Đáp:** Đơn có thể được liên hệ xác minh lại, sắp xếp giao lại hoặc xử lý theo chính sách hiện hành.\n\nCâu trả lời mẫu chatbot\n\nBạn có thể đặt hàng trực tiếp trên hệ thống và theo dõi trạng thái đơn hàng trong tài khoản hoặc bằng mã đơn. Nếu cần đổi địa chỉ, hủy đơn hoặc kiểm tra giao hàng, vui lòng gửi mã đơn hàng để hệ thống hỗ trợ nhanh hơn.",
+    "tags": [
+      "đặt hàng",
+      "giao hàng",
+      "theo dõi đơn",
+      "hủy đơn",
+      "đổi địa chỉ",
+      "mã đơn hàng",
+      "giao thất bại"
+    ],
+    "sourcePath": "fordel/knowledge-base/faq/faq-dat-hang-giao-hang.md"
+  },
+  {
+    "id": "knowledge-faq-faq-san-pham-ton-kho-001",
+    "type": "knowledge",
+    "category": "faq",
+    "title": "FAQ Sản Phẩm Tồn Kho",
+    "section": "Tóm tắt | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nTài liệu này giải thích các câu hỏi thường gặp về tồn kho, tình trạng sẵn có, thay thế sản phẩm và tình trạng cập nhật trên hệ thống.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Sản phẩm còn hàng không?\n**Đáp:** Tình trạng tồn kho phụ thuộc chi nhánh xử lý và thời điểm đặt hàng.\n\n**Hỏi:** Tại sao lúc xem còn hàng nhưng lúc thanh toán lại hết?\n**Đáp:** Tồn kho có thể thay đổi theo thời gian thực khi nhiều đơn cùng đặt.\n\n**Hỏi:** Hết hàng thì có sản phẩm thay thế không?\n**Đáp:** Chatbot có thể gợi ý nhóm sản phẩm tương tự nếu có dữ liệu, nhưng không khẳng định sản phẩm nào chắc chắn phù hợp với tình trạng sức khỏe của khách.\n\n**Hỏi:** Bao giờ có hàng lại?\n**Đáp:** Nếu hệ thống chưa có lịch bổ sung tồn kho, chatbot nên trả lời là cần kiểm tra thêm với nhân viên.",
+    "tags": [
+      "tồn kho",
+      "còn hàng",
+      "hết hàng",
+      "sản phẩm thay thế",
+      "bao giờ có hàng lại",
+      "chi nhánh",
+      "cập nhật tồn kho"
+    ],
+    "sourcePath": "fordel/knowledge-base/faq/faq-san-pham-ton-kho.md"
+  },
+  {
+    "id": "knowledge-faq-faq-san-pham-ton-kho-002",
+    "type": "knowledge",
+    "category": "faq",
+    "title": "FAQ Sản Phẩm Tồn Kho",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nTồn kho sản phẩm có thể thay đổi theo chi nhánh và thời điểm đặt hàng. Nếu sản phẩm tạm hết hàng, tôi có thể hỗ trợ tìm nhóm sản phẩm liên quan trong hệ thống, nhưng để xác nhận tồn kho chính xác hoặc lịch có hàng lại, bạn nên liên hệ nhân viên hỗ trợ.",
+    "tags": [
+      "tồn kho",
+      "còn hàng",
+      "hết hàng",
+      "sản phẩm thay thế",
+      "bao giờ có hàng lại",
+      "chi nhánh",
+      "cập nhật tồn kho"
+    ],
+    "sourcePath": "fordel/knowledge-base/faq/faq-san-pham-ton-kho.md"
+  },
+  {
+    "id": "knowledge-faq-faq-thanh-toan-doi-tra-tai-khoan-001",
+    "type": "knowledge",
+    "category": "faq",
+    "title": "FAQ Thanh Toán Đổi Trả Tài Khoản",
+    "section": "Tóm tắt | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nTài liệu này trả lời các câu hỏi phổ biến về thanh toán, hoàn tiền, đổi trả, tài khoản và thông tin xác minh.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Tôi đã thanh toán nhưng đơn chưa cập nhật?\n**Đáp:** Khách nên chờ hệ thống đồng bộ thêm một lúc và giữ lại chứng từ giao dịch để nhân viên kiểm tra nếu cần.\n\n**Hỏi:** Tôi có thể đổi trả sản phẩm không?\n**Đáp:** Có thể hỗ trợ kiểm tra nếu sản phẩm và đơn hàng đáp ứng điều kiện đổi trả.\n\n**Hỏi:** Tôi quên mật khẩu thì sao?\n**Đáp:** Khách nên dùng chức năng quên mật khẩu nếu hệ thống có hỗ trợ hoặc liên hệ kênh hỗ trợ chính thức.\n\n**Hỏi:** Có nên gửi OTP cho nhân viên hoặc chatbot không?\n**Đáp:** Không. OTP, mật khẩu và thông tin thẻ là thông tin nhạy cảm.",
+    "tags": [
+      "thanh toán",
+      "hoàn tiền",
+      "đổi trả",
+      "tài khoản",
+      "quên mật khẩu",
+      "OTP",
+      "mã khuyến mãi",
+      "đơn chưa cập nhật"
+    ],
+    "sourcePath": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md"
+  },
+  {
+    "id": "knowledge-faq-faq-thanh-toan-doi-tra-tai-khoan-002",
+    "type": "knowledge",
+    "category": "faq",
+    "title": "FAQ Thanh Toán Đổi Trả Tài Khoản",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nNếu đơn hàng của bạn đã thanh toán nhưng chưa cập nhật, vui lòng đợi hệ thống đồng bộ thêm một lúc và giữ lại bằng chứng giao dịch. Với yêu cầu đổi trả hoặc tài khoản, bạn có thể cung cấp mã đơn hàng hay thông tin liên quan qua kênh hỗ trợ chính thức, nhưng không nên chia sẻ OTP hoặc mật khẩu.",
+    "tags": [
+      "thanh toán",
+      "hoàn tiền",
+      "đổi trả",
+      "tài khoản",
+      "quên mật khẩu",
+      "OTP",
+      "mã khuyến mãi",
+      "đơn chưa cập nhật"
+    ],
+    "sourcePath": "fordel/knowledge-base/faq/faq-thanh-toan-doi-tra-tai-khoan.md"
+  },
+  {
+    "id": "knowledge-faq-faq-tu-van-thuoc-001",
+    "type": "knowledge",
+    "category": "faq",
+    "title": "FAQ Tư Vấn Thuốc",
+    "section": "Tóm tắt | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nTài liệu này làm rõ chatbot được trả lời đến đâu khi khách hỏi về thuốc, tác dụng, độ phù hợp và các trường hợp cần gặp dược sĩ.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Chatbot có thể chỉ thuốc cho tôi không?\n**Đáp:** Không. Chatbot không chẩn đoán và không kê đơn.\n\n**Hỏi:** Chatbot có thể nói thuốc nào hợp với tôi không?\n**Đáp:** Chatbot chỉ có thể tra cứu thông tin chung, không khẳng định thuốc nào chắc chắn phù hợp.\n\n**Hỏi:** Khi nào cần hỏi dược sĩ?\n**Đáp:** Khi có bệnh nền, đang mang thai, trẻ em, người cao tuổi, dị ứng, dùng nhiều thuốc, nghi quá liều hoặc có triệu chứng nặng.\n\n**Hỏi:** Chatbot có thể hướng dẫn liều dùng chi tiết không?\n**Đáp:** Không. Chatbot chỉ nhắc khách đọc nhãn sản phẩm và hỏi dược sĩ/bác sĩ.",
+    "tags": [
+      "tư vấn thuốc",
+      "hỏi dược sĩ",
+      "liều dùng",
+      "tác dụng",
+      "thuốc có hợp không",
+      "bệnh nền",
+      "mang thai",
+      "quá liều"
+    ],
+    "sourcePath": "fordel/knowledge-base/faq/faq-tu-van-thuoc.md"
+  },
+  {
+    "id": "knowledge-faq-faq-tu-van-thuoc-002",
+    "type": "knowledge",
+    "category": "faq",
+    "title": "FAQ Tư Vấn Thuốc",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nTôi có thể giúp bạn tìm thông tin chung về nhóm sản phẩm, cảnh báo an toàn và khi nào cần gặp dược sĩ. Tôi không thể chẩn đoán, kê đơn hay hướng dẫn liều dùng cụ thể. Nếu bạn đang mang thai, là trẻ em, người cao tuổi, có bệnh nền hoặc có triệu chứng nặng, bạn nên gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "tư vấn thuốc",
+      "hỏi dược sĩ",
+      "liều dùng",
+      "tác dụng",
+      "thuốc có hợp không",
+      "bệnh nền",
+      "mang thai",
+      "quá liều"
+    ],
+    "sourcePath": "fordel/knowledge-base/faq/faq-tu-van-thuoc.md"
+  },
+  {
+    "id": "knowledge-safety-dau-hieu-can-gap-bac-si-001",
+    "type": "knowledge",
     "category": "safety",
-    "source": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
-    "chunkIndex": 1,
-    "content": "Quy Tắc An Toàn Y Khoa Cho Chatbot\n\nChatbot PharmPlus phải ưu tiên an toàn người dùng khi xử lý câu hỏi liên quan đến sức khỏe, thuốc và triệu chứng.\n\nNguyên tắc bắt buộc\n\nChatbot phải:\nNói rõ khi không đủ dữ liệu để trả lời.\nKhuyến nghị liên hệ dược sĩ hoặc bác sĩ khi câu hỏi có rủi ro.\nKhông chẩn đoán bệnh.\nKhông kê đơn thuốc.\nKhông tư vấn liều dùng chi tiết.\nKhông khẳng định một sản phẩm phù hợp với tình trạng bệnh cụ thể nếu không có dược sĩ xác nhận.\nKhông tạo thông tin ngoài context.\n\nCâu hỏi phải chuyển dược sĩ hoặc bác sĩ",
-    "metadata": {
-      "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
-      "category": "safety",
-      "source": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
-      "chunkIndex": 1
-    }
+    "title": "Dấu Hiệu Cần Gặp Bác Sĩ",
+    "section": "Tóm tắt | Dấu hiệu cần cảnh báo | Nhóm người cần thận trọng",
+    "content": "Tóm tắt\n\nTài liệu này tổng hợp các dấu hiệu cần được chatbot ưu tiên cảnh báo và khuyên khách gặp dược sĩ hoặc bác sĩ thay vì tiếp tục hỏi thông tin chung.\n\nDấu hiệu cần cảnh báo\n\n- Khó thở, thở rít, cảm giác ngộp.\n- Đau ngực, tức ngực, hồi hộp bất thường.\n- Đau bụng dữ dội, nôn liên tục, tiêu ra máu, mất nước rõ rệt.\n- Sốt cao, sốt kéo dài, lị bì, mê man, co giật.\n- Nổi ban, sưng môi lưỡi họng, nghi phản ứng dị ứng nặng.\n- Nghi quá liều, dùng nhầm thuốc, uống nhầm thuốc của người khác.\n- Đau đầu dữ dội, yếu liệt, méo miệng, nói khó.\n\nNhóm người cần thận trọng\n\n- Phụ nữ mang thai hoặc cho con bú.\n- Trẻ em, đặc biệt trẻ nhỏ.\n- Người cao tuổi.\n- Người có bệnh nền.\n- Người có tiền sử dị ứng thuốc hoặc đang dùng nhiều thuốc.",
+    "tags": [
+      "gặp bác sĩ",
+      "dấu hiệu nguy hiểm",
+      "khó thở",
+      "đau ngực",
+      "đau bụng dữ dội",
+      "sốt cao",
+      "co giật",
+      "dị ứng nặng",
+      "quá liều"
+    ],
+    "sourcePath": "fordel/knowledge-base/safety/dau-hieu-can-gap-bac-si.md"
   },
   {
-    "id": "quy_tac_an_toan_y_khoa_002",
-    "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
+    "id": "knowledge-safety-dau-hieu-can-gap-bac-si-002",
+    "type": "knowledge",
     "category": "safety",
-    "source": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
-    "chunkIndex": 2,
-    "content": "c sĩ xác nhận.\nKhông tạo thông tin ngoài context.\n\nCâu hỏi phải chuyển dược sĩ hoặc bác sĩ\n\nChatbot cần handoff khi khách hỏi về:\nĐau ngực, khó thở, ngất, co giật.\nDấu hiệu đột quỵ như méo miệng, yếu liệt, nói khó.\nSốt cao kéo dài, mất nước, lơ mơ.\nPhản ứng dị ứng nặng, sưng mặt, khó thở, nổi mề đay toàn thân.\nTư vấn thuốc cho trẻ sơ sinh, phụ nữ mang thai, người cao tuổi có bệnh nền.\nTương tác thuốc, dùng nhiều thuốc cùng lúc.\nLiều dùng thuốc, đổi thuốc, ngưng thuốc.\nTác dụng phụ nghiêm trọng sau khi dùng thuốc.\n\nCách trả lời khi cần handoff\n\nChatbot nên trả lời:",
-    "metadata": {
-      "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
-      "category": "safety",
-      "source": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
-      "chunkIndex": 2
-    }
+    "title": "Dấu Hiệu Cần Gặp Bác Sĩ",
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Khi nào tôi không nên tự hỏi chatbot nữa?\n**Đáp:** Khi có dấu hiệu nghiêm trọng hoặc thuộc nhóm nguy cơ cao cần được đánh giá trực tiếp.\n\n**Hỏi:** Đau bụng, khó thở, sốt cao có cần gặp bác sĩ không?\n**Đáp:** Có. Đây là nhóm dấu hiệu chatbot phải khuyên khách đi khám hoặc liên hệ cấp cứu tùy mức độ.\n\nCâu trả lời mẫu chatbot\n\nNhững dấu hiệu bạn mô tả có thể cần được đánh giá y tế trực tiếp. Tôi không thể chẩn đoán hay hướng dẫn xử trí chi tiết trong trường hợp này. Nếu bạn đang khó thở, đau ngực, đau bụng dữ dội, sốt cao, co giật, lị bì hoặc nghi dị ứng nặng, bạn nên đến cơ sở y tế hoặc liên hệ cấp cứu ngay.",
+    "tags": [
+      "gặp bác sĩ",
+      "dấu hiệu nguy hiểm",
+      "khó thở",
+      "đau ngực",
+      "đau bụng dữ dội",
+      "sốt cao",
+      "co giật",
+      "dị ứng nặng",
+      "quá liều"
+    ],
+    "sourcePath": "fordel/knowledge-base/safety/dau-hieu-can-gap-bac-si.md"
   },
   {
-    "id": "quy_tac_an_toan_y_khoa_003",
-    "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
+    "id": "knowledge-safety-gioi-han-tu-van-cua-chatbot-001",
+    "type": "knowledge",
     "category": "safety",
-    "source": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
-    "chunkIndex": 3,
-    "content": "g phụ nghiêm trọng sau khi dùng thuốc.\n\nCách trả lời khi cần handoff\n\nChatbot nên trả lời:\n\nCâu hỏi của bạn cần được dược sĩ hoặc bác sĩ kiểm tra để đảm bảo an toàn. Tôi không thể chẩn đoán hoặc kê đơn. Nếu triệu chứng nghiêm trọng như khó thở, đau ngực, ngất, co giật hoặc dấu hiệu đột quỵ, bạn nên gọi cấp cứu hoặc đến cơ sở y tế gần nhất ngay.\n\nCách trả lời khi thiếu dữ liệu\n\nNếu context không đủ:\n\nHiện hệ thống chưa có đủ dữ liệu để trả lời chính xác câu hỏi này. Bạn vui lòng liên hệ dược sĩ hoặc nhân viên hỗ trợ để được tư vấn phù hợp hơn.\n\nCách trả lời với câu hỏi sản phẩm thông thường\n\nNếu câu hỏi chỉ hỏi thông tin chung:",
-    "metadata": {
-      "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
-      "category": "safety",
-      "source": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
-      "chunkIndex": 3
-    }
+    "title": "Giới Hạn Tư Vấn Của Chatbot",
+    "section": "Tóm tắt | Chatbot có thể hỗ trợ | Chatbot không được hỗ trợ | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nChatbot PharmPlus được thiết kế để tra cứu thông tin chung và hỗ trợ vận hành cơ bản. Chatbot không thay thế dược sĩ, bác sĩ hoặc đánh giá y tế trực tiếp.\n\nChatbot có thể hỗ trợ\n\n- Giải thích chính sách giao hàng, thanh toán, đổi trả, bảo mật.\n- Tra cứu câu hỏi thường gặp về đặt hàng và tồn kho.\n- Cung cấp thông tin chung về nhóm thuốc OTC, vitamin, thực phẩm chức năng.\n- Định hướng khi nào cần gặp dược sĩ hoặc bác sĩ.\n\nChatbot không được hỗ trợ\n\n- Chẩn đoán bệnh.\n- Kê đơn.\n- Hướng dẫn liều dùng cụ thể.\n- Khẳng định một thuốc chắc chắn hợp với từng người.\n- Đánh giá tương tác thuốc phức tạp, quá liều, biến chứng nặng.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Chatbot có thay dược sĩ không?\n**Đáp:** Không. Chatbot chỉ là công cụ hỗ trợ thông tin chung.\n\n**Hỏi:** Chatbot có thể nói tôi nên dùng thuốc nào không?\n**Đáp:** Chatbot không thể xác nhận thuốc nào chắc chắn phù hợp cho từng tình trạng cá nhân.",
+    "tags": [
+      "giới hạn chatbot",
+      "chatbot làm được gì",
+      "chatbot không làm được gì",
+      "chẩn đoán",
+      "kê đơn",
+      "liều dùng",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/safety/gioi-han-tu-van-cua-chatbot.md"
   },
   {
-    "id": "quy_tac_an_toan_y_khoa_004",
-    "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
+    "id": "knowledge-safety-gioi-han-tu-van-cua-chatbot-002",
+    "type": "knowledge",
     "category": "safety",
-    "source": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
-    "chunkIndex": 4,
-    "content": "hơn.\n\nCách trả lời với câu hỏi sản phẩm thông thường\n\nNếu câu hỏi chỉ hỏi thông tin chung:\n\nChatbot có thể mô tả thông tin trong context, nhắc khách đọc nhãn sản phẩm và hỏi dược sĩ nếu có bệnh nền, đang dùng thuốc khác hoặc thuộc nhóm nhạy cảm.",
-    "metadata": {
-      "title": "Quy Tắc An Toàn Y Khoa Cho Chatbot",
-      "category": "safety",
-      "source": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md",
-      "chunkIndex": 4
-    }
+    "title": "Giới Hạn Tư Vấn Của Chatbot",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nTôi có thể hỗ trợ thông tin chung và tra cứu nội dung có sẵn trong hệ thống, nhưng tôi không thay thế dược sĩ hoặc bác sĩ. Tôi không thể chẩn đoán, kê đơn, hướng dẫn liều dùng cụ thể hay khẳng định thuốc nào chắc chắn phù hợp. Nếu trường hợp của bạn có yếu tố nguy cơ, vui lòng gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "giới hạn chatbot",
+      "chatbot làm được gì",
+      "chatbot không làm được gì",
+      "chẩn đoán",
+      "kê đơn",
+      "liều dùng",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/safety/gioi-han-tu-van-cua-chatbot.md"
   },
   {
-    "id": "tinh_huong_handoff_duoc_si_001",
+    "id": "knowledge-safety-quy-tac-an-toan-y-khoa-001",
+    "type": "knowledge",
+    "category": "safety",
+    "title": "Quy Tắc An Toàn Y Khoa",
+    "section": "Tóm tắt | Quy tắc bắt buộc | Trường hợp bắt buộc cảnh báo hoặc handoff",
+    "content": "Tóm tắt\n\nĐây là bộ nguyên tắc an toàn cốt lõi cho public chatbot PharmPlus khi xử lý nội dung liên quan đến sức khỏe, triệu chứng và thuốc.\n\nQuy tắc bắt buộc\n\n- Không chẩn đoán bệnh.\n- Không kê đơn.\n- Không hướng dẫn liều dùng cụ thể.\n- Không khẳng định thuốc nào chắc chắn phù hợp.\n- Không tạo thông tin ngoài dữ liệu có sẵn.\n- Luôn ưu tiên handoff khi xuất hiện nguy cơ y khoa hoặc thông tin cá nhân không đủ để trả lời an toàn.\n\nTrường hợp bắt buộc cảnh báo hoặc handoff\n\n- Phụ nữ mang thai hoặc cho con bú.\n- Trẻ em và người cao tuổi.\n- Người có bệnh nền, đang dùng nhiều thuốc, có tiền sử dị ứng.\n- Nghi quá liều, dùng sai thuốc, tác dụng phụ bất thường.\n- Khó thở, đau ngực, đau bụng dữ dội, sốt cao, ngất, co giật, mệt lả bất thường.",
+    "tags": [
+      "an toàn y khoa",
+      "không chẩn đoán",
+      "không kê đơn",
+      "handoff",
+      "quá liều",
+      "dị ứng",
+      "khó thở",
+      "đau ngực",
+      "sốt cao"
+    ],
+    "sourcePath": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md"
+  },
+  {
+    "id": "knowledge-safety-quy-tac-an-toan-y-khoa-002",
+    "type": "knowledge",
+    "category": "safety",
+    "title": "Quy Tắc An Toàn Y Khoa",
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Chatbot có được tư vấn như dược sĩ không?\n**Đáp:** Không. Chatbot chỉ hỗ trợ thông tin chung và hướng dẫn an toàn.\n\n**Hỏi:** Khi nào chatbot phải khuyên tôi đi gặp bác sĩ?\n**Đáp:** Khi có dấu hiệu nghiêm trọng hoặc thuộc nhóm nguy cơ cao như mang thai, trẻ em, bệnh nền, quá liều, khó thở, đau ngực, đau bụng dữ dội, sốt cao.\n\nCâu trả lời mẫu chatbot\n\nTôi chỉ có thể cung cấp thông tin chung và nhắc các lưu ý an toàn. Tôi không thể chẩn đoán, kê đơn hay hướng dẫn liều dùng cụ thể. Nếu bạn có triệu chứng nặng, đang mang thai, là trẻ em, người cao tuổi, có bệnh nền, dị ứng hoặc nghi quá liều, bạn nên liên hệ dược sĩ hoặc đến cơ sở y tế để được đánh giá.",
+    "tags": [
+      "an toàn y khoa",
+      "không chẩn đoán",
+      "không kê đơn",
+      "handoff",
+      "quá liều",
+      "dị ứng",
+      "khó thở",
+      "đau ngực",
+      "sốt cao"
+    ],
+    "sourcePath": "fordel/knowledge-base/safety/quy-tac-an-toan-y-khoa.md"
+  },
+  {
+    "id": "knowledge-safety-tinh-huong-handoff-duoc-si-001",
+    "type": "knowledge",
+    "category": "safety",
     "title": "Tình Huống Handoff Dược Sĩ",
-    "category": "safety",
-    "source": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
-    "chunkIndex": 1,
-    "content": "Tình Huống Handoff Dược Sĩ\n\nHandoff là quá trình chuyển câu hỏi từ chatbot sang dược sĩ hoặc nhân viên hỗ trợ khi chatbot không nên tự trả lời.\n\nKhi nào cần handoff?\n\nChatbot cần handoff khi:\nCâu hỏi yêu cầu chẩn đoán bệnh.\nCâu hỏi yêu cầu kê đơn thuốc.\nCâu hỏi yêu cầu liều dùng cụ thể.\nCâu hỏi có triệu chứng nguy hiểm.\nCâu hỏi liên quan trẻ nhỏ, thai kỳ, người cao tuổi hoặc bệnh nền.\nCâu hỏi về tương tác thuốc, dị ứng thuốc, tác dụng phụ nghiêm trọng.\nCâu hỏi có rủi ro pháp lý hoặc cần xác minh đơn hàng chi tiết.\n\nThông tin nên thu thập trước khi handoff",
-    "metadata": {
-      "title": "Tình Huống Handoff Dược Sĩ",
-      "category": "safety",
-      "source": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
-      "chunkIndex": 1
-    }
+    "section": "Tóm tắt | Tình huống cần handoff | Thông tin có thể thu thập trước khi handoff",
+    "content": "Tóm tắt\n\nTài liệu này mô tả các tình huống chatbot không nên tự trả lời sau cùng mà cần chuyển tiếp cho dược sĩ, bác sĩ hoặc nhân viên hỗ trợ phù hợp.\n\nTình huống cần handoff\n\n- Khách muốn được chẩn đoán bệnh hoặc kê đơn.\n- Khách hỏi liều dùng cụ thể, cách đổi thuốc, ngừng thuốc, dùng kết hợp nhiều thuốc.\n- Khách thuộc nhóm nhạy cảm: mang thai, cho con bú, trẻ em, người cao tuổi, bệnh nền, dị ứng.\n- Khách nghi quá liều, dùng nhầm thuốc, gặp tác dụng phụ bất thường.\n- Khách có triệu chứng nghiêm trọng như khó thở, đau ngực, đau bụng dữ dội, sốt cao, ngất, co giật.\n- Khách cần xác minh vấn đề đơn hàng hoặc tài khoản mà chatbot không đủ dữ liệu để quyết định.\n\nThông tin có thể thu thập trước khi handoff\n\n- Mã đơn hàng nếu liên quan đơn hàng.\n- Tên sản phẩm nếu liên quan thuốc hoặc thực phẩm chức năng.\n- Mô tả ngắn gọn vấn đề.\n- Số điện thoại hoặc kênh liên hệ nếu quy trình vận hành cần.",
+    "tags": [
+      "handoff dược sĩ",
+      "chuyển dược sĩ",
+      "cần gặp bác sĩ",
+      "liều dùng",
+      "quá liều",
+      "tác dụng phụ",
+      "triệu chứng nghiêm trọng"
+    ],
+    "sourcePath": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md"
   },
   {
-    "id": "tinh_huong_handoff_duoc_si_002",
-    "title": "Tình Huống Handoff Dược Sĩ",
+    "id": "knowledge-safety-tinh-huong-handoff-duoc-si-002",
+    "type": "knowledge",
     "category": "safety",
-    "source": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
-    "chunkIndex": 2,
-    "content": "ro pháp lý hoặc cần xác minh đơn hàng chi tiết.\n\nThông tin nên thu thập trước khi handoff\n\nNếu phù hợp và không gây chậm trễ trong tình huống nguy hiểm, chatbot có thể hỏi thêm:\nMã đơn hàng nếu liên quan đơn hàng.\nTên sản phẩm nếu liên quan sản phẩm.\nMô tả ngắn vấn đề cần hỗ trợ.\nSố điện thoại hoặc kênh liên hệ nếu hệ thống cần.\n\nKhông hỏi quá nhiều thông tin khi khách có triệu chứng cấp cứu.\n\nCâu trả lời mẫu cho triệu chứng nguy hiểm\n\nNếu khách hỏi: “Tôi đau ngực khó thở uống thuốc gì?”\n\nChatbot nên trả lời:",
-    "metadata": {
-      "title": "Tình Huống Handoff Dược Sĩ",
-      "category": "safety",
-      "source": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
-      "chunkIndex": 2
-    }
+    "title": "Tình Huống Handoff Dược Sĩ",
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Khi nào chatbot sẽ chuyển tôi sang dược sĩ?\n**Đáp:** Khi câu hỏi vượt phạm vi thông tin chung hoặc có nguy cơ y khoa.\n\n**Hỏi:** Chatbot có thể trả lời về liều dùng không?\n**Đáp:** Không. Các câu hỏi liều dùng cụ thể cần dược sĩ hoặc bác sĩ hỗ trợ.\n\nCâu trả lời mẫu chatbot\n\nVấn đề bạn hỏi cần được dược sĩ hoặc bác sĩ xem xét để đảm bảo an toàn. Tôi không thể chẩn đoán, kê đơn hay hướng dẫn liều dùng cụ thể. Nếu bạn đang có khó thở, đau ngực, đau bụng dữ dội, sốt cao, ngất hoặc nghi quá liều, bạn nên đến cơ sở y tế ngay.",
+    "tags": [
+      "handoff dược sĩ",
+      "chuyển dược sĩ",
+      "cần gặp bác sĩ",
+      "liều dùng",
+      "quá liều",
+      "tác dụng phụ",
+      "triệu chứng nghiêm trọng"
+    ],
+    "sourcePath": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md"
   },
   {
-    "id": "tinh_huong_handoff_duoc_si_003",
-    "title": "Tình Huống Handoff Dược Sĩ",
-    "category": "safety",
-    "source": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
-    "chunkIndex": 3,
-    "content": "hứng nguy hiểm\n\nNếu khách hỏi: “Tôi đau ngực khó thở uống thuốc gì?”\n\nChatbot nên trả lời:\n\nĐau ngực kèm khó thở có thể là tình huống nguy hiểm. Tôi không thể tư vấn thuốc hoặc chẩn đoán trong trường hợp này. Bạn nên gọi cấp cứu hoặc đến cơ sở y tế gần nhất ngay. Nếu cần, hệ thống có thể ghi nhận yêu cầu để dược sĩ/nhân viên hỗ trợ liên hệ lại.\n\nCâu trả lời mẫu cho câu hỏi liều dùng\n\nNếu khách hỏi: “Tôi uống thuốc này liều bao nhiêu?”\n\nChatbot nên trả lời:\n\nTôi không thể tư vấn liều dùng cụ thể. Liều dùng phụ thuộc vào tuổi, tình trạng sức khỏe, bệnh nền, thuốc đang dùng và hướng dẫn của bác sĩ/dược sĩ. Bạn vui lòng đọc hướng dẫn sử dụng trên nhãn hoặc liên hệ dược sĩ để được tư vấn an toàn.",
-    "metadata": {
-      "title": "Tình Huống Handoff Dược Sĩ",
-      "category": "safety",
-      "source": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
-      "chunkIndex": 3
-    }
+    "id": "knowledge-medicine-nhom-ho-cam-cum-dau-hong-001",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Nhóm Ho Cảm Cúm Đau Họng",
+    "section": "Tóm tắt | Nội dung chính | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nĐây là nhóm sản phẩm thường được khách tìm khi có ho, sổ mũi, đau họng hoặc biểu hiện cảm cúm thông thường. Chatbot chỉ được mô tả thông tin chung và lưu ý an toàn.\n\nNội dung chính\n\n- Triệu chứng ho, đau họng, sổ mũi có thể do nhiều nguyên nhân khác nhau.\n- Chatbot không chẩn đoán cảm cúm, viêm họng, viêm phế quản hay các bệnh cụ thể.\n- Nếu có khó thở, sốt cao, đau ngực, thở rít, mệt lả nhiều, triệu chứng kéo dài hoặc nặng lên: cần gặp dược sĩ/bác sĩ.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Ho, đau họng, sổ mũi thì có nhóm sản phẩm nào thường được tìm?\n**Đáp:** Chatbot có thể mô tả nhóm sản phẩm liên quan trong hệ thống, nhưng không xác nhận sản phẩm nào chắc chắn phù hợp.\n\n**Hỏi:** Khi nào cần gặp bác sĩ?\n**Đáp:** Khi có khó thở, sốt cao, đau ngực, thở rít, trẻ nhỏ, người cao tuổi, mang thai hoặc bệnh nền.\n\n**Hỏi:** Chatbot có thể hướng dẫn dùng thuốc chi tiết không?\n**Đáp:** Không. Chatbot chỉ nhắc đọc nhãn sản phẩm và hỏi dược sĩ nếu cần.",
+    "tags": [
+      "ho",
+      "cảm cúm",
+      "đau họng",
+      "sổ mũi",
+      "sốt cao",
+      "khó thở",
+      "thuốc ho OTC",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/nhom-ho-cam-cum-dau-hong.md"
   },
   {
-    "id": "tinh_huong_handoff_duoc_si_004",
-    "title": "Tình Huống Handoff Dược Sĩ",
-    "category": "safety",
-    "source": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
-    "chunkIndex": 4,
-    "content": "Bạn vui lòng đọc hướng dẫn sử dụng trên nhãn hoặc liên hệ dược sĩ để được tư vấn an toàn.\n\nCâu trả lời mẫu cho thiếu dữ liệu\n\nNếu hệ thống không có đủ thông tin:\n\nHiện hệ thống chưa có đủ dữ liệu để trả lời chính xác. Tôi sẽ chuyển yêu cầu này đến nhân viên hoặc dược sĩ để hỗ trợ bạn tốt hơn.",
-    "metadata": {
-      "title": "Tình Huống Handoff Dược Sĩ",
-      "category": "safety",
-      "source": "fordel/knowledge-base/safety/tinh-huong-handoff-duoc-si.md",
-      "chunkIndex": 4
-    }
+    "id": "knowledge-medicine-nhom-ho-cam-cum-dau-hong-002",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Nhóm Ho Cảm Cúm Đau Họng",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nTôi có thể hỗ trợ thông tin chung về nhóm sản phẩm ho, cảm cúm, đau họng trong hệ thống. Tôi không thể chẩn đoán nguyên nhân hay hướng dẫn liều dùng cụ thể. Nếu bạn có khó thở, sốt cao, đau ngực, trẻ em, mang thai, bệnh nền hoặc triệu chứng kéo dài, bạn nên gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "ho",
+      "cảm cúm",
+      "đau họng",
+      "sổ mũi",
+      "sốt cao",
+      "khó thở",
+      "thuốc ho OTC",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/nhom-ho-cam-cum-dau-hong.md"
+  },
+  {
+    "id": "knowledge-medicine-nhom-thuoc-giam-dau-ha-sot-001",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Nhóm Thuốc Giảm Đau Hạ Sốt",
+    "section": "Tóm tắt | Nội dung chính",
+    "content": "Tóm tắt\n\nĐây là nhóm sản phẩm thường được khách tìm khi có đau đầu, đau nhức nhẹ hoặc sốt. Chatbot chỉ được mô tả nhóm công dụng chung, không được hướng dẫn liều dùng cụ thể hay xác nhận thuốc nào chắc chắn phù hợp.\n\nNội dung chính\n\n- Nhóm này thường được nhắc đến trong bối cảnh giảm đau và hỗ trợ hạ sốt mức độ thông thường.\n- Mức độ phù hợp còn tùy tuổi, bệnh nền, thuốc đang dùng, tiền sử dị ứng và tình trạng thực tế.\n- Với sốt cao, sốt kéo dài, đau đầu dữ dội, lị bì, co giật, khó thở hoặc đau ngực: cần gặp dược sĩ/bác sĩ.",
+    "tags": [
+      "giảm đau",
+      "hạ sốt",
+      "đau đầu",
+      "sốt",
+      "sốt cao",
+      "thuốc OTC giảm đau",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/nhom-thuoc-giam-dau-ha-sot.md"
+  },
+  {
+    "id": "knowledge-medicine-nhom-thuoc-giam-dau-ha-sot-002",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Nhóm Thuốc Giảm Đau Hạ Sốt",
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Tôi đau đầu, sốt nhẹ thì có nhóm sản phẩm nào thường được tìm?\n**Đáp:** Chatbot có thể nói về nhóm thuốc giảm đau hạ sốt ở mức thông tin chung, nhưng không khẳng định sản phẩm nào hợp với bạn.\n\n**Hỏi:** Chatbot có thể nói liều dùng không?\n**Đáp:** Không. Liều dùng cụ thể phải xem nhãn sản phẩm và hỏi dược sĩ/bác sĩ.\n\n**Hỏi:** Khi nào sốt cần đi khám?\n**Đáp:** Khi sốt cao, sốt kéo dài, kèm khó thở, lị bì, co giật, đau ngực hoặc đau đầu dữ dội.\n\nCâu trả lời mẫu chatbot\n\nTôi có thể hỗ trợ thông tin chung về nhóm thuốc giảm đau hạ sốt, nhưng không thể hướng dẫn liều dùng cụ thể hay xác nhận thuốc nào chắc chắn phù hợp. Nếu bạn là trẻ em, người cao tuổi, đang mang thai, có bệnh nền, dị ứng hoặc đang sốt cao, sốt kéo dài, bạn nên hỏi dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "giảm đau",
+      "hạ sốt",
+      "đau đầu",
+      "sốt",
+      "sốt cao",
+      "thuốc OTC giảm đau",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/nhom-thuoc-giam-dau-ha-sot.md"
+  },
+  {
+    "id": "knowledge-medicine-nhom-tieu-hoa-da-day-001",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Nhóm Tiêu Hóa Dạ Dày",
+    "section": "Tóm tắt | Nội dung chính",
+    "content": "Tóm tắt\n\nTài liệu này mô tả nhóm sản phẩm thường được khách tìm khi có triệu chứng khó chịu tiêu hóa, đầy bụng, khó tiêu hoặc vấn đề dạ dày mức độ nhẹ. Chatbot không được chẩn đoán nguyên nhân và không khẳng định thuốc nào chắc chắn phù hợp.\n\nNội dung chính\n\n- Đây là nhóm thông tin chung, không thay thế đánh giá y tế.\n- Đau bụng dữ dội, nôn liên tục, tiêu ra máu, sốt cao, mất nước, đau lan rộng cần được đánh giá bởi dược sĩ/bác sĩ.\n- Người có bệnh nền tiêu hóa, mang thai, trẻ em, người cao tuổi hoặc đang dùng nhiều thuốc cần thận trọng.",
+    "tags": [
+      "tiêu hóa",
+      "dạ dày",
+      "đầy bụng",
+      "khó tiêu",
+      "đau bụng",
+      "nôn",
+      "sốt cao",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/nhom-tieu-hoa-da-day.md"
+  },
+  {
+    "id": "knowledge-medicine-nhom-tieu-hoa-da-day-002",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Nhóm Tiêu Hóa Dạ Dày",
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Đau dạ dày, đầy bụng thì chatbot có thể gợi ý nhóm sản phẩm nào?\n**Đáp:** Chatbot chỉ có thể mô tả nhóm sản phẩm liên quan ở mức thông tin chung.\n\n**Hỏi:** Khi nào cần gặp bác sĩ?\n**Đáp:** Khi đau bụng dữ dội, nôn liên tục, sốt cao, tiêu ra máu, mất nước hoặc triệu chứng kéo dài.\n\n**Hỏi:** Chatbot có thể nói thuốc nào chắc chắn hợp với tôi không?\n**Đáp:** Không. Độ phù hợp phụ thuộc nguyên nhân và tình trạng cá nhân.\n\nCâu trả lời mẫu chatbot\n\nTôi có thể hỗ trợ thông tin chung về nhóm sản phẩm tiêu hóa dạ dày, nhưng không thể chẩn đoán nguyên nhân hay xác nhận thuốc nào chắc chắn phù hợp. Nếu bạn đau bụng dữ dội, nôn liên tục, sốt cao, tiêu ra máu, đang mang thai, là trẻ em, người cao tuổi hoặc có bệnh nền, bạn nên gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "tiêu hóa",
+      "dạ dày",
+      "đầy bụng",
+      "khó tiêu",
+      "đau bụng",
+      "nôn",
+      "sốt cao",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/nhom-tieu-hoa-da-day.md"
+  },
+  {
+    "id": "knowledge-medicine-nhom-vitamin-tpcn-001",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Nhóm Vitamin TPCN",
+    "section": "Tóm tắt | Nội dung chính | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nVitamin và thực phẩm chức năng là nhóm sản phẩm hỗ trợ sức khỏe, không thay thế thuốc điều trị. Chatbot chỉ được cung cấp thông tin chung về nhóm sản phẩm, thành phần tổng quan và lưu ý an toàn.\n\nNội dung chính\n\n- Sản phẩm TPCN không được xem là thuốc điều trị.\n- Người mang thai, trẻ em, người cao tuổi, bệnh nền, dị ứng hoặc đang dùng thuốc khác cần hỏi dược sĩ trước khi dùng.\n- Nếu có biểu hiện bất thường sau khi dùng, chatbot phải khuyên ngừng tự ý tư vấn và liên hệ dược sĩ/bác sĩ.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Vitamin có thay được thuốc chữa bệnh không?\n**Đáp:** Không. Vitamin và TPCN chỉ hỗ trợ sức khỏe.\n\n**Hỏi:** Chatbot có thể nói sản phẩm nào chắc chắn hợp với tôi không?\n**Đáp:** Không. Độ phù hợp cần xem theo cơ địa, bệnh nền, thuốc đang dùng và mục đích sử dụng.\n\n**Hỏi:** Khi nào cần hỏi dược sĩ?\n**Đáp:** Khi dùng cho nhóm nhạy cảm, có dị ứng, dùng nhiều thuốc hoặc có tác dụng phụ bất thường.",
+    "tags": [
+      "vitamin",
+      "TPCN",
+      "thực phẩm chức năng",
+      "bổ sung",
+      "hỗ trợ sức khỏe",
+      "dị ứng",
+      "bệnh nền",
+      "mang thai"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/nhom-vitamin-tpcn.md"
+  },
+  {
+    "id": "knowledge-medicine-nhom-vitamin-tpcn-002",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Nhóm Vitamin TPCN",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nTôi có thể giúp bạn tra cứu thông tin chung về nhóm vitamin và thực phẩm chức năng, nhưng không thể khẳng định sản phẩm nào chắc chắn phù hợp hay thay thế thuốc điều trị. Nếu bạn đang mang thai, là trẻ em, người cao tuổi, có bệnh nền, dị ứng hoặc đang dùng thuốc khác, bạn nên hỏi dược sĩ hoặc bác sĩ trước khi dùng.",
+    "tags": [
+      "vitamin",
+      "TPCN",
+      "thực phẩm chức năng",
+      "bổ sung",
+      "hỗ trợ sức khỏe",
+      "dị ứng",
+      "bệnh nền",
+      "mang thai"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/nhom-vitamin-tpcn.md"
+  },
+  {
+    "id": "knowledge-medicine-thong-tin-thuoc-otc-co-ban-001",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Thông Tin Thuốc OTC Cơ Bản",
+    "section": "Tóm tắt | Nội dung chính",
+    "content": "Tóm tắt\n\nThuốc OTC là nhóm thuốc có thể được bán không cần đơn trong một số trường hợp. Public chatbot PharmPlus chỉ được cung cấp thông tin chung về nhóm thuốc OTC, không chẩn đoán, không kê đơn và không hướng dẫn liều dùng cụ thể.\n\nNội dung chính\n\n- Thuốc OTC vẫn cần được đọc kỹ nhãn, thành phần, cảnh báo và hướng dẫn sử dụng.\n- Khách có bệnh nền, đang dùng nhiều thuốc, có tiền sử dị ứng, mang thai, là trẻ em hoặc người cao tuổi cần hỏi dược sĩ trước khi dùng.\n- Nếu triệu chứng nặng lên, kéo dài, khó thở, đau ngực, đau bụng dữ dội, sốt cao hoặc nghi quá liều, chatbot phải khuyên gặp dược sĩ/bác sĩ.",
+    "tags": [
+      "thuốc OTC",
+      "thuốc không kê đơn",
+      "thông tin thuốc",
+      "hỏi dược sĩ",
+      "dị ứng thuốc",
+      "bệnh nền",
+      "quá liều"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md"
+  },
+  {
+    "id": "knowledge-medicine-thong-tin-thuoc-otc-co-ban-002",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Thông Tin Thuốc OTC Cơ Bản",
+    "section": "Câu hỏi khách hàng thường hỏi | Câu trả lời mẫu chatbot",
+    "content": "Câu hỏi khách hàng thường hỏi\n\n**Hỏi:** Thuốc OTC là gì?\n**Đáp:** Là nhóm thuốc có thể được bán không cần đơn trong một số trường hợp, nhưng vẫn cần dùng thận trọng.\n\n**Hỏi:** Chatbot có thể gợi ý thuốc OTC cho tôi không?\n**Đáp:** Chatbot chỉ có thể tra cứu thông tin chung về nhóm sản phẩm, không khẳng định thuốc nào chắc chắn phù hợp.\n\n**Hỏi:** Khi nào cần hỏi dược sĩ trước khi dùng thuốc OTC?\n**Đáp:** Khi mang thai, cho con bú, là trẻ em, người cao tuổi, có bệnh nền, dị ứng, dùng nhiều thuốc hoặc triệu chứng kéo dài.\n\nCâu trả lời mẫu chatbot\n\nTôi có thể giúp bạn tra cứu thông tin chung về nhóm thuốc OTC và các lưu ý an toàn. Tôi không thể chẩn đoán, kê đơn hay hướng dẫn liều dùng cụ thể. Nếu bạn đang mang thai, là trẻ em, người cao tuổi, có bệnh nền, dị ứng, nghi quá liều hoặc có khó thở, đau ngực, đau bụng dữ dội, sốt cao, bạn nên gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "thuốc OTC",
+      "thuốc không kê đơn",
+      "thông tin thuốc",
+      "hỏi dược sĩ",
+      "dị ứng thuốc",
+      "bệnh nền",
+      "quá liều"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/thong-tin-thuoc-otc-co-ban.md"
+  },
+  {
+    "id": "knowledge-medicine-vitamin-tpcn-va-bao-quan-001",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Vitamin TPCN Và Bảo Quản",
+    "section": "Tóm tắt | Nội dung chính | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nTài liệu bổ sung này tập trung vào nguyên tắc bảo quản và lưu ý an toàn khi tra cứu nhóm vitamin, khoáng chất và thực phẩm chức năng.\n\nNội dung chính\n\n- Bảo quản nơi khô ráo, tránh nắng gắt, tránh ẩm, đóng kín bao bì theo hướng dẫn nhà sản xuất.\n- Không dùng sản phẩm hết hạn, biến màu, biến mùi hoặc bao bì hỏng.\n- Nhóm sản phẩm này không thay thế thuốc điều trị và không nên được chatbot tư vấn như đơn thuốc.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Bảo quản vitamin như thế nào?\n**Đáp:** Nên bảo quản theo hướng dẫn trên nhãn, thường là nơi khô ráo, thoáng mát, tránh ẩm và tránh nắng trực tiếp.\n\n**Hỏi:** Nếu sản phẩm đổi màu hoặc có mùi lạ thì sao?\n**Đáp:** Khách không nên tiếp tục sử dụng và nên liên hệ kênh hỗ trợ hoặc dược sĩ để được hướng dẫn.",
+    "tags": [
+      "bảo quản vitamin",
+      "TPCN",
+      "hết hạn",
+      "đổi màu",
+      "mùi lạ",
+      "bao bì hỏng",
+      "điều kiện bảo quản"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md"
+  },
+  {
+    "id": "knowledge-medicine-vitamin-tpcn-va-bao-quan-002",
+    "type": "knowledge",
+    "category": "medicines",
+    "title": "Vitamin TPCN Và Bảo Quản",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nVới vitamin và thực phẩm chức năng, bạn nên bảo quản theo hướng dẫn trên nhãn sản phẩm, giữ nơi khô ráo, tránh ẩm và tránh nắng trực tiếp. Nếu sản phẩm đã hết hạn, đổi màu, có mùi lạ hoặc bạn đang thuộc nhóm nhạy cảm như mang thai, trẻ em, người cao tuổi, bệnh nền, bạn nên hỏi dược sĩ trước khi dùng.",
+    "tags": [
+      "bảo quản vitamin",
+      "TPCN",
+      "hết hạn",
+      "đổi màu",
+      "mùi lạ",
+      "bao bì hỏng",
+      "điều kiện bảo quản"
+    ],
+    "sourcePath": "fordel/knowledge-base/medicines/vitamin-tpcn-va-bao-quan.md"
+  },
+  {
+    "id": "knowledge-symptom-dau-bung-tieu-hoa-001",
+    "type": "knowledge",
+    "category": "symptoms",
+    "title": "Đau Bụng Tiêu Hóa",
+    "section": "Tóm tắt | Nguyên tắc tư vấn an toàn | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nTài liệu này dùng cho các câu hỏi có nhắc đến đau bụng, đầy bụng, khó tiêu, buồn nôn nhẹ hoặc khó chịu tiêu hóa. Chatbot chỉ định hướng an toàn, không chẩn đoán nguyên nhân.\n\nNguyên tắc tư vấn an toàn\n\n- Không kết luận viêm dạ dày, ngộ độc, rối loạn tiêu hóa hay bệnh cụ thể.\n- Không hướng dẫn liều dùng thuốc cụ thể.\n- Đau bụng dữ dội, nôn liên tục, sốt cao, tiêu ra máu, mất nước, đau lan rộng cần gặp dược sĩ/bác sĩ.\n- Trẻ em, người cao tuổi, mang thai, bệnh nền cần thận trọng hơn.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Đau bụng, đầy bụng thì chatbot có thể gợi ý gì?\n**Đáp:** Chatbot có thể mô tả nhóm sản phẩm tiêu hóa dạ dày ở mức chung, nhưng không khẳng định sản phẩm nào chắc chắn phù hợp.\n\n**Hỏi:** Khi nào cần đi khám?\n**Đáp:** Khi đau bụng dữ dội, kéo dài, nôn liên tục, sốt cao, tiêu ra máu, mất nước hoặc có bệnh nền.",
+    "tags": [
+      "đau bụng",
+      "đầy bụng",
+      "khó tiêu",
+      "buồn nôn",
+      "dạ dày",
+      "sốt cao",
+      "tiêu ra máu",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/symptoms/dau-bung-tieu-hoa.md"
+  },
+  {
+    "id": "knowledge-symptom-dau-bung-tieu-hoa-002",
+    "type": "knowledge",
+    "category": "symptoms",
+    "title": "Đau Bụng Tiêu Hóa",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nTôi có thể hỗ trợ thông tin chung về nhóm sản phẩm liên quan đến khó chịu tiêu hóa, nhưng không thể chẩn đoán nguyên nhân hay hướng dẫn thuốc cụ thể. Nếu bạn đau bụng dữ dội, nôn liên tục, sốt cao, tiêu ra máu, đang mang thai, là trẻ em, người cao tuổi hoặc có bệnh nền, bạn nên gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "đau bụng",
+      "đầy bụng",
+      "khó tiêu",
+      "buồn nôn",
+      "dạ dày",
+      "sốt cao",
+      "tiêu ra máu",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/symptoms/dau-bung-tieu-hoa.md"
+  },
+  {
+    "id": "knowledge-symptom-dau-dau-sot-cam-cum-001",
+    "type": "knowledge",
+    "category": "symptoms",
+    "title": "Đau Đầu Sốt Cảm Cúm",
+    "section": "Tóm tắt | Nguyên tắc tư vấn an toàn | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nTài liệu này dùng cho các câu hỏi về đau đầu, sốt, mệt mỏi, cảm cúm thông thường. Chatbot chỉ định hướng an toàn, không chẩn đoán cảm cúm, sốt xuất huyết, covid hay bệnh cụ thể.\n\nNguyên tắc tư vấn an toàn\n\n- Không kết luận nguyên nhân gây sốt hoặc đau đầu.\n- Không hướng dẫn liều dùng cụ thể cho thuốc giảm đau hạ sốt.\n- Sốt cao, sốt kéo dài, đau đầu dữ dội, lị bì, co giật, khó thở, đau ngực cần gặp dược sĩ/bác sĩ.\n- Trẻ em, người cao tuổi, mang thai, bệnh nền cần được đánh giá thận trọng hơn.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Sốt nhẹ, đau đầu thì chatbot có thể gợi ý nhóm sản phẩm nào?\n**Đáp:** Chatbot có thể mô tả nhóm giảm đau hạ sốt ở mức thông tin chung.\n\n**Hỏi:** Khi nào sốt cần đi khám?\n**Đáp:** Khi sốt cao, sốt kéo dài, kèm khó thở, lị bì, co giật, đau ngực hoặc đau đầu dữ dội.",
+    "tags": [
+      "đau đầu",
+      "sốt",
+      "cảm cúm",
+      "giảm đau hạ sốt",
+      "sốt cao",
+      "co giật",
+      "khó thở",
+      "đau ngực"
+    ],
+    "sourcePath": "fordel/knowledge-base/symptoms/dau-dau-sot-cam-cum.md"
+  },
+  {
+    "id": "knowledge-symptom-dau-dau-sot-cam-cum-002",
+    "type": "knowledge",
+    "category": "symptoms",
+    "title": "Đau Đầu Sốt Cảm Cúm",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nTôi có thể hỗ trợ thông tin chung về nhóm sản phẩm giảm đau hạ sốt, nhưng không thể chẩn đoán nguyên nhân hay hướng dẫn liều dùng cụ thể. Nếu bạn sốt cao, sốt kéo dài, đau đầu dữ dội, khó thở, đau ngực, là trẻ em, người cao tuổi, đang mang thai hoặc có bệnh nền, bạn nên gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "đau đầu",
+      "sốt",
+      "cảm cúm",
+      "giảm đau hạ sốt",
+      "sốt cao",
+      "co giật",
+      "khó thở",
+      "đau ngực"
+    ],
+    "sourcePath": "fordel/knowledge-base/symptoms/dau-dau-sot-cam-cum.md"
+  },
+  {
+    "id": "knowledge-symptom-ho-dau-hong-so-mui-001",
+    "type": "knowledge",
+    "category": "symptoms",
+    "title": "Ho Đau Họng Sổ Mũi",
+    "section": "Tóm tắt | Nguyên tắc tư vấn an toàn | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nTài liệu này dùng cho các câu hỏi về ho, đau họng, sổ mũi, nghẹt mũi hoặc biểu hiện giống cảm lạnh thông thường. Chatbot chỉ cung cấp thông tin chung và lưu ý an toàn.\n\nNguyên tắc tư vấn an toàn\n\n- Không kết luận viêm họng, viêm phế quản, dị ứng hoặc bệnh cụ thể.\n- Không hướng dẫn liều dùng thuốc chi tiết.\n- Khó thở, thở rít, sốt cao, đau ngực, ho kéo dài, mệt lả nhiều cần gặp dược sĩ/bác sĩ.\n- Trẻ em, người cao tuổi, mang thai, bệnh nền cần được ưu tiên handoff sớm hơn.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Ho, sổ mũi, đau họng thì chatbot có thể gợi ý nhóm sản phẩm nào?\n**Đáp:** Chatbot có thể mô tả nhóm sản phẩm ho cảm cúm đau họng ở mức thông tin chung.\n\n**Hỏi:** Khi nào cần đi khám?\n**Đáp:** Khi có khó thở, thở rít, sốt cao, đau ngực, ho kéo dài hoặc người dùng thuộc nhóm nguy cơ cao.",
+    "tags": [
+      "ho",
+      "đau họng",
+      "sổ mũi",
+      "cảm lạnh",
+      "khó thở",
+      "thở rít",
+      "sốt cao",
+      "đau ngực",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/symptoms/ho-dau-hong-so-mui.md"
+  },
+  {
+    "id": "knowledge-symptom-ho-dau-hong-so-mui-002",
+    "type": "knowledge",
+    "category": "symptoms",
+    "title": "Ho Đau Họng Sổ Mũi",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nTôi có thể hỗ trợ thông tin chung về nhóm sản phẩm ho, đau họng, sổ mũi trong hệ thống, nhưng không thể chẩn đoán nguyên nhân hay hướng dẫn liều dùng cụ thể. Nếu bạn khó thở, sốt cao, đau ngực, ho kéo dài, đang mang thai, là trẻ em, người cao tuổi hoặc có bệnh nền, bạn nên gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "ho",
+      "đau họng",
+      "sổ mũi",
+      "cảm lạnh",
+      "khó thở",
+      "thở rít",
+      "sốt cao",
+      "đau ngực",
+      "hỏi dược sĩ"
+    ],
+    "sourcePath": "fordel/knowledge-base/symptoms/ho-dau-hong-so-mui.md"
+  },
+  {
+    "id": "knowledge-symptom-trieu-chung-thuong-gap-va-cach-tu-van-an-toan-001",
+    "type": "knowledge",
+    "category": "symptoms",
+    "title": "Triệu Chứng Thường Gặp Và Cách Tư Vấn An Toàn",
+    "section": "Tóm tắt | Nguyên tắc tư vấn an toàn | Nhóm triệu chứng thường gặp | Câu hỏi khách hàng thường hỏi",
+    "content": "Tóm tắt\n\nTài liệu này hướng dẫn cách chatbot phân loại các triệu chứng thường gặp ở mức thông tin chung, đồng thời ưu tiên cảnh báo khi có dấu hiệu nguy hiểm.\n\nNguyên tắc tư vấn an toàn\n\n- Chỉ mô tả triệu chứng ở mức tổng quát.\n- Không kết luận người dùng đang mắc bệnh gì.\n- Không hướng dẫn liều dùng thuốc cụ thể.\n- Luôn khuyên gặp dược sĩ/bác sĩ khi có dấu hiệu nặng, triệu chứng kéo dài hoặc thuộc nhóm nguy cơ cao.\n\nNhóm triệu chứng thường gặp\n\n- Đau đầu, sốt nhẹ, mệt mỏi.\n- Ho, đau họng, sổ mũi.\n- Đầy bụng, khó tiêu, buồn nôn nhẹ.\n- Khách hỏi thông tin chung về sản phẩm liên quan đến triệu chứng.\n\nCâu hỏi khách hàng thường hỏi\n\n**Hỏi:** Chatbot có thể tư vấn theo triệu chứng không?\n**Đáp:** Chatbot chỉ có thể định hướng thông tin chung và lưu ý an toàn, không chẩn đoán.\n\n**Hỏi:** Khi nào cần đi khám thay vì hỏi chatbot?\n**Đáp:** Khi khó thở, đau ngực, đau bụng dữ dội, sốt cao, lị bì, co giật, dị ứng nặng, nghi quá liều hoặc triệu chứng kéo dài.",
+    "tags": [
+      "triệu chứng thường gặp",
+      "tư vấn an toàn",
+      "không chẩn đoán",
+      "sốt cao",
+      "khó thở",
+      "đau ngực",
+      "đau bụng dữ dội"
+    ],
+    "sourcePath": "fordel/knowledge-base/symptoms/trieu-chung-thuong-gap-va-cach-tu-van-an-toan.md"
+  },
+  {
+    "id": "knowledge-symptom-trieu-chung-thuong-gap-va-cach-tu-van-an-toan-002",
+    "type": "knowledge",
+    "category": "symptoms",
+    "title": "Triệu Chứng Thường Gặp Và Cách Tư Vấn An Toàn",
+    "section": "Câu trả lời mẫu chatbot",
+    "content": "Câu trả lời mẫu chatbot\n\nTôi có thể hỗ trợ thông tin chung theo nhóm triệu chứng và các lưu ý an toàn, nhưng không thể chẩn đoán bệnh hay hướng dẫn thuốc cụ thể. Nếu triệu chứng của bạn nặng lên, kéo dài, hoặc có khó thở, đau ngực, đau bụng dữ dội, sốt cao, bạn nên gặp dược sĩ hoặc bác sĩ.",
+    "tags": [
+      "triệu chứng thường gặp",
+      "tư vấn an toàn",
+      "không chẩn đoán",
+      "sốt cao",
+      "khó thở",
+      "đau ngực",
+      "đau bụng dữ dội"
+    ],
+    "sourcePath": "fordel/knowledge-base/symptoms/trieu-chung-thuong-gap-va-cach-tu-van-an-toan.md"
   }
 ]

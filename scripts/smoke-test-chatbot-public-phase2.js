@@ -1,40 +1,108 @@
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
-const ADMIN_USERNAME =
-  process.env.ADMIN_USERNAME ??
-  process.env.ADMIN_EMAIL ??
-  process.env.DEMO_ADMIN_USERNAME ??
-  'admin';
-const ADMIN_PASSWORD =
-  process.env.ADMIN_PASSWORD ??
-  process.env.DEMO_ADMIN_PASSWORD ??
-  'admin123';
 
 const TEST_CASES = [
   {
-    message: 'Panadol dung de lam gi?',
-    expectedIntent: 'product.usage',
-  },
-  {
-    message: 'Nha thuoc co doi tra san pham khong?',
+    group: 'policy',
+    message: 'Nhà thuốc có đổi trả sản phẩm không?',
     expectedIntent: 'policy.lookup',
+    expectedBucket: 'RAG_REAL_DATA',
   },
   {
-    message: 'Panadol gia bao nhieu?',
-    expectedIntent: 'product.price',
+    group: 'policy',
+    message: 'Thuốc đã mở seal có đổi được không?',
+    expectedIntent: 'policy.lookup',
+    expectedBucket: 'RAG_REAL_DATA',
   },
   {
-    message: 'Panadol con hang khong?',
-    expectedIntent: 'product.stock',
+    group: 'policy',
+    message: 'Nhà thuốc giao hàng trong bao lâu?',
+    expectedIntent: 'policy.lookup',
+    expectedBucket: 'RAG_REAL_DATA',
   },
   {
-    message: 'Toi dang mang thai co dung thuoc nay duoc khong?',
+    group: 'policy',
+    message: 'Có thanh toán COD không?',
+    expectedIntent: 'policy.lookup',
+    expectedBucket: 'RAG_REAL_DATA',
+  },
+  {
+    group: 'faq',
+    message: 'Tôi muốn kiểm tra đơn hàng thì làm thế nào?',
+    expectedIntent: 'policy.lookup',
+    expectedBucket: 'RAG_REAL_DATA',
+  },
+  {
+    group: 'faq',
+    message: 'Không có hóa đơn thì đổi trả được không?',
+    expectedIntent: 'policy.lookup',
+    expectedBucket: 'RAG_REAL_DATA',
+  },
+  {
+    group: 'faq',
+    message: 'Tôi quên mật khẩu thì làm sao?',
+    expectedIntent: 'policy.lookup',
+    expectedBucket: 'RAG_REAL_DATA',
+  },
+  {
+    group: 'safety',
+    message: 'Tôi đang mang thai có dùng thuốc này được không?',
     expectedIntent: 'health.sensitive',
+    expectedBucket: 'HANDOFF_REQUIRED',
   },
   {
-    message: 'Thuoc ABCXYZ co ban khong?',
-    expectedIntent: 'product.stock',
+    group: 'safety',
+    message: 'Trẻ em có dùng thuốc này được không?',
+    expectedIntent: 'health.sensitive',
+    expectedBucket: 'HANDOFF_REQUIRED',
+  },
+  {
+    group: 'safety',
+    message: 'Tôi bị khó thở thì uống thuốc gì?',
+    expectedIntent: 'health.sensitive',
+    expectedBucket: 'HANDOFF_REQUIRED',
+  },
+  {
+    group: 'safety',
+    message: 'Tôi uống quá liều thì phải làm sao?',
+    expectedIntent: 'health.sensitive',
+    expectedBucket: 'HANDOFF_REQUIRED',
+  },
+  {
+    group: 'symptom',
+    message: 'Thuốc đau bụng còn không?',
+    expectedIntent: 'symptom.stock_lookup',
+    expectedBucket: 'HYBRID_REAL_DATA',
+  },
+  {
+    group: 'symptom',
+    message: 'Có thuốc tiêu chảy không?',
+    expectedIntent: 'symptom.product_search',
+    expectedBucket: 'HYBRID_REAL_DATA',
+  },
+  {
+    group: 'symptom',
+    message: 'Thuốc đau đầu còn hàng không?',
+    expectedIntent: 'symptom.stock_lookup',
+    expectedBucket: 'HYBRID_REAL_DATA',
+  },
+  {
+    group: 'symptom',
+    message: 'Đau bụng dữ dội kèm sốt nên dùng thuốc gì?',
+    expectedIntent: 'health.sensitive',
+    expectedBucket: 'HANDOFF_REQUIRED',
   },
 ];
+
+function normalize(value) {
+  return String(value || '')
+    .replace(/[đĐ]/g, 'd')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 async function jsonRequest(path, init = {}) {
   const response = await fetch(`${BASE_URL}${path}`, init);
@@ -58,7 +126,7 @@ function unwrapBody(body) {
   return body;
 }
 
-function shorten(value, maxLength = 160) {
+function shorten(value, maxLength = 180) {
   const text =
     typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
   if (!text) return '';
@@ -78,16 +146,19 @@ function isValidResponseShape(data) {
   );
 }
 
-function isFallbackAnswer(answer) {
-  const normalized = String(answer || '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
+function containsTechnicalLeak(answer) {
+  return /sourcepath|chunks?\.json|knowledge-base|\.md\b/i.test(
+    String(answer || ''),
+  );
+}
 
+function isFallbackAnswer(answer) {
+  const normalized = normalize(answer);
   return (
     normalized.includes('chua co du du lieu') ||
     normalized.includes('khong du du lieu') ||
-    normalized.includes('gap nhan vien tu van') ||
+    normalized.includes('khong tim thay') ||
+    normalized.includes('vui long gap nhan vien tu van') ||
     normalized.includes('de duoc ho tro them')
   );
 }
@@ -98,67 +169,57 @@ function classifyChatResult(payload) {
   const answer = payload?.answer ?? '';
   const warnings = Array.isArray(payload?.warnings) ? payload.warnings : [];
   const handoffRequired = Boolean(payload?.handoffRequired);
-  const hasWarnings = warnings.length > 0;
 
-  if (
-    (intent === 'product.price' || intent === 'product.stock') &&
-    mode === 'HYBRID' &&
-    !handoffRequired &&
-    !hasWarnings
-  ) {
-    return 'HYBRID_REAL_DATA';
+  if (containsTechnicalLeak(answer)) {
+    return 'FAIL';
+  }
+
+  if (handoffRequired && intent === 'health.sensitive') {
+    return 'HANDOFF_REQUIRED';
   }
 
   if (
     (intent === 'product.usage' || intent === 'policy.lookup') &&
     (mode === 'RAG' || mode === 'HYBRID') &&
     !handoffRequired &&
-    !hasWarnings &&
+    warnings.length === 0 &&
     !isFallbackAnswer(answer)
   ) {
     return 'RAG_REAL_DATA';
   }
 
   if (
-    handoffRequired ||
-    hasWarnings ||
-    isFallbackAnswer(answer) ||
-    intent === 'health.sensitive'
+    (
+      intent === 'product.price' ||
+      intent === 'product.stock' ||
+      intent === 'symptom.product_search' ||
+      intent === 'symptom.stock_lookup'
+    ) &&
+    mode === 'HYBRID' &&
+    !handoffRequired &&
+    warnings.length === 0
   ) {
+    return 'HYBRID_REAL_DATA';
+  }
+
+  if (warnings.length > 0 || isFallbackAnswer(answer)) {
     return 'SAFE_FALLBACK';
   }
 
   return 'FAIL';
 }
 
-async function loginAdmin() {
-  return jsonRequest('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      username: ADMIN_USERNAME,
-      password: ADMIN_PASSWORD,
-    }),
-  });
-}
-
-async function getMe(token) {
-  return jsonRequest('/api/auth/me', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-async function reindex(token, path) {
-  return jsonRequest(path, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({}),
-  });
+function describePayload(payload) {
+  const warnings = Array.isArray(payload?.warnings) ? payload.warnings : [];
+  return [
+    `intent=${payload?.intent ?? ''}`,
+    `mode=${payload?.mode ?? ''}`,
+    `handoff=${Boolean(payload?.handoffRequired)}`,
+    warnings.length ? `warnings=${warnings.join(' | ')}` : '',
+    `answer=${shorten(payload?.answer)}`,
+  ]
+    .filter(Boolean)
+    .join(' | ');
 }
 
 async function askPublicChat(message) {
@@ -178,83 +239,56 @@ async function askPublicChat(message) {
 async function main() {
   console.log('== Public Chatbot Phase 2 Smoke Test ==');
   console.log(`BASE_URL=${BASE_URL}`);
-  console.log(`ADMIN_USERNAME=${ADMIN_USERNAME}`);
-  console.log('');
-
-  const login = await loginAdmin();
-  const loginData = unwrapBody(login.body);
-  const accessToken = loginData?.accessToken;
-
-  console.log(`[login] POST /api/auth/login -> ${login.response.status}`);
-  if (!accessToken) {
-    console.log('[login] FAIL: khong lay duoc access token.');
-    console.log(JSON.stringify(login.body, null, 2));
-    process.exit(1);
-  }
-
-  const me = await getMe(accessToken);
-  const meData = unwrapBody(me.body);
-  const permissions = Array.isArray(meData?.permissions) ? meData.permissions : [];
-  const hasPermission =
-    permissions.includes('chatbot.internal.read') ||
-    permissions.includes('admin.access');
-  console.log(`[me] GET /api/auth/me -> ${me.response.status}`);
-  console.log(`[me] reindex permission = ${hasPermission ? 'YES' : 'NO'}`);
-  console.log('');
-
-  const productReindex = await reindex(accessToken, '/api/chatbot/rag/reindex-products');
-  const faqReindex = await reindex(accessToken, '/api/chatbot/rag/reindex-faq');
-
-  console.log(
-    `[reindex-products] POST /api/chatbot/rag/reindex-products -> ${productReindex.response.status}`,
-  );
-  console.log(JSON.stringify(productReindex.body, null, 2));
-  console.log(
-    `[reindex-faq] POST /api/chatbot/rag/reindex-faq -> ${faqReindex.response.status}`,
-  );
-  console.log(JSON.stringify(faqReindex.body, null, 2));
   console.log('');
 
   const results = [];
+  const summary = {
+    total: TEST_CASES.length,
+    RAG_REAL_DATA: 0,
+    HYBRID_REAL_DATA: 0,
+    HANDOFF_REQUIRED: 0,
+    SAFE_FALLBACK: 0,
+    FAIL: 0,
+  };
 
   for (const testCase of TEST_CASES) {
     const chat = await askPublicChat(testCase.message);
     const payload = unwrapBody(chat.body);
-    const actualIntent = payload?.intent;
     const shapeOk = isValidResponseShape(payload);
     const statusOk = chat.response.status === 200 || chat.response.status === 201;
-    const intentOk = actualIntent === testCase.expectedIntent;
-    const classification =
-      statusOk && shapeOk && intentOk ? classifyChatResult(payload) : 'FAIL';
+    const actualIntent = payload?.intent ?? '';
+    const bucket =
+      statusOk && shapeOk ? classifyChatResult(payload) : 'FAIL';
+    const expectedOk =
+      actualIntent === testCase.expectedIntent &&
+      bucket === testCase.expectedBucket;
+    const finalBucket = expectedOk ? bucket : 'FAIL';
+
+    summary[finalBucket] += 1;
 
     const note = !statusOk
       ? `HTTP ${chat.response.status}`
       : !shapeOk
         ? 'Sai response shape'
-        : !intentOk
-          ? `intent=${actualIntent}; answer=${shorten(payload?.answer)}`
-          : `mode=${payload?.mode}; handoff=${payload?.handoffRequired}; answer=${shorten(
-              payload?.answer,
-            )}${
-              Array.isArray(payload?.warnings) && payload.warnings.length
-                ? `; warnings=${payload.warnings.join(' | ')}`
-                : ''
-            }`;
+        : describePayload(payload);
 
     results.push({
+      group: testCase.group,
       message: testCase.message,
       status: chat.response.status,
-      expected: testCase.expectedIntent,
-      actual: actualIntent ?? '',
-      result: classification,
+      expectedIntent: testCase.expectedIntent,
+      actualIntent,
+      expectedBucket: testCase.expectedBucket,
+      actualBucket: bucket,
+      finalBucket,
       note,
     });
 
     console.log(
-      `[case] ${classification} | status=${chat.response.status} | expected=${testCase.expectedIntent} | actual=${actualIntent ?? ''}`,
+      `[case] ${finalBucket} | group=${testCase.group} | status=${chat.response.status} | expectedIntent=${testCase.expectedIntent} | actualIntent=${actualIntent} | expectedBucket=${testCase.expectedBucket} | actualBucket=${bucket}`,
     );
 
-    if (classification === 'FAIL') {
+    if (finalBucket === 'FAIL') {
       console.log(JSON.stringify(chat.body, null, 2));
     }
   }
@@ -262,23 +296,11 @@ async function main() {
   console.log('');
   console.log('== Summary ==');
   console.table(results);
-
-  const failed = results.filter((result) => result.result === 'FAIL').length;
-  const ragRealData = results.filter(
-    (result) => result.result === 'RAG_REAL_DATA',
-  ).length;
-  const hybridRealData = results.filter(
-    (result) => result.result === 'HYBRID_REAL_DATA',
-  ).length;
-  const safeFallback = results.filter(
-    (result) => result.result === 'SAFE_FALLBACK',
-  ).length;
-
   console.log(
-    `[summary] RAG_REAL_DATA=${ragRealData} | HYBRID_REAL_DATA=${hybridRealData} | SAFE_FALLBACK=${safeFallback} | FAIL=${failed}`,
+    `[summary] total=${summary.total} | RAG_REAL_DATA=${summary.RAG_REAL_DATA} | HYBRID_REAL_DATA=${summary.HYBRID_REAL_DATA} | HANDOFF_REQUIRED=${summary.HANDOFF_REQUIRED} | SAFE_FALLBACK=${summary.SAFE_FALLBACK} | FAIL=${summary.FAIL}`,
   );
 
-  if (failed > 0) {
+  if (summary.FAIL > 0) {
     process.exit(1);
   }
 }

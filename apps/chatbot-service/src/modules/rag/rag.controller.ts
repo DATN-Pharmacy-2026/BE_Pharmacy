@@ -36,4 +36,11 @@ export class RagController {
   async reindexFaq() {
     return this.knowledgeIndexService.reindexFaq();
   }
+
+  @Post('reindex-knowledge')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('admin.access|chatbot.internal.read')
+  async reindexKnowledge() {
+    return this.knowledgeIndexService.reindexKnowledge();
+  }
 }

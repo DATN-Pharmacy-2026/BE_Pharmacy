@@ -44,17 +44,21 @@ type ProductDocumentSource = {
 
 type KnowledgeChunkSource = {
   id: string;
+  type?: string;
   title?: string;
   category?: string;
+  section?: string;
+  tags?: string[];
   source?: string;
-  chunkIndex?: number;
+  sourcePath?: string;
   content: string;
 };
 
 type ReindexResult = {
   indexed: number;
+  failed: number;
   collection: string;
-  source: 'products' | 'faq';
+  source: 'products' | 'faq' | 'knowledge';
   qdrantHealthy: boolean;
 };
 
@@ -86,6 +90,7 @@ export class KnowledgeIndexService {
     if (products.length === 0) {
       return {
         indexed: 0,
+        failed: 0,
         collection: this.vectorStoreService.getCollectionName(),
         source: 'products',
         qdrantHealthy,
@@ -96,6 +101,7 @@ export class KnowledgeIndexService {
     if (!rows.length) {
       return {
         indexed: 0,
+        failed: 0,
         collection: this.vectorStoreService.getCollectionName(),
         source: 'products',
         qdrantHealthy,
@@ -108,6 +114,7 @@ export class KnowledgeIndexService {
 
     return {
       indexed: rows.length,
+      failed: 0,
       collection: this.vectorStoreService.getCollectionName(),
       source: 'products',
       qdrantHealthy,
@@ -123,12 +130,13 @@ export class KnowledgeIndexService {
     }
     this.assertEmbeddingReady();
     const chunks = this.loadKnowledgeChunks().filter((chunk) =>
-      ['faq', 'policy', 'general', 'safety'].includes(chunk.category || 'general'),
+      ['faq', 'policies', 'safety'].includes(chunk.category || 'general'),
     );
 
     if (!chunks.length) {
       return {
         indexed: 0,
+        failed: 0,
         collection: this.vectorStoreService.getCollectionName(),
         source: 'faq',
         qdrantHealthy,
@@ -139,6 +147,7 @@ export class KnowledgeIndexService {
     if (!rows.length) {
       return {
         indexed: 0,
+        failed: chunks.length,
         collection: this.vectorStoreService.getCollectionName(),
         source: 'faq',
         qdrantHealthy,
@@ -156,8 +165,71 @@ export class KnowledgeIndexService {
 
     return {
       indexed: rows.length,
+      failed: chunks.length - rows.length,
       collection: this.vectorStoreService.getCollectionName(),
       source: 'faq',
+      qdrantHealthy,
+    };
+  }
+
+  async reindexKnowledge(): Promise<ReindexResult> {
+    const qdrantHealthy = await this.vectorStoreService.health();
+    if (!qdrantHealthy) {
+      throw new ServiceUnavailableException(
+        'Qdrant is not reachable. Please start Qdrant before reindexing knowledge.',
+      );
+    }
+    this.assertEmbeddingReady();
+
+    const chunks = this.loadKnowledgeChunks();
+    if (!chunks.length) {
+      return {
+        indexed: 0,
+        failed: 0,
+        collection: this.vectorStoreService.getCollectionName(),
+        source: 'knowledge',
+        qdrantHealthy,
+      };
+    }
+
+    const rows = await this.buildKnowledgeRows(chunks);
+    if (!rows.length) {
+      return {
+        indexed: 0,
+        failed: chunks.length,
+        collection: this.vectorStoreService.getCollectionName(),
+        source: 'knowledge',
+        qdrantHealthy,
+      };
+    }
+
+    await this.vectorStoreService.ensureCollection(rows[0].embedding.length);
+
+    let indexed = 0;
+    let failed = chunks.length - rows.length;
+
+    for (const row of rows) {
+      try {
+        await this.vectorStoreService.upsertChunks([row]);
+        indexed += 1;
+      } catch (error) {
+        failed += 1;
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Failed to upsert knowledge chunk ${String(row.payload.id)}: ${message}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `Knowledge reindex completed. indexed=${indexed}, failed=${failed}, collection=${this.vectorStoreService.getCollectionName()}`,
+    );
+
+    return {
+      indexed,
+      failed,
+      collection: this.vectorStoreService.getCollectionName(),
+      source: 'knowledge',
       qdrantHealthy,
     };
   }
@@ -294,11 +366,15 @@ export class KnowledgeIndexService {
         embedding,
         payload: {
           id: chunk.id,
-          type: category,
+          type: this.mapKnowledgeCategoryToSearchType(category),
           title: chunk.title || chunk.id,
           category,
+          section: chunk.section || 'Tổng quan',
+          tags: Array.isArray(chunk.tags) ? chunk.tags : [],
           source: chunk.source || 'knowledge-base',
-          chunkIndex: Number(chunk.chunkIndex ?? 1),
+          sourcePath: chunk.sourcePath || '',
+          recordType: chunk.type || 'knowledge',
+          chunkIndex: 1,
           content,
         },
       });
@@ -329,6 +405,21 @@ export class KnowledgeIndexService {
       hex.slice(16, 20),
       hex.slice(20, 32),
     ].join('-');
+  }
+
+  private mapKnowledgeCategoryToSearchType(category: string): string {
+    switch (category) {
+      case 'faq':
+        return 'faq';
+      case 'policies':
+        return 'policy';
+      case 'safety':
+        return 'safety';
+      case 'medicines':
+      case 'symptoms':
+      default:
+        return 'general';
+    }
   }
 
   private assertEmbeddingReady(): void {

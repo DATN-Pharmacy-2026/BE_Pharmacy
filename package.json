@@ -49,6 +49,7 @@
     "import:longchau:with-inventory": "npm run import:longchau && npm run sync:pos-inventory",
     "products:backfill-images": "npx ts-node scripts/backfill-product-images.ts",
     "chatbot:ingest": "npx ts-node scripts/ingest-chatbot-kb.ts",
+    "knowledge:build": "node scripts/build-knowledge-chunks.js",
     "chatbot:ingest:embeddings": "npx ts-node scripts/ingest-chatbot-kb.ts --withEmbeddings",
     "chatbot:vector:upsert": "npx ts-node scripts/qdrant-upsert-chunks.ts",
     "chatbot:vector:search": "npx ts-node scripts/qdrant-search-query.ts",

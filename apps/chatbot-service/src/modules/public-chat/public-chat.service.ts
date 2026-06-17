@@ -9,13 +9,18 @@ import {
   PublicChatRequestDto,
   PublicChatResponseDto,
 } from './dto/public-chat.dto';
-import type { ChatProductSummary } from '../chat/dto/chat.dto';
+import type {
+  ChatProductAvailabilityBranch,
+  ChatProductSummary,
+} from '../chat/dto/chat.dto';
 
 type PublicIntent =
   | 'product.price'
   | 'product.stock'
   | 'product.usage'
   | 'policy.lookup'
+  | 'symptom.product_search'
+  | 'symptom.stock_lookup'
   | 'health.sensitive'
   | 'unknown';
 
@@ -45,6 +50,49 @@ Quy tắc:
 - Nếu câu hỏi liên quan đến mang thai, cho con bú, trẻ em, bệnh nền, dị ứng, quá liều, đau ngực, khó thở, hãy khuyên hỏi bác sĩ/dược sĩ.
 - Nếu không đủ dữ liệu, nói rõ không đủ dữ liệu và đề xuất gặp nhân viên tư vấn.`;
 
+  private readonly dangerousSymptomPatterns = [
+    'dau bung du doi',
+    'dau dau du doi',
+    'sot cao',
+    'sot keo dai',
+    'non nhieu',
+    'non lien tuc',
+    'di ngoai ra mau',
+    'tieu ra mau',
+    'kho tho',
+    'tho rit',
+    'dau nguc',
+  ];
+
+  private readonly stockKeywords = [
+    'con khong',
+    'con hang',
+    'co ban khong',
+    'het hang',
+  ];
+
+  private readonly symptomKeywords = [
+    'dau bung',
+    'dau da day',
+    'tieu chay',
+    'dau dau',
+    'ho',
+    'sot',
+    'cam',
+    'cum',
+    'so mui',
+    'nghet mui',
+    'viem hong',
+    'dau hong',
+    'tao bon',
+    'non',
+    'buon non',
+    'di ngoai',
+    'di ung',
+    'met moi',
+    'nhuc moi',
+  ];
+
   constructor(
     private readonly conversationService: ConversationService,
     private readonly safetyService: SafetyService,
@@ -66,6 +114,13 @@ Quy tắc:
       channel: 'PUBLIC_RAG',
     });
 
+    if (this.containsDangerousSymptom(message)) {
+      return this.finalizeResponse(
+        conversationId,
+        this.buildDangerousSymptomResponse(conversationId),
+      );
+    }
+
     const intent = this.detectIntent(message);
     const safety = this.safetyService.checkSafety(message);
     if (safety.handoffRequired) {
@@ -76,10 +131,27 @@ Quy tắc:
         intent: 'health.sensitive',
         conversationId,
         handoffRequired: true,
-        warnings: ['Câu hỏi có yếu tố sức khỏe nhạy cảm, chatbot không tự tư vấn thay chuyên môn.'],
+        warnings: [
+          'Câu hỏi có yếu tố sức khỏe nhạy cảm, chatbot không tự tư vấn thay chuyên môn.',
+        ],
         suggestedActions: ['Gặp nhân viên tư vấn'],
       });
       return response;
+    }
+
+    if (intent === 'health.sensitive') {
+      return this.finalizeResponse(conversationId, {
+        answer:
+          'Câu hỏi này cần được dược sĩ hoặc bác sĩ tư vấn trực tiếp để bảo đảm an toàn. Bạn nên gặp nhân viên tư vấn trước khi sử dụng thuốc.',
+        mode: 'HYBRID',
+        intent: 'health.sensitive',
+        conversationId,
+        handoffRequired: true,
+        warnings: [
+          'Câu hỏi có yếu tố sức khỏe nhạy cảm, chatbot không tự tư vấn thay chuyên môn.',
+        ],
+        suggestedActions: ['Gặp nhân viên tư vấn'],
+      });
     }
 
     if (intent === 'product.price') {
@@ -89,6 +161,19 @@ Quy tắc:
 
     if (intent === 'product.stock') {
       const response = await this.handleStockQuestion(message, conversationId, dto);
+      return this.finalizeResponse(conversationId, response);
+    }
+
+    if (
+      intent === 'symptom.product_search' ||
+      intent === 'symptom.stock_lookup'
+    ) {
+      const response = await this.handleSymptomQuestion(
+        message,
+        intent,
+        conversationId,
+        dto,
+      );
       return this.finalizeResponse(conversationId, response);
     }
 
@@ -199,12 +284,96 @@ Quy tắc:
     };
   }
 
+  private async handleSymptomQuestion(
+    message: string,
+    intent: 'symptom.product_search' | 'symptom.stock_lookup',
+    conversationId: string,
+    dto: PublicChatRequestDto,
+  ): Promise<PublicChatResponseDto> {
+    const symptomQuery = this.extractSymptomQuery(message);
+    const branchId = dto.context?.branchId;
+    const products = await this.findProductsBySymptom(message, symptomQuery, branchId);
+
+    if (!products.length) {
+      return {
+        answer:
+          'Tôi chưa tìm thấy sản phẩm phù hợp trong hệ thống. Bạn có thể mô tả rõ hơn triệu chứng hoặc chuyển sang nhân viên/dược sĩ để được hỗ trợ.',
+        mode: 'HYBRID',
+        intent,
+        conversationId,
+        handoffRequired: true,
+        warnings: ['Chưa tìm thấy sản phẩm liên quan trong dữ liệu hệ thống.'],
+        suggestedActions: ['Gặp nhân viên tư vấn'],
+      };
+    }
+
+    return {
+      answer:
+        intent === 'symptom.stock_lookup'
+          ? this.buildSymptomStockAnswer(products, branchId)
+          : this.buildSymptomProductAnswer(products),
+      mode: 'HYBRID',
+      intent,
+      conversationId,
+      handoffRequired: false,
+      warnings: [],
+      suggestedActions: [],
+    };
+  }
+
   private async findProducts(message: string, branchId?: string) {
     try {
       return await this.productSearchService.searchProducts(message, branchId);
     } catch (error) {
       const messageText = error instanceof Error ? error.message : String(error);
       this.logger.warn(`Public product lookup failed: ${messageText}`);
+      return [];
+    }
+  }
+
+  private async findProductsBySymptom(
+    message: string,
+    symptomQuery: string,
+    branchId?: string,
+  ): Promise<ChatProductSummary[]> {
+    try {
+      const catalogMatches = await this.productSearchService.searchProductsBySymptom(
+        message,
+        symptomQuery,
+        branchId,
+      );
+      if (catalogMatches.length) {
+        return catalogMatches.slice(0, 5);
+      }
+    } catch (error) {
+      const messageText = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Symptom product lookup failed: ${messageText}`);
+    }
+
+    try {
+      const ragMatches = await this.searchKnowledgeContexts(
+        `san pham lien quan ${symptomQuery || message}`,
+        ['product'],
+        8,
+        0.22,
+      );
+      const productIds = ragMatches
+        .map((item) => item.payload?.productId)
+        .filter((productId): productId is string => typeof productId === 'string')
+        .slice(0, 5);
+
+      if (!productIds.length) {
+        return [];
+      }
+
+      const products = await this.productSearchService.getProductsByIds(
+        productIds,
+        branchId,
+      );
+      return products.slice(0, 5);
+    } catch (error) {
+      const messageText = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Symptom RAG fallback failed: ${messageText}`);
       return [];
     }
   }
@@ -245,6 +414,70 @@ Quy tắc:
     return `đang còn hàng tại ${branches}.`;
   }
 
+  private buildSymptomProductAnswer(products: ChatProductSummary[]): string {
+    const lines = products.slice(0, 3).map((product, index) => {
+      const details = [
+        product.category ? `nhóm ${product.category}` : '',
+        product.usage ? `thông tin liên quan: ${this.truncate(product.usage, 90)}` : '',
+        product.activeIngredient
+          ? `hoạt chất: ${this.truncate(product.activeIngredient, 50)}`
+          : '',
+      ].filter(Boolean);
+
+      return `${index + 1}. ${product.name}${details.length ? ` (${details.join('; ')})` : ''}`;
+    });
+
+    return [
+      'Tôi có tìm thấy một số sản phẩm liên quan trong hệ thống để bạn tham khảo:',
+      ...lines,
+      'Đây chỉ là các sản phẩm có thông tin liên quan đến triệu chứng bạn nêu, không thay thế tư vấn của dược sĩ hoặc bác sĩ.',
+    ].join('\n');
+  }
+
+  private buildSymptomStockAnswer(
+    products: ChatProductSummary[],
+    branchId?: string,
+  ): string {
+    const lines = products.slice(0, 3).map((product, index) => {
+      const stockLabel = this.describeBranchAvailability(
+        product.availableBranches,
+        branchId,
+      );
+      return `${index + 1}. ${product.name}: ${stockLabel}`;
+    });
+
+    return [
+      'Tôi có tìm thấy một số sản phẩm liên quan trong hệ thống:',
+      ...lines,
+      'Danh sách này chỉ mang tính tham khảo theo dữ liệu sản phẩm và tồn kho hiện có, bạn nên trao đổi thêm với dược sĩ để chọn sản phẩm phù hợp.',
+    ].join('\n');
+  }
+
+  private describeBranchAvailability(
+    availableBranches: ChatProductAvailabilityBranch[],
+    branchId?: string,
+  ): string {
+    if (!availableBranches.length) {
+      return 'hiện chưa ghi nhận còn hàng';
+    }
+
+    if (branchId) {
+      const total = availableBranches.reduce(
+        (sum, branch) => sum + Number(branch.availableQty || 0),
+        0,
+      );
+      return total > 0
+        ? `còn khoảng ${this.formatQuantity(total)} tại chi nhánh đã chọn`
+        : 'hiện chưa ghi nhận còn hàng tại chi nhánh đã chọn';
+    }
+
+    const branches = availableBranches
+      .slice(0, 2)
+      .map((branch) => `${branch.name}${branch.availableQty > 0 ? ` (${this.formatQuantity(branch.availableQty)})` : ''}`)
+      .join(', ');
+    return branches ? `còn hàng tại ${branches}` : 'hiện chưa ghi nhận còn hàng';
+  }
+
   private async searchKnowledgeContexts(
     message: string,
     types: string[],
@@ -277,7 +510,7 @@ Quy tắc:
     const contextText = ragContexts
       .map(
         (item, index) =>
-          `[${index + 1}] loại=${item.category}; tiêu đề=${item.title}; nội dung=${item.content}`,
+          `[${index + 1}] loai=${item.category}; tieu de=${item.title}; noi dung=${item.content}`,
       )
       .join('\n');
 
@@ -287,7 +520,7 @@ ${message}
 CONTEXT:
 ${contextText}
 
-Hãy trả lời ngắn gọn bằng tiếng Việt tự nhiên. Không nhắc tới file, chunk, source kỹ thuật hay điểm số tìm kiếm.`;
+Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, source ky thuat hay diem so tim kiem.`;
 
     try {
       return await this.llmService.generateAnswer(this.systemPrompt, userPrompt);
@@ -309,77 +542,143 @@ Hãy trả lời ngắn gọn bằng tiếng Việt tự nhiên. Không nhắc t
 
   private detectIntent(message: string): PublicIntent {
     const normalized = this.normalize(message);
+    const symptomQuery = this.extractSymptomQuery(message);
+    const symptomRelated = this.isSymptomRelated(normalized, symptomQuery);
+    const isPolicyQuestion = this.containsAny(normalized, [
+      'doi tra',
+      'tra hang',
+      'hoan tien',
+      'giao hang',
+      'van chuyen',
+      'thanh toan',
+      'cod',
+      'chinh sach',
+      'don hang',
+      'kiem tra don hang',
+      'theo doi don',
+      'ma don',
+      'mo seal',
+      'mo niem phong',
+      'mat khau',
+      'quen mat khau',
+      'tai khoan',
+      'dang nhap',
+    ]);
+
     if (
       this.containsAny(normalized, [
         'mang thai',
         'cho con bu',
-        'cho con bú',
         'tre em',
-        'trẻ em',
         'benh nen',
-        'bệnh nền',
         'di ung',
-        'dị ứng',
         'qua lieu',
-        'quá liều',
         'dau nguc',
-        'đau ngực',
         'kho tho',
-        'khó thở',
       ])
     ) {
       return 'health.sensitive';
+    }
+
+    if (isPolicyQuestion) {
+      return 'policy.lookup';
+    }
+
+    if (symptomRelated && this.containsAny(normalized, this.stockKeywords)) {
+      return 'symptom.stock_lookup';
+    }
+
+    if (symptomRelated) {
+      return 'symptom.product_search';
     }
 
     if (this.containsAny(normalized, ['gia', 'bao nhieu tien', 'bao nhieu', 'muc gia'])) {
       return 'product.price';
     }
 
-    if (this.containsAny(normalized, ['con hang', 'còn hàng', 'co ban khong', 'có bán không', 'het hang'])) {
+    if (this.containsAny(normalized, this.stockKeywords)) {
       return 'product.stock';
     }
 
     if (
       this.containsAny(normalized, [
         'cong dung',
-        'công dụng',
         'dung de lam gi',
-        'dùng để làm gì',
+        'thuoc nay dung de lam gi',
+        'lam gi',
         'cach dung',
-        'cách dùng',
         'luu y',
-        'lưu ý',
         'chi dinh',
-        'chỉ định',
         'hoat chat',
-        'hoạt chất',
       ])
     ) {
       return 'product.usage';
     }
 
-    if (
-      this.containsAny(normalized, [
-        'doi tra',
-        'đổi trả',
-        'giao hang',
-        'giao hàng',
-        'hoan tien',
-        'hoàn tiền',
-        'thanh toan',
-        'thanh toán',
-        'chinh sach',
-        'chính sách',
-      ])
-    ) {
-      return 'policy.lookup';
-    }
-
     return 'unknown';
   }
 
+  private isSymptomRelated(normalizedMessage: string, symptomQuery: string): boolean {
+    const phraseKeywords = this.symptomKeywords.filter((keyword) => keyword.includes(' '));
+    if (this.containsAny(normalizedMessage, phraseKeywords)) {
+      return true;
+    }
+
+    const normalizedSymptom = this.normalize(symptomQuery);
+    if (!normalizedSymptom) {
+      return false;
+    }
+
+    const tokens = new Set(
+      normalizedSymptom.split(' ').filter((token) => token.length > 1),
+    );
+    return [
+      'dau',
+      'ho',
+      'sot',
+      'non',
+      'tieu',
+      'cam',
+      'cum',
+      'bung',
+      'day',
+    ].some((token) => tokens.has(token));
+  }
+
+  private extractSymptomQuery(message: string): string {
+    return this.normalize(message)
+      .replace(/\b(thuoc|san pham|co|khong|con|hang|ban|khong|nen|dung|gi|nao|cho toi|toi|muon|hoi|kiem tra|xem|giup|voi|khong a|khong vay|khong nhi)\b/g, ' ')
+      .replace(/\b(co ban|con hang|con khong|co thuoc)\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private containsDangerousSymptom(message: string): boolean {
+    const normalized = this.normalize(message);
+    return this.containsAny(normalized, this.dangerousSymptomPatterns);
+  }
+
+  private buildDangerousSymptomResponse(
+    conversationId: string,
+  ): PublicChatResponseDto {
+    return {
+      answer:
+        'Triệu chứng bạn mô tả có dấu hiệu cần được dược sĩ hoặc bác sĩ đánh giá trực tiếp. Tôi không nên gợi ý sản phẩm trong trường hợp này. Bạn nên đi khám hoặc liên hệ dược sĩ/nhân viên tư vấn sớm để được hỗ trợ an toàn hơn.',
+      mode: 'HYBRID',
+      intent: 'health.sensitive',
+      conversationId,
+      handoffRequired: true,
+      warnings: ['Triệu chứng có dấu hiệu cảnh báo, cần chuyển hỗ trợ chuyên môn.'],
+      suggestedActions: ['Gặp nhân viên tư vấn'],
+    };
+  }
+
   private usesRealtimeData(intent: PublicIntent): boolean {
-    return intent === 'product.price' || intent === 'product.stock';
+    return (
+      intent === 'product.price' ||
+      intent === 'product.stock' ||
+      intent === 'symptom.stock_lookup'
+    );
   }
 
   private containsAny(text: string, patterns: string[]): boolean {
@@ -388,6 +687,7 @@ Hãy trả lời ngắn gọn bằng tiếng Việt tự nhiên. Không nhắc t
 
   private normalize(value: string): string {
     return value
+      .replace(/[đĐ]/g, 'd')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
@@ -402,6 +702,14 @@ Hãy trả lời ngắn gọn bằng tiếng Việt tự nhiên. Không nhắc t
 
   private formatQuantity(value: number): string {
     return new Intl.NumberFormat('vi-VN').format(Math.round(value));
+  }
+
+  private truncate(value: string, maxLength: number): string {
+    const text = value.replace(/\s+/g, ' ').trim();
+    if (text.length <= maxLength) {
+      return text;
+    }
+    return `${text.slice(0, maxLength - 3)}...`;
   }
 
   private async finalizeResponse(

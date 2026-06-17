@@ -12,6 +12,7 @@ type ProductApiItem = {
   indication?: string;
   requiresPrescription?: boolean;
   basePrice?: number;
+  status?: string;
   category?: { name?: string };
   images?: Array<{ url?: string }>;
 };
@@ -46,12 +47,78 @@ export class ProductSearchService {
       return [];
     }
 
-    const branches = branchId ? [] : await this.fetchActiveBranches();
-    const availability = await Promise.all(
-      products.map((product) => this.resolveAvailability(product, branchId, branches)),
+    return this.resolveProducts(products, branchId);
+  }
+
+  async searchProductsBySymptom(
+    message: string,
+    symptomQuery: string,
+    branchId?: string,
+  ): Promise<ChatProductSummary[]> {
+    const searchPlan = this.buildSymptomSearchPlan(message, symptomQuery);
+    const collected = new Map<string, ProductApiItem>();
+
+    for (const plan of searchPlan) {
+      const items = await this.fetchProducts(plan);
+      for (const item of items) {
+        collected.set(item.id, item);
+      }
+      if (collected.size >= 12) break;
+    }
+
+    let rankedCandidates = this.rankProductsBySymptom(
+      Array.from(collected.values()),
+      symptomQuery,
     );
 
-    return availability;
+    if (rankedCandidates.length < 3) {
+      const fallbackCatalog = await this.fetchProducts({
+        page: 1,
+        limit: 100,
+        status: 'ACTIVE',
+      });
+      const merged = new Map<string, ProductApiItem>();
+      for (const item of [...collected.values(), ...fallbackCatalog]) {
+        merged.set(item.id, item);
+      }
+      rankedCandidates = this.rankProductsBySymptom(
+        Array.from(merged.values()),
+        symptomQuery,
+      );
+    }
+
+    if (!rankedCandidates.length) {
+      return [];
+    }
+
+    return this.resolveProducts(rankedCandidates.slice(0, 5), branchId);
+  }
+
+  async getProductsByIds(
+    productIds: string[],
+    branchId?: string,
+  ): Promise<ChatProductSummary[]> {
+    const uniqueIds = Array.from(
+      new Set(
+        productIds
+          .map((productId) => productId.trim())
+          .filter((productId) => productId.length > 0),
+      ),
+    ).slice(0, 5);
+
+    if (!uniqueIds.length) {
+      return [];
+    }
+
+    const products = (
+      await Promise.all(uniqueIds.map((productId) => this.fetchProductById(productId)))
+    ).filter(Boolean) as ProductApiItem[];
+
+    if (!products.length) {
+      return [];
+    }
+
+    return this.resolveProducts(products, branchId);
   }
 
   private async fetchProducts(params: Record<string, string | number>): Promise<ProductApiItem[]> {
@@ -67,6 +134,24 @@ export class ProductSearchService {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.warn(`Product search request failed: ${message}`);
       return [];
+    }
+  }
+
+  private async fetchProductById(productId: string): Promise<ProductApiItem | null> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<ProductApiItem>(
+          `${this.getCommerceBaseUrl()}/api/products/${productId}`,
+        ),
+      );
+      if (!response.data?.id) {
+        return null;
+      }
+      return response.data;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Product detail lookup failed for ${productId}: ${message}`);
+      return null;
     }
   }
 
@@ -117,6 +202,16 @@ export class ProductSearchService {
       isAvailable: availableBranches.length > 0,
       availableBranches,
     };
+  }
+
+  private async resolveProducts(
+    products: ProductApiItem[],
+    branchId?: string,
+  ): Promise<ChatProductSummary[]> {
+    const branches = branchId ? [] : await this.fetchActiveBranches();
+    return Promise.all(
+      products.map((product) => this.resolveAvailability(product, branchId, branches)),
+    );
   }
 
   private async fetchAvailabilityAcrossBranches(
@@ -231,6 +326,39 @@ export class ProductSearchService {
     return Array.from(deduped.values());
   }
 
+  private buildSymptomSearchPlan(
+    message: string,
+    symptomQuery: string,
+  ): Array<Record<string, string | number>> {
+    const plans: Array<Record<string, string | number>> = [];
+    const base = { page: 1, limit: 12, status: 'ACTIVE' };
+    const normalizedMessage = this.normalizeText(message);
+    const normalizedSymptom = this.normalizeText(symptomQuery || message);
+    const tokens = this.tokenizeMeaningful(normalizedSymptom);
+    const phrases = [
+      normalizedSymptom,
+      this.cleanupQuery(this.extractDirectQuery(normalizedMessage)),
+      tokens.slice(0, 3).join(' '),
+      tokens.slice(0, 2).join(' '),
+      ...tokens,
+    ]
+      .map((value) => this.cleanupQuery(value))
+      .filter((value, index, array) => value.length > 1 && array.indexOf(value) === index);
+
+    for (const phrase of phrases) {
+      plans.push({ ...base, useCase: phrase });
+      plans.push({ ...base, search: phrase });
+      plans.push({ ...base, activeIngredient: phrase });
+    }
+
+    const deduped = new Map<string, Record<string, string | number>>();
+    for (const plan of plans) {
+      const key = JSON.stringify(plan);
+      deduped.set(key, plan);
+    }
+    return Array.from(deduped.values());
+  }
+
   private extractDirectQuery(normalized: string): string {
     const stripped = normalized
       .replace(/\b(bao nhieu|gia|con hang|co ban|chi nhanh nao|thuoc nay|san pham nay|khong|co|hay|voi|cho toi|toi muon hoi)\b/g, ' ')
@@ -262,7 +390,7 @@ export class ProductSearchService {
 
   private cleanupQuery(value: string): string {
     return value
-      .replace(/\b(khong|khong a|khong vay|khong nhi|bao nhieu|gia|con hang|chi nhanh nao|co ban)\b/g, ' ')
+      .replace(/\b(khong|khong a|khong vay|khong nhi|bao nhieu|gia|con hang|con khong|chi nhanh nao|co ban|co thuoc|thuoc gi|nen dung|trieu chung|bi|kem)\b/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -295,6 +423,13 @@ export class ProductSearchService {
       'kiem',
       'he',
       'thong',
+      'neu',
+      'dung',
+      'nen',
+      'trieu',
+      'chung',
+      'kem',
+      'bi',
     ]);
 
     return normalized
@@ -305,12 +440,66 @@ export class ProductSearchService {
 
   private normalizeText(value: string): string {
     return value
+      .replace(/[đĐ]/g, 'd')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  private rankProductsBySymptom(
+    products: ProductApiItem[],
+    symptomQuery: string,
+  ): ProductApiItem[] {
+    const normalizedSymptom = this.normalizeText(symptomQuery);
+    const tokens = this.tokenizeMeaningful(normalizedSymptom);
+
+    return products
+      .map((product) => {
+        const haystack = this.normalizeText(
+          [
+            product.name,
+            product.category?.name,
+            product.description,
+            product.activeIngredient,
+            product.indication,
+          ]
+            .filter(Boolean)
+            .join(' '),
+        );
+
+        let score = 0;
+        if (normalizedSymptom && haystack.includes(normalizedSymptom)) {
+          score += 8;
+        }
+
+        for (const token of tokens) {
+          if (haystack.includes(token)) {
+            score += token.length >= 5 ? 3 : 1;
+          }
+        }
+
+        if (
+          normalizedSymptom &&
+          this.normalizeText(product.indication || '').includes(normalizedSymptom)
+        ) {
+          score += 4;
+        }
+
+        if (
+          normalizedSymptom &&
+          this.normalizeText(product.category?.name || '').includes(normalizedSymptom)
+        ) {
+          score += 2;
+        }
+
+        return { product, score };
+      })
+      .filter((item) => item.score >= 2)
+      .sort((left, right) => right.score - left.score)
+      .map((item) => item.product);
   }
 
   private getCommerceBaseUrl(): string {
