@@ -89,20 +89,20 @@ services:
       NODE_ENV: production
       CHATBOT_SERVICE_PORT: 3006
       COMMERCE_DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/pharmacy_commerce?schema=public
-      AI_PROVIDER: ${AI_PROVIDER:-gemini}
-      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
-      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-gemini}
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}
       GEMINI_CHAT_MODEL: ${GEMINI_CHAT_MODEL:-gemini-2.5-flash}
       GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-text-embedding-004}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
-      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-4o-mini}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-4.1-mini}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       CHATBOT_GATEWAY_BASE_URL: ${CHATBOT_GATEWAY_BASE_URL:-http://gateway:3000}
       QDRANT_URL: http://qdrant:6333
-      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-pharmacy_knowledge_base}
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-pharmacy_knowledge}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
     ports:
       - "${CHATBOT_SERVICE_PORT:-3006}:3006"

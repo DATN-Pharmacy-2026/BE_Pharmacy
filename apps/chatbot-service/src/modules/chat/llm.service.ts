@@ -31,7 +31,8 @@ export class LlmService {
   private readonly openAiApiKey = process.env.OPENAI_API_KEY;
   private readonly openAiBaseUrl =
     process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
-  private readonly openAiModel = process.env.OPENAI_CHAT_MODEL || 'gpt-4o-mini';
+  private readonly openAiModel =
+    process.env.OPENAI_CHAT_MODEL || 'gpt-4.1-mini';
 
   private readonly geminiApiKey = process.env.GEMINI_API_KEY;
   private readonly geminiBaseUrl =

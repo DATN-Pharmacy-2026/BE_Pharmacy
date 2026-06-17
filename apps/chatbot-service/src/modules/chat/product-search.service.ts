@@ -58,7 +58,7 @@ export class ProductSearchService {
     try {
       const response = await firstValueFrom(
         this.httpService.get<{ items?: ProductApiItem[] }>(
-          `${this.getGatewayBaseUrl()}/api/products`,
+          `${this.getCommerceBaseUrl()}/api/products`,
           { params },
         ),
       );
@@ -74,7 +74,7 @@ export class ProductSearchService {
     try {
       const response = await firstValueFrom(
         this.httpService.get<{ items?: BranchApiItem[] }>(
-          `${this.getGatewayBaseUrl()}/api/branches`,
+          `${this.getOperationBaseUrl()}/api/branches`,
           {
             params: {
               page: 1,
@@ -172,7 +172,7 @@ export class ProductSearchService {
     try {
       const response = await firstValueFrom(
         this.httpService.get(
-          `${this.getGatewayBaseUrl()}/api/public-inventory/availability`,
+          `${this.getOperationBaseUrl()}/api/public-inventory/availability`,
           {
             params: {
               productId,
@@ -313,7 +313,19 @@ export class ProductSearchService {
       .trim();
   }
 
-  private getGatewayBaseUrl(): string {
-    return process.env.CHATBOT_GATEWAY_BASE_URL?.trim() || 'http://localhost:3000';
+  private getCommerceBaseUrl(): string {
+    return (
+      process.env.COMMERCE_SERVICE_URL?.trim() ||
+      process.env.CHATBOT_GATEWAY_BASE_URL?.trim() ||
+      'http://localhost:3000'
+    );
+  }
+
+  private getOperationBaseUrl(): string {
+    return (
+      process.env.OPERATION_SERVICE_URL?.trim() ||
+      process.env.CHATBOT_GATEWAY_BASE_URL?.trim() ||
+      'http://localhost:3000'
+    );
   }
 }

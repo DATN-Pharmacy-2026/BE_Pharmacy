@@ -17,11 +17,20 @@ export class VectorStoreService {
       process.env.QDRANT_URL || 'http://localhost:6333'
     ).replace(/\/+$/, '');
     this.collectionName =
-      process.env.QDRANT_COLLECTION || 'pharmacy_knowledge_base';
+      process.env.QDRANT_COLLECTION || 'pharmacy_knowledge';
   }
 
   getCollectionName(): string {
     return this.collectionName;
+  }
+
+  async health(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.qdrantUrl}/healthz`);
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 
   async ensureCollection(vectorSize: number): Promise<void> {
@@ -84,10 +93,49 @@ export class VectorStoreService {
     }
   }
 
+  async deleteByTypes(types: string[]): Promise<void> {
+    const normalizedTypes = types
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+
+    if (!normalizedTypes.length) return;
+
+    const response = await fetch(
+      `${this.qdrantUrl}/collections/${this.collectionName}/points/delete?wait=true`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filter: {
+            should: normalizedTypes.map((type) => ({
+              key: 'type',
+              match: { value: type },
+            })),
+          },
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(
+        `Failed to delete points by type: ${response.status} ${err}`,
+      );
+    }
+  }
+
   async searchSimilar(
     queryEmbedding: number[],
     topK = 5,
+    options?: {
+      types?: string[];
+      minScore?: number;
+    },
   ): Promise<SimilarSearchResult[]> {
+    const types =
+      options?.types
+        ?.map((value) => value.trim())
+        .filter((value) => value.length > 0) ?? [];
     const response = await fetch(
       `${this.qdrantUrl}/collections/${this.collectionName}/points/search`,
       {
@@ -98,6 +146,16 @@ export class VectorStoreService {
           limit: topK,
           with_payload: true,
           with_vector: false,
+          ...(types.length
+            ? {
+                filter: {
+                  should: types.map((type) => ({
+                    key: 'type',
+                    match: { value: type },
+                  })),
+                },
+              }
+            : {}),
         }),
       },
     );
@@ -108,7 +166,8 @@ export class VectorStoreService {
     }
 
     const data = (await response.json()) as { result: QdrantSearchItem[] };
-    return (data.result || []).map((item) => {
+    return (data.result || [])
+      .map((item) => {
       const payload = item.payload || {};
       return {
         id: String(item.id),
@@ -118,7 +177,11 @@ export class VectorStoreService {
         content: String(payload.content || ''),
         category: String(payload.category || ''),
         chunkIndex: Number(payload.chunkIndex || 0),
+        payload: payload as VectorPayload,
       };
-    });
+      })
+      .filter((item) =>
+        typeof options?.minScore === 'number' ? item.score >= options.minScore : true,
+      );
   }
 }

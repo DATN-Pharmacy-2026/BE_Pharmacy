@@ -5,6 +5,12 @@ export interface VectorPayload {
   source: string;
   chunkIndex: number;
   content: string;
+  type?: string;
+  productId?: string;
+  name?: string;
+  sku?: string;
+  brand?: string;
+  [key: string]: unknown;
 }
 
 export interface SimilarSearchResult {
@@ -15,4 +21,5 @@ export interface SimilarSearchResult {
   content: string;
   category: string;
   chunkIndex: number;
+  payload?: VectorPayload;
 }

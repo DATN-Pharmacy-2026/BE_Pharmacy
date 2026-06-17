@@ -14,6 +14,7 @@ import { SafetyModule } from './modules/safety/safety.module';
 import { HandoffModule } from './modules/handoff/handoff.module';
 import { ConversationModule } from './modules/conversation/conversation.module';
 import { InternalChatModule } from './modules/internal-chat/internal-chat.module';
+import { PublicChatModule } from './modules/public-chat/public-chat.module';
 import { JwtStrategy } from './auth/jwt.strategy';
 
 @Module({
@@ -31,6 +32,7 @@ import { JwtStrategy } from './auth/jwt.strategy';
     HandoffModule,
     ConversationModule,
     InternalChatModule,
+    PublicChatModule,
   ],
   providers: [JwtStrategy],
   controllers: [HealthController],
