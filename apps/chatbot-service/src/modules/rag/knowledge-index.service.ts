@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { createHash } from 'node:crypto';
 import {
   BadRequestException,
   Injectable,
@@ -61,7 +62,7 @@ type ReindexResult = {
 export class KnowledgeIndexService {
   private readonly logger = new Logger(KnowledgeIndexService.name);
   private readonly commerceServiceUrl = (
-    process.env.COMMERCE_SERVICE_URL || 'http://localhost:3002'
+    process.env.COMMERCE_SERVICE_URL || 'http://commerce-service:3002'
   ).replace(/\/+$/, '');
   private readonly knowledgeBaseCandidates = [
     path.resolve(process.cwd(), 'apps/chatbot-service/knowledge-base/chunks.json'),
@@ -320,9 +321,14 @@ export class KnowledgeIndexService {
   }
 
   private normalizePointId(input: string): string {
-    return input
-      .replace(/[^a-zA-Z0-9_-]/g, '_')
-      .slice(0, 120);
+    const hex = createHash('sha256').update(input).digest('hex');
+    return [
+      hex.slice(0, 8),
+      hex.slice(8, 12),
+      hex.slice(12, 16),
+      hex.slice(16, 20),
+      hex.slice(20, 32),
+    ].join('-');
   }
 
   private assertEmbeddingReady(): void {

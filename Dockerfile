@@ -22,6 +22,7 @@ RUN apt-get update -y && apt-get install -y openssl wget curl && rm -rf /var/lib
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/apps/chatbot-service/knowledge-base ./apps/chatbot-service/knowledge-base
 
 RUN npm run prisma:generate:all
 
