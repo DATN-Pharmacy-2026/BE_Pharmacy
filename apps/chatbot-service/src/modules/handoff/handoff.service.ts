@@ -25,6 +25,13 @@ export class HandoffService implements OnModuleInit {
     `);
     await this.prisma.$executeRawUnsafe(`
       ALTER TABLE chatbot_handoff_ticket
+      ADD COLUMN IF NOT EXISTS source VARCHAR(50) NOT NULL DEFAULT 'PUBLIC_CHATBOT',
+      ADD COLUMN IF NOT EXISTS customer_name VARCHAR(255) NULL,
+      ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50) NULL,
+      ADD COLUMN IF NOT EXISTS customer_email VARCHAR(255) NULL,
+      ADD COLUMN IF NOT EXISTS branch_id VARCHAR(100) NULL,
+      ADD COLUMN IF NOT EXISTS latest_chatbot_reply TEXT NULL,
+      ADD COLUMN IF NOT EXISTS conversation_snapshot JSONB NULL,
       ADD COLUMN IF NOT EXISTS assigned_user_id UUID NULL,
       ADD COLUMN IF NOT EXISTS assigned_by_user_id UUID NULL,
       ADD COLUMN IF NOT EXISTS assignment_source VARCHAR(40) NULL,
@@ -50,23 +57,42 @@ export class HandoffService implements OnModuleInit {
   }
 
   async createTicket(input: {
+    source?: string;
     conversationId?: string;
     userId?: string;
     question: string;
     handoffReason: string;
+    customerName?: string;
+    customerPhone?: string;
+    customerEmail?: string;
+    branchId?: string;
+    latestChatbotReply?: string;
+    conversationSnapshot?: Array<Record<string, unknown>>;
   }) {
     const id = randomUUID();
     const ticketCode = this.createTicketCode();
     await this.prisma.$executeRawUnsafe(
       `INSERT INTO chatbot_handoff_ticket
-      (id, ticket_code, conversation_id, user_id, question, handoff_reason, status, created_at, updated_at)
-      VALUES ($1::uuid, $2, $3::uuid, $4::uuid, $5, $6, 'PENDING', NOW(), NOW())`,
+      (id, ticket_code, source, conversation_id, user_id, question, handoff_reason, status,
+       customer_name, customer_phone, customer_email, branch_id, latest_chatbot_reply, conversation_snapshot,
+       created_at, updated_at)
+      VALUES ($1::uuid, $2, $3, $4::uuid, $5::uuid, $6, $7, 'PENDING',
+              $8, $9, $10, $11, $12, $13::jsonb, NOW(), NOW())`,
       id,
       ticketCode,
+      (input.source ?? 'PUBLIC_CHATBOT').trim(),
       this.safeUuid(input.conversationId),
       this.safeUuid(input.userId),
       input.question,
       input.handoffReason,
+      input.customerName?.trim() ?? null,
+      input.customerPhone?.trim() ?? null,
+      input.customerEmail?.trim() ?? null,
+      input.branchId?.trim() ?? null,
+      input.latestChatbotReply?.trim() ?? null,
+      input.conversationSnapshot
+        ? JSON.stringify(input.conversationSnapshot)
+        : null,
     );
 
     return {
@@ -80,6 +106,7 @@ export class HandoffService implements OnModuleInit {
     if (status) {
       return this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
         `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note,
+                source, customer_name, customer_phone, customer_email, branch_id, latest_chatbot_reply, conversation_snapshot,
                 assigned_user_id, assigned_by_user_id, assignment_source, assigned_at, contact_status,
                 created_at, updated_at
          FROM chatbot_handoff_ticket
@@ -91,6 +118,7 @@ export class HandoffService implements OnModuleInit {
 
     return this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
       `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note,
+              source, customer_name, customer_phone, customer_email, branch_id, latest_chatbot_reply, conversation_snapshot,
               assigned_user_id, assigned_by_user_id, assignment_source, assigned_at, contact_status,
               created_at, updated_at
        FROM chatbot_handoff_ticket
@@ -104,6 +132,7 @@ export class HandoffService implements OnModuleInit {
       Array<Record<string, unknown>>
     >(
       `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note,
+              source, customer_name, customer_phone, customer_email, branch_id, latest_chatbot_reply, conversation_snapshot,
               assigned_user_id, assigned_by_user_id, assignment_source, assigned_at, contact_status,
               created_at, updated_at
        FROM chatbot_handoff_ticket

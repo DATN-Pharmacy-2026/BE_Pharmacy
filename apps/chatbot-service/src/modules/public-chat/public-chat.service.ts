@@ -8,6 +8,10 @@ import { ProductSearchService } from '../chat/product-search.service';
 import {
   PublicChatRequestDto,
   PublicChatResponseDto,
+  type PublicChatAnswerContextDto,
+  type PublicChatMetadataDto,
+  type PublicChatMode,
+  type PublicChatResolvedEntitiesDto,
 } from './dto/public-chat.dto';
 import type {
   ChatProductAvailabilityBranch,
@@ -15,6 +19,7 @@ import type {
 } from '../chat/dto/chat.dto';
 
 type PublicIntent =
+  | 'branch.lookup'
   | 'product.price'
   | 'product.stock'
   | 'product.usage'
@@ -22,6 +27,7 @@ type PublicIntent =
   | 'symptom.product_search'
   | 'symptom.stock_lookup'
   | 'health.sensitive'
+  | 'health.emergency'
   | 'unknown';
 
 type RagContext = {
@@ -34,34 +40,48 @@ type RagContext = {
   payload?: Record<string, unknown>;
 };
 
+type AnswerPlan = {
+  intent: PublicIntent;
+  mode: PublicChatMode;
+  facts: Record<string, unknown>;
+  resolvedEntities: PublicChatResolvedEntitiesDto;
+  rules: string[];
+  handoffRequired: boolean;
+  warnings: string[];
+  suggestedActions: string[];
+  llmDirective: string;
+  fallbackAnswer: string;
+};
+
+type BranchSummary = {
+  id: string;
+  name: string;
+  code?: string;
+  address?: string;
+  phone?: string;
+};
+
 @Injectable()
 export class PublicChatService {
   private readonly logger = new Logger(PublicChatService.name);
 
-  private readonly systemPrompt = `Bạn là trợ lý tư vấn của hệ thống nhà thuốc.
+  private readonly naturalAnswerPrompt =
+    'Ban la tro ly nha thuoc PharmPlus. Hay tra loi tu nhien, ngan gon, de hieu cho khach hang. Chi su dung du lieu trong FACTS. Khong tu bia them gia, ton kho, dia chi, chinh sach, cong dung, ten san pham hoac metadata noi bo. Neu FACTS khong du thong tin, hay noi ro he thong chua co du lieu va de xuat gap nhan vien tu van. Khong hien thi sourcePath, ten file ky thuat, score, metadata hoac JSON.';
 
-Quy tắc:
-- Trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu.
-- Chỉ dựa trên CONTEXT và DỮ LIỆU HỆ THỐNG được cung cấp.
-- Không tự bịa tên thuốc, giá bán, tồn kho hoặc công dụng.
-- Không chẩn đoán bệnh.
-- Không kê đơn thuốc.
-- Không thay thế bác sĩ hoặc dược sĩ.
-- Nếu câu hỏi liên quan đến mang thai, cho con bú, trẻ em, bệnh nền, dị ứng, quá liều, đau ngực, khó thở, hãy khuyên hỏi bác sĩ/dược sĩ.
-- Nếu không đủ dữ liệu, nói rõ không đủ dữ liệu và đề xuất gặp nhân viên tư vấn.`;
-
-  private readonly dangerousSymptomPatterns = [
-    'dau bung du doi',
-    'dau dau du doi',
-    'sot cao',
-    'sot keo dai',
-    'non nhieu',
-    'non lien tuc',
-    'di ngoai ra mau',
-    'tieu ra mau',
+  private readonly dangerousMedicalPatterns = [
+    'ngo doc',
+    'sui bot mep',
+    'co giat',
     'kho tho',
-    'tho rit',
     'dau nguc',
+    'uong qua lieu',
+    'di ung nang',
+    'soc thuoc',
+    'dau bung du doi',
+    'sot cao',
+    'non nhieu',
+    'di ngoai ra mau',
+    'ngat',
   ];
 
   private readonly stockKeywords = [
@@ -114,211 +134,613 @@ Quy tắc:
       channel: 'PUBLIC_RAG',
     });
 
-    if (this.containsDangerousSymptom(message)) {
-      return this.finalizeResponse(
-        conversationId,
-        this.buildDangerousSymptomResponse(conversationId),
-      );
-    }
+    const normalizedMessage = this.normalizeVi(message);
+    const plan = await this.buildAnswerPlan(message, normalizedMessage, dto);
+    const answer = await this.generateNaturalAnswer(plan, message);
 
-    const intent = this.detectIntent(message);
-    const safety = this.safetyService.checkSafety(message);
-    if (safety.handoffRequired) {
-      const response = await this.finalizeResponse(conversationId, {
-        answer:
-          'Câu hỏi này cần được dược sĩ hoặc bác sĩ tư vấn trực tiếp để bảo đảm an toàn. Bạn nên gặp nhân viên tư vấn trước khi sử dụng thuốc.',
-        mode: 'HYBRID',
-        intent: 'health.sensitive',
-        conversationId,
-        handoffRequired: true,
-        warnings: [
-          'Câu hỏi có yếu tố sức khỏe nhạy cảm, chatbot không tự tư vấn thay chuyên môn.',
-        ],
-        suggestedActions: ['Gặp nhân viên tư vấn'],
-      });
-      return response;
-    }
-
-    if (intent === 'health.sensitive') {
-      return this.finalizeResponse(conversationId, {
-        answer:
-          'Câu hỏi này cần được dược sĩ hoặc bác sĩ tư vấn trực tiếp để bảo đảm an toàn. Bạn nên gặp nhân viên tư vấn trước khi sử dụng thuốc.',
-        mode: 'HYBRID',
-        intent: 'health.sensitive',
-        conversationId,
-        handoffRequired: true,
-        warnings: [
-          'Câu hỏi có yếu tố sức khỏe nhạy cảm, chatbot không tự tư vấn thay chuyên môn.',
-        ],
-        suggestedActions: ['Gặp nhân viên tư vấn'],
-      });
-    }
-
-    if (intent === 'product.price') {
-      const response = await this.handlePriceQuestion(message, conversationId, dto);
-      return this.finalizeResponse(conversationId, response);
-    }
-
-    if (intent === 'product.stock') {
-      const response = await this.handleStockQuestion(message, conversationId, dto);
-      return this.finalizeResponse(conversationId, response);
-    }
-
-    if (
-      intent === 'symptom.product_search' ||
-      intent === 'symptom.stock_lookup'
-    ) {
-      const response = await this.handleSymptomQuestion(
-        message,
-        intent,
-        conversationId,
-        dto,
-      );
-      return this.finalizeResponse(conversationId, response);
-    }
-
-    let ragContexts: RagContext[] = [];
-    let ragWarning = '';
-    try {
-      ragContexts = await this.searchKnowledgeContexts(
-        message,
-        intent === 'policy.lookup'
-          ? ['faq', 'policy', 'general', 'safety']
-          : ['product', 'faq', 'policy', 'general', 'safety'],
-        5,
-        intent === 'policy.lookup' ? 0.28 : 0.25,
-      );
-    } catch (error) {
-      const technicalError = error instanceof Error ? error.message : String(error);
-      ragWarning = 'Kho tri thức hiện chưa sẵn sàng để trả lời tự động.';
-      this.logger.warn(`Knowledge search failed: ${technicalError}`);
-    }
-
-    if (!ragContexts.length) {
-      return this.finalizeResponse(conversationId, {
-        answer:
-          'Hiện hệ thống chưa có đủ dữ liệu phù hợp để trả lời chính xác câu hỏi này. Bạn vui lòng gặp nhân viên tư vấn để được hỗ trợ thêm.',
-        mode: 'RAG',
-        intent,
-        conversationId,
-        handoffRequired: true,
-        warnings: [
-          ragWarning || 'Không tìm thấy ngữ cảnh phù hợp trong kho tri thức.',
-        ],
-        suggestedActions: ['Gặp nhân viên tư vấn'],
-      });
-    }
-
-    const answer = await this.buildRagAnswer(message, ragContexts);
     return this.finalizeResponse(conversationId, {
       answer,
-      mode: this.usesRealtimeData(intent) ? 'HYBRID' : 'RAG',
-      intent,
+      mode: plan.mode,
+      intent: plan.intent,
       conversationId,
-      handoffRequired: false,
-      warnings: [],
-      suggestedActions: [],
+      handoffRequired: plan.handoffRequired,
+      warnings: plan.warnings,
+      suggestedActions: plan.suggestedActions,
+      metadata: {
+        answerContext: {
+          intent: plan.intent,
+          facts: plan.facts,
+          rules: plan.rules,
+        },
+        facts: plan.facts,
+        resolvedEntities: plan.resolvedEntities,
+      },
     });
   }
 
-  private async handlePriceQuestion(
+  private async buildAnswerPlan(
     message: string,
-    conversationId: string,
+    normalizedMessage: string,
     dto: PublicChatRequestDto,
-  ): Promise<PublicChatResponseDto> {
-    const products = await this.findProducts(message, dto.context?.branchId);
-    if (!products.length) {
-      return {
-        answer:
-          'Hiện hệ thống chưa tìm thấy sản phẩm phù hợp để báo giá. Bạn vui lòng kiểm tra lại tên sản phẩm hoặc gặp nhân viên tư vấn.',
-        mode: 'HYBRID',
-        intent: 'product.price',
-        conversationId,
+  ): Promise<AnswerPlan> {
+    if (this.detectDangerousMedicalQuestion(normalizedMessage)) {
+      return this.buildEmergencyPlan();
+    }
+
+    const safety = this.safetyService.checkSafety(message);
+    if (safety.handoffRequired) {
+      return this.buildSensitiveSafetyPlan(safety.matchedRules);
+    }
+
+    const intent = this.detectIntent(message, normalizedMessage);
+    switch (intent) {
+      case 'branch.lookup':
+        return this.buildBranchLookupPlan(message, dto.context?.branchId);
+      case 'policy.lookup':
+        return this.buildPolicyLookupPlan(message);
+      case 'product.price':
+        return this.buildProductPricePlan(message, dto.context?.branchId, dto.context?.productId);
+      case 'product.stock':
+        return this.buildProductStockPlan(message, dto.context?.branchId, dto.context?.productId);
+      case 'product.usage':
+        return this.buildProductUsagePlan(message, dto.context?.branchId, dto.context?.productId);
+      case 'symptom.product_search':
+      case 'symptom.stock_lookup':
+        return this.buildSymptomPlan(
+          message,
+          intent,
+          dto.context?.branchId,
+        );
+      case 'health.sensitive':
+        return this.buildSensitiveSafetyPlan(['health_sensitive']);
+      case 'unknown':
+      default:
+        return this.buildUnknownPlan();
+    }
+  }
+
+  private buildEmergencyPlan(): AnswerPlan {
+    return {
+      intent: 'health.emergency',
+      mode: 'HYBRID',
+      facts: {
+        severity: 'dangerous',
         handoffRequired: true,
-        warnings: ['Không tìm thấy sản phẩm phù hợp trong danh mục công khai.'],
-        suggestedActions: ['Gặp nhân viên tư vấn'],
+        guidance:
+          'Trieu chung co dau hieu nguy hiem, can lien he co so y te, cap cuu hoac duoc si ngay.',
+      },
+      resolvedEntities: {},
+      rules: [
+        'Khong goi y thuoc',
+        'Khong ke don',
+        'Chi dien dat lai canh bao an toan',
+      ],
+      handoffRequired: true,
+      warnings: ['Trieu chung co dau hieu nguy hiem, can ho tro chuyen mon ngay.'],
+      suggestedActions: ['Gap nhan vien tu van'],
+      llmDirective:
+        'Chi dien dat lai canh bao an toan, khuyen lien he y te/cap cuu, co the de xuat chuyen nhan vien tu van. Tuyet doi khong goi y thuoc.',
+      fallbackAnswer:
+        'Trieu chung ban mo ta co dau hieu nguy hiem. Ban nen lien he co so y te/cap cuu hoac duoc si ngay. Toi co the chuyen yeu cau nay cho nhan vien tu van ho tro them.',
+    };
+  }
+
+  private buildSensitiveSafetyPlan(matchedRules: string[]): AnswerPlan {
+    return {
+      intent: 'health.sensitive',
+      mode: 'HYBRID',
+      facts: {
+        handoffRequired: true,
+        matchedRules,
+        guidance:
+          'Cau hoi nay can duoc duoc si hoac bac si tu van truc tiep de dam bao an toan.',
+      },
+      resolvedEntities: {},
+      rules: [
+        'Khong goi y thuoc',
+        'Khong ke don',
+        'Chi dien dat lai canh bao an toan',
+      ],
+      handoffRequired: true,
+      warnings: [
+        'Cau hoi co yeu to suc khoe nhay cam, chatbot khong tu tu van thay chuyen mon.',
+      ],
+      suggestedActions: ['Gap nhan vien tu van'],
+      llmDirective:
+        'Chi dien dat lai canh bao an toan va de xuat gap duoc si/nhan vien tu van. Tuyet doi khong goi y thuoc.',
+      fallbackAnswer:
+        'Cau hoi nay can duoc duoc si hoac bac si tu van truc tiep de dam bao an toan. Toi co the chuyen yeu cau nay cho nhan vien tu van ho tro them.',
+    };
+  }
+
+  private async buildBranchLookupPlan(
+    message: string,
+    branchId?: string,
+  ): Promise<AnswerPlan> {
+    const branches = (await this.productSearchService.searchBranches(
+      message,
+      branchId,
+    )) as BranchSummary[];
+
+    if (!branches.length) {
+      return {
+        intent: 'branch.lookup',
+        mode: 'HYBRID',
+        facts: {
+          branches: [],
+          hasData: false,
+        },
+        resolvedEntities: {},
+        rules: [
+          'Khong bia dia chi neu DB khong co',
+          'Neu thieu du lieu thi noi ro he thong chua co thong tin',
+        ],
+        handoffRequired: true,
+        warnings: ['Chua tim thay thong tin chi nhanh phu hop.'],
+        suggestedActions: ['Gap nhan vien tu van'],
+        llmDirective:
+          'Noi ro he thong chua co thong tin chi nhanh phu hop va de xuat gap nhan vien tu van.',
+        fallbackAnswer:
+          'Hien he thong chua tim thay thong tin chi nhanh phu hop. Ban vui long de lai yeu cau de nhan vien tu van ho tro them.',
       };
     }
 
-    const product = this.pickBestProduct(products, dto.context?.productId);
     return {
-      answer: `${product.name} hiện có giá tham khảo ${this.formatCurrency(product.price)}.`,
+      intent: 'branch.lookup',
       mode: 'HYBRID',
+      facts: {
+        branches: branches.slice(0, 3).map((branch) => ({
+          id: branch.id,
+          name: branch.name,
+          address: branch.address ?? null,
+          phone: branch.phone ?? null,
+          code: branch.code ?? null,
+        })),
+      },
+      resolvedEntities: {
+        branchId: branches[0]?.id,
+      },
+      rules: [
+        'Khong bia dia chi',
+        'Chi dung du lieu chi nhanh tu API',
+      ],
+      handoffRequired: false,
+      warnings: [],
+      suggestedActions: [],
+      llmDirective:
+        'Tra loi ngan gon thong tin chi nhanh, dia chi, so dien thoai theo FACTS. Neu co nhieu chi nhanh, liet ke toi da 3 chi nhanh.',
+      fallbackAnswer: this.buildBranchFallbackAnswer(branches),
+    };
+  }
+
+  private async buildPolicyLookupPlan(message: string): Promise<AnswerPlan> {
+    const contexts = await this.searchKnowledgeContexts(
+      message,
+      ['faq', 'policy', 'general', 'safety'],
+      3,
+      0.18,
+    ).catch((error) => {
+      const technicalError = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Policy knowledge search failed: ${technicalError}`);
+      return [] as RagContext[];
+    });
+
+    if (!contexts.length) {
+      return {
+        intent: 'policy.lookup',
+        mode: 'RAG',
+        facts: {
+          policyFound: false,
+          excerpts: [],
+        },
+        resolvedEntities: {},
+        rules: [
+          'Khong tu tao chinh sach moi',
+          'Neu khong co du lieu thi noi ro he thong chua co thong tin',
+        ],
+        handoffRequired: true,
+        warnings: ['Khong tim thay chinh sach phu hop trong kho tri thuc.'],
+        suggestedActions: ['Gap nhan vien tu van'],
+        llmDirective:
+          'Noi ro he thong chua co du lieu chinh sach phu hop va de xuat gap nhan vien tu van.',
+        fallbackAnswer:
+          'Hien he thong chua co du lieu chinh sach phu hop de tra loi chinh xac. Ban vui long gap nhan vien tu van de duoc ho tro them.',
+      };
+    }
+
+    return {
+      intent: 'policy.lookup',
+      mode: 'RAG',
+      facts: {
+        policyFound: true,
+        excerpts: contexts.map((context) => ({
+          knowledgeId: context.id,
+          title: context.title,
+          category: context.category,
+          content: context.content,
+        })),
+      },
+      resolvedEntities: {
+        knowledgeIds: contexts.map((context) => context.id),
+      },
+      rules: [
+        'Chi duoc dien dat lai theo doan chinh sach da truy xuat',
+        'Khong tu tao chinh sach moi',
+      ],
+      handoffRequired: false,
+      warnings: [],
+      suggestedActions: [],
+      llmDirective:
+        'Tom tat ngan gon, de hieu theo cac doan chinh sach trong FACTS. Khong them chinh sach moi.',
+      fallbackAnswer: this.truncate(contexts[0].content, 320),
+    };
+  }
+
+  private async buildProductPricePlan(
+    message: string,
+    branchId?: string,
+    productId?: string,
+  ): Promise<AnswerPlan> {
+    const products = await this.findProducts(message, branchId);
+    if (!products.length) {
+      return this.buildMissingProductPlan('product.price');
+    }
+
+    if (this.shouldAskToChooseProduct(products, productId)) {
+      return this.buildProductDisambiguationPlan('product.price', products);
+    }
+
+    const product = this.pickBestProduct(products, productId);
+    return {
       intent: 'product.price',
-      conversationId,
+      mode: 'HYBRID',
+      facts: {
+        productName: product.name,
+        price: Math.round(product.price),
+        unit: 'san pham',
+        stockStatus: this.stockStatusLabel(product, branchId),
+        availableBranches: this.toAvailabilityFacts(product.availableBranches),
+      },
+      resolvedEntities: {
+        productId: product.id,
+        branchId,
+      },
+      rules: [
+        'Khong bia gia',
+        'Khong tu them san pham khac',
+        'Khong thay doi so lieu',
+      ],
       handoffRequired: false,
       warnings: [],
       suggestedActions: [],
+      llmDirective:
+        'Tra loi gia san pham tu nhien, ngan gon. Co the nhac stockStatus neu FACTS co.',
+      fallbackAnswer:
+        `${product.name} hien co gia tham khao ${this.formatCurrency(product.price)}.` +
+        ` ${this.stockStatusSentence(product, branchId)}`,
     };
   }
 
-  private async handleStockQuestion(
+  private async buildProductStockPlan(
     message: string,
-    conversationId: string,
-    dto: PublicChatRequestDto,
-  ): Promise<PublicChatResponseDto> {
-    const products = await this.findProducts(message, dto.context?.branchId);
+    branchId?: string,
+    productId?: string,
+  ): Promise<AnswerPlan> {
+    const products = await this.findProducts(message, branchId);
     if (!products.length) {
+      return this.buildMissingProductPlan('product.stock');
+    }
+
+    if (this.shouldAskToChooseProduct(products, productId)) {
+      return this.buildProductDisambiguationPlan('product.stock', products);
+    }
+
+    const product = this.pickBestProduct(products, productId);
+    const totalAvailable = product.availableBranches.reduce(
+      (sum, item) => sum + Number(item.availableQty || 0),
+      0,
+    );
+
+    return {
+      intent: 'product.stock',
+      mode: 'HYBRID',
+      facts: {
+        productName: product.name,
+        stockStatus: this.stockStatusLabel(product, branchId),
+        totalAvailable,
+        availableBranches: this.toAvailabilityFacts(product.availableBranches),
+      },
+      resolvedEntities: {
+        productId: product.id,
+        branchId,
+      },
+      rules: [
+        'Khong bia ton kho',
+        'Khong tu them san pham khac',
+        'Khong thay doi so lieu',
+      ],
+      handoffRequired: false,
+      warnings: [],
+      suggestedActions: [],
+      llmDirective:
+        'Tra loi ngan gon ve ton kho, chi dung FACTS. Neu khong co du lieu ton kho thi noi ro.',
+      fallbackAnswer: `${product.name} ${this.stockStatusSentence(product, branchId)}`,
+    };
+  }
+
+  private async buildProductUsagePlan(
+    message: string,
+    branchId?: string,
+    productId?: string,
+  ): Promise<AnswerPlan> {
+    const products = await this.findProducts(message, branchId);
+    if (!products.length) {
+      return this.buildMissingProductPlan('product.usage');
+    }
+
+    if (this.shouldAskToChooseProduct(products, productId)) {
+      return this.buildProductDisambiguationPlan('product.usage', products);
+    }
+
+    const product = this.pickBestProduct(products, productId);
+    const usage = product.usage || product.description || '';
+
+    if (!usage && !product.activeIngredient) {
       return {
-        answer:
-          'Hiện hệ thống chưa tìm thấy sản phẩm phù hợp để kiểm tra tồn kho. Bạn vui lòng kiểm tra lại tên sản phẩm hoặc gặp nhân viên tư vấn.',
+        intent: 'product.usage',
         mode: 'HYBRID',
-        intent: 'product.stock',
-        conversationId,
+        facts: {
+          productName: product.name,
+          hasData: false,
+        },
+        resolvedEntities: {
+          productId: product.id,
+          branchId,
+        },
+        rules: [
+          'Khong bia cong dung',
+          'Neu thieu du lieu thi noi ro he thong chua co thong tin',
+        ],
         handoffRequired: true,
-        warnings: ['Không tìm thấy sản phẩm phù hợp trong danh mục công khai.'],
-        suggestedActions: ['Gặp nhân viên tư vấn'],
+        warnings: ['Khong co du lieu cong dung phu hop trong he thong.'],
+        suggestedActions: ['Gap nhan vien tu van'],
+        llmDirective:
+          'Noi ro he thong chua co thong tin cong dung day du va de xuat gap nhan vien tu van.',
+        fallbackAnswer:
+          `Hien he thong chua co thong tin day du ve cong dung cua ${product.name}. Ban vui long gap nhan vien tu van de duoc ho tro them.`,
       };
     }
 
-    const product = this.pickBestProduct(products, dto.context?.productId);
-    const stockText = this.buildStockAnswer(product, dto.context?.branchId);
     return {
-      answer: `${product.name} ${stockText}`,
+      intent: 'product.usage',
       mode: 'HYBRID',
-      intent: 'product.stock',
-      conversationId,
+      facts: {
+        productName: product.name,
+        usage: usage || null,
+        activeIngredient: product.activeIngredient || null,
+      },
+      resolvedEntities: {
+        productId: product.id,
+        branchId,
+      },
+      rules: [
+        'Khong bia cong dung',
+        'Chi dien dat lai thong tin usage trong FACTS',
+      ],
       handoffRequired: false,
       warnings: [],
       suggestedActions: [],
+      llmDirective:
+        'Tra loi ngan gon ve cong dung/thong tin lien quan, chi dua tren FACTS.',
+      fallbackAnswer: [
+        product.name,
+        usage ? this.toSentence(usage) : '',
+        product.activeIngredient ? `Hoat chat: ${product.activeIngredient}.` : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
     };
   }
 
-  private async handleSymptomQuestion(
+  private async buildSymptomPlan(
     message: string,
     intent: 'symptom.product_search' | 'symptom.stock_lookup',
-    conversationId: string,
-    dto: PublicChatRequestDto,
-  ): Promise<PublicChatResponseDto> {
+    branchId?: string,
+  ): Promise<AnswerPlan> {
     const symptomQuery = this.extractSymptomQuery(message);
-    const branchId = dto.context?.branchId;
     const products = await this.findProductsBySymptom(message, symptomQuery, branchId);
+    const filtered = products.filter((product) => Number(product.matchScore ?? 0) >= 3);
 
-    if (!products.length) {
+    if (!filtered.length) {
       return {
-        answer:
-          'Tôi chưa tìm thấy sản phẩm phù hợp trong hệ thống. Bạn có thể mô tả rõ hơn triệu chứng hoặc chuyển sang nhân viên/dược sĩ để được hỗ trợ.',
-        mode: 'HYBRID',
         intent,
-        conversationId,
+        mode: 'HYBRID',
+        facts: {
+          symptomQuery,
+          products: [],
+          hasData: false,
+        },
+        resolvedEntities: {},
+        rules: [
+          'Khong tu goi y thuoc neu khong chac',
+          'Neu khong du lieu thi de xuat gap nhan vien tu van',
+        ],
         handoffRequired: true,
-        warnings: ['Chưa tìm thấy sản phẩm liên quan trong dữ liệu hệ thống.'],
-        suggestedActions: ['Gặp nhân viên tư vấn'],
+        warnings: ['Chua tim thay san pham lien quan trong du lieu he thong.'],
+        suggestedActions: ['Gap nhan vien tu van'],
+        llmDirective:
+          'Noi ro he thong chua co du lieu du chac chan de goi y san pham va de xuat gap nhan vien tu van.',
+        fallbackAnswer:
+          'Toi chua tim thay san pham phu hop trong he thong. Ban co the mo ta ro hon trieu chung hoac chon gap nhan vien tu van de duoc ho tro.',
       };
     }
 
+    const topProducts = filtered.slice(0, 3);
     return {
-      answer:
-        intent === 'symptom.stock_lookup'
-          ? this.buildSymptomStockAnswer(products, branchId)
-          : this.buildSymptomProductAnswer(products),
-      mode: 'HYBRID',
       intent,
-      conversationId,
+      mode: 'HYBRID',
+      facts: {
+        symptomQuery,
+        products: topProducts.map((product) => ({
+          productId: product.id,
+          productName: product.name,
+          stockStatus: this.stockStatusLabel(product, branchId),
+          availableBranches: this.toAvailabilityFacts(product.availableBranches),
+          usage: product.usage || null,
+          activeIngredient: product.activeIngredient || null,
+        })),
+      },
+      resolvedEntities: {
+        productId: topProducts[0]?.id,
+        branchId,
+      },
+      rules: [
+        'Khong goi y thuoc ngoai FACTS',
+        'Khong dua san pham sai ngu canh',
+        'Neu khong chac thi de xuat gap nhan vien tu van',
+      ],
       handoffRequired: false,
       warnings: [],
       suggestedActions: [],
+      llmDirective:
+        intent === 'symptom.stock_lookup'
+          ? 'Tra loi danh sach toi da 3 san pham lien quan va tinh trang con hang theo FACTS.'
+          : 'Tra loi danh sach toi da 3 san pham lien quan theo FACTS, nhac day chi la thong tin tham khao.',
+      fallbackAnswer:
+        intent === 'symptom.stock_lookup'
+          ? this.buildSymptomStockAnswer(topProducts, branchId)
+          : this.buildSymptomProductAnswer(topProducts),
     };
+  }
+
+  private buildUnknownPlan(): AnswerPlan {
+    return {
+      intent: 'unknown',
+      mode: 'RAG',
+      facts: {
+        hasData: false,
+      },
+      resolvedEntities: {},
+      rules: [
+        'Neu khong co du lieu thi noi ro he thong chua co thong tin',
+      ],
+      handoffRequired: true,
+      warnings: ['Chua xac dinh duoc nhu cau truy xuat du lieu.'],
+      suggestedActions: ['Gap nhan vien tu van'],
+      llmDirective:
+        'Noi ro he thong chua hieu du yeu cau va de xuat khach noi ro hon hoac gap nhan vien tu van.',
+      fallbackAnswer:
+        'Toi chua du thong tin de tra loi chinh xac. Ban vui long noi ro hon yeu cau hoac chon gap nhan vien tu van.',
+    };
+  }
+
+  private buildMissingProductPlan(intent: 'product.price' | 'product.stock' | 'product.usage'): AnswerPlan {
+    return {
+      intent,
+      mode: 'HYBRID',
+      facts: {
+        hasData: false,
+        products: [],
+      },
+      resolvedEntities: {},
+      rules: [
+        'Khong bia du lieu san pham',
+        'Neu khong tim thay thi noi ro he thong chua co thong tin',
+      ],
+      handoffRequired: true,
+      warnings: ['Khong tim thay san pham phu hop trong danh muc cong khai.'],
+      suggestedActions: ['Gap nhan vien tu van'],
+      llmDirective:
+        'Noi ro he thong chua tim thay san pham phu hop va de xuat gap nhan vien tu van.',
+      fallbackAnswer:
+        'Hien he thong chua tim thay san pham phu hop. Ban vui long kiem tra lai ten san pham hoac chon gap nhan vien tu van.',
+    };
+  }
+
+  private buildProductDisambiguationPlan(
+    intent: 'product.price' | 'product.stock' | 'product.usage',
+    products: ChatProductSummary[],
+  ): AnswerPlan {
+    const topProducts = products.slice(0, 3);
+    return {
+      intent,
+      mode: 'HYBRID',
+      facts: {
+        options: topProducts.map((product) => ({
+          productId: product.id,
+          productName: product.name,
+          price: Math.round(product.price),
+          stockStatus: this.stockStatusLabel(product),
+        })),
+      },
+      resolvedEntities: {
+        productId: undefined,
+      },
+      rules: [
+        'Khong tu chon san pham khi nhieu ket qua gan nhau',
+        'Chi tra toi da 3 san pham',
+      ],
+      handoffRequired: false,
+      warnings: [],
+      suggestedActions: [],
+      llmDirective:
+        'Noi ngan gon rang co nhieu san pham gan giong nhau, liet ke toi da 3 lua chon va moi khach chon lai.',
+      fallbackAnswer: [
+        'Toi tim thay mot vai san pham gan giong nhau. Ban vui long chon dung san pham can hoi:',
+        ...topProducts.map(
+          (product, index) =>
+            `${index + 1}. ${product.name} - ${this.formatCurrency(product.price)} - ${this.stockStatusLabel(product)}`,
+        ),
+      ].join('\n'),
+    };
+  }
+
+  private async generateNaturalAnswer(
+    plan: AnswerPlan,
+    message: string,
+  ): Promise<string> {
+    const answerContext: PublicChatAnswerContextDto = {
+      intent: plan.intent,
+      facts: plan.facts,
+      rules: plan.rules,
+    };
+
+    const userPrompt = [
+      `QUESTION: ${message}`,
+      `DIRECTIVE: ${plan.llmDirective}`,
+      `FACTS: ${JSON.stringify(answerContext.facts)}`,
+      `RULES: ${JSON.stringify(answerContext.rules)}`,
+    ].join('\n');
+
+    try {
+      const answer = await this.llmService.generateAnswer(
+        this.naturalAnswerPrompt,
+        userPrompt,
+        { temperature: 0.3, topP: 0.9 },
+      );
+      return this.sanitizeGeneratedAnswer(answer, plan);
+    } catch (error) {
+      const messageText = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Public answer generation fallback triggered: ${messageText}`);
+      return plan.fallbackAnswer;
+    }
+  }
+
+  private sanitizeGeneratedAnswer(answer: string, plan: AnswerPlan): string {
+    const sanitized = answer
+      .replace(/sourcepath|knowledge-base|chunks?\.json/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!sanitized) {
+      return plan.fallbackAnswer;
+    }
+
+    if (this.containsTechnicalLeak(sanitized)) {
+      return plan.fallbackAnswer;
+    }
+
+    return sanitized;
   }
 
   private async findProducts(message: string, branchId?: string) {
@@ -342,140 +764,12 @@ Quy tắc:
         symptomQuery,
         branchId,
       );
-      if (catalogMatches.length) {
-        return catalogMatches.slice(0, 5);
-      }
+      return catalogMatches.slice(0, 5);
     } catch (error) {
       const messageText = error instanceof Error ? error.message : String(error);
       this.logger.warn(`Symptom product lookup failed: ${messageText}`);
-    }
-
-    try {
-      const ragMatches = await this.searchKnowledgeContexts(
-        `san pham lien quan ${symptomQuery || message}`,
-        ['product'],
-        8,
-        0.22,
-      );
-      const productIds = ragMatches
-        .map((item) => item.payload?.productId)
-        .filter((productId): productId is string => typeof productId === 'string')
-        .slice(0, 5);
-
-      if (!productIds.length) {
-        return [];
-      }
-
-      const products = await this.productSearchService.getProductsByIds(
-        productIds,
-        branchId,
-      );
-      return products.slice(0, 5);
-    } catch (error) {
-      const messageText = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`Symptom RAG fallback failed: ${messageText}`);
       return [];
     }
-  }
-
-  private pickBestProduct(
-    products: ChatProductSummary[],
-    preferredProductId?: string,
-  ): ChatProductSummary {
-    if (preferredProductId) {
-      const matched = products.find((product) => product.id === preferredProductId);
-      if (matched) return matched;
-    }
-    return products[0];
-  }
-
-  private buildStockAnswer(
-    product: ChatProductSummary,
-    branchId?: string,
-  ): string {
-    if (!product.availableBranches.length) {
-      return 'hiện chưa có dữ liệu còn hàng ở chi nhánh đang kiểm tra.';
-    }
-
-    if (branchId) {
-      const total = product.availableBranches.reduce(
-        (sum, item) => sum + Number(item.availableQty || 0),
-        0,
-      );
-      return total > 0
-        ? `đang còn hàng tại chi nhánh đã chọn với số lượng khả dụng khoảng ${this.formatQuantity(total)}.`
-        : 'hiện chưa có sẵn hàng tại chi nhánh đã chọn.';
-    }
-
-    const branches = product.availableBranches
-      .slice(0, 2)
-      .map((item) => item.name)
-      .join(', ');
-    return `đang còn hàng tại ${branches}.`;
-  }
-
-  private buildSymptomProductAnswer(products: ChatProductSummary[]): string {
-    const lines = products.slice(0, 3).map((product, index) => {
-      const details = [
-        product.category ? `nhóm ${product.category}` : '',
-        product.usage ? `thông tin liên quan: ${this.truncate(product.usage, 90)}` : '',
-        product.activeIngredient
-          ? `hoạt chất: ${this.truncate(product.activeIngredient, 50)}`
-          : '',
-      ].filter(Boolean);
-
-      return `${index + 1}. ${product.name}${details.length ? ` (${details.join('; ')})` : ''}`;
-    });
-
-    return [
-      'Tôi có tìm thấy một số sản phẩm liên quan trong hệ thống để bạn tham khảo:',
-      ...lines,
-      'Đây chỉ là các sản phẩm có thông tin liên quan đến triệu chứng bạn nêu, không thay thế tư vấn của dược sĩ hoặc bác sĩ.',
-    ].join('\n');
-  }
-
-  private buildSymptomStockAnswer(
-    products: ChatProductSummary[],
-    branchId?: string,
-  ): string {
-    const lines = products.slice(0, 3).map((product, index) => {
-      const stockLabel = this.describeBranchAvailability(
-        product.availableBranches,
-        branchId,
-      );
-      return `${index + 1}. ${product.name}: ${stockLabel}`;
-    });
-
-    return [
-      'Tôi có tìm thấy một số sản phẩm liên quan trong hệ thống:',
-      ...lines,
-      'Danh sách này chỉ mang tính tham khảo theo dữ liệu sản phẩm và tồn kho hiện có, bạn nên trao đổi thêm với dược sĩ để chọn sản phẩm phù hợp.',
-    ].join('\n');
-  }
-
-  private describeBranchAvailability(
-    availableBranches: ChatProductAvailabilityBranch[],
-    branchId?: string,
-  ): string {
-    if (!availableBranches.length) {
-      return 'hiện chưa ghi nhận còn hàng';
-    }
-
-    if (branchId) {
-      const total = availableBranches.reduce(
-        (sum, branch) => sum + Number(branch.availableQty || 0),
-        0,
-      );
-      return total > 0
-        ? `còn khoảng ${this.formatQuantity(total)} tại chi nhánh đã chọn`
-        : 'hiện chưa ghi nhận còn hàng tại chi nhánh đã chọn';
-    }
-
-    const branches = availableBranches
-      .slice(0, 2)
-      .map((branch) => `${branch.name}${branch.availableQty > 0 ? ` (${this.formatQuantity(branch.availableQty)})` : ''}`)
-      .join(', ');
-    return branches ? `còn hàng tại ${branches}` : 'hiện chưa ghi nhận còn hàng';
   }
 
   private async searchKnowledgeContexts(
@@ -503,70 +797,40 @@ Quy tắc:
     }));
   }
 
-  private async buildRagAnswer(
-    message: string,
-    ragContexts: RagContext[],
-  ): Promise<string> {
-    const contextText = ragContexts
-      .map(
-        (item, index) =>
-          `[${index + 1}] loai=${item.category}; tieu de=${item.title}; noi dung=${item.content}`,
-      )
-      .join('\n');
-
-    const userPrompt = `QUESTION:
-${message}
-
-CONTEXT:
-${contextText}
-
-Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, source ky thuat hay diem so tim kiem.`;
-
-    try {
-      return await this.llmService.generateAnswer(this.systemPrompt, userPrompt);
-    } catch (error) {
-      const messageText = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`Public RAG LLM fallback triggered: ${messageText}`);
-      return this.buildRagFallbackAnswer(ragContexts);
+  private pickBestProduct(
+    products: ChatProductSummary[],
+    preferredProductId?: string,
+  ): ChatProductSummary {
+    if (preferredProductId) {
+      const matched = products.find((product) => product.id === preferredProductId);
+      if (matched) return matched;
     }
+    return products[0];
   }
 
-  private buildRagFallbackAnswer(ragContexts: RagContext[]): string {
-    const best = ragContexts[0];
-    const normalized = best.content.replace(/\s+/g, ' ').trim();
-    if (normalized.length <= 320) {
-      return normalized;
+  private shouldAskToChooseProduct(
+    products: ChatProductSummary[],
+    preferredProductId?: string,
+  ): boolean {
+    if (preferredProductId || products.length < 2) {
+      return false;
     }
-    return `${normalized.slice(0, 317)}...`;
+
+    const topScore = Number(products[0]?.matchScore ?? 0);
+    const secondScore = Number(products[1]?.matchScore ?? 0);
+    if (topScore >= 90 && secondScore <= topScore - 20) {
+      return false;
+    }
+
+    return secondScore > 0 && topScore - secondScore < 18;
   }
 
-  private detectIntent(message: string): PublicIntent {
-    const normalized = this.normalize(message);
+  private detectIntent(message: string, normalizedMessage: string): PublicIntent {
     const symptomQuery = this.extractSymptomQuery(message);
-    const symptomRelated = this.isSymptomRelated(normalized, symptomQuery);
-    const isPolicyQuestion = this.containsAny(normalized, [
-      'doi tra',
-      'tra hang',
-      'hoan tien',
-      'giao hang',
-      'van chuyen',
-      'thanh toan',
-      'cod',
-      'chinh sach',
-      'don hang',
-      'kiem tra don hang',
-      'theo doi don',
-      'ma don',
-      'mo seal',
-      'mo niem phong',
-      'mat khau',
-      'quen mat khau',
-      'tai khoan',
-      'dang nhap',
-    ]);
+    const symptomRelated = this.isSymptomRelated(normalizedMessage, symptomQuery);
 
     if (
-      this.containsAny(normalized, [
+      this.containsAny(normalizedMessage, [
         'mang thai',
         'cho con bu',
         'tre em',
@@ -580,32 +844,66 @@ Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, sourc
       return 'health.sensitive';
     }
 
-    if (isPolicyQuestion) {
+    if (
+      this.containsAny(normalizedMessage, [
+        'dia chi',
+        'o dau',
+        'chi nhanh',
+        'hotline',
+        'so dien thoai',
+        'lien he',
+      ])
+    ) {
+      return 'branch.lookup';
+    }
+
+    if (
+      this.containsAny(normalizedMessage, [
+        'doi tra',
+        'tra hang',
+        'hoan tien',
+        'giao hang',
+        'van chuyen',
+        'thanh toan',
+        'cod',
+        'chinh sach',
+        'don hang',
+        'kiem tra don hang',
+        'theo doi don',
+        'ma don',
+        'mo seal',
+        'mo niem phong',
+        'mat khau',
+        'quen mat khau',
+        'tai khoan',
+        'dang nhap',
+      ])
+    ) {
       return 'policy.lookup';
     }
 
-    if (symptomRelated && this.containsAny(normalized, this.stockKeywords)) {
-      return 'symptom.stock_lookup';
-    }
-
-    if (symptomRelated) {
-      return 'symptom.product_search';
-    }
-
-    if (this.containsAny(normalized, ['gia', 'bao nhieu tien', 'bao nhieu', 'muc gia'])) {
+    if (
+      this.containsAny(normalizedMessage, [
+        'bao nhieu tien',
+        'gia bao nhieu',
+        'gia cua',
+        'bao tien',
+        'gia thuoc',
+        'gia',
+      ])
+    ) {
       return 'product.price';
     }
 
-    if (this.containsAny(normalized, this.stockKeywords)) {
+    if (!symptomRelated && this.containsAny(normalizedMessage, this.stockKeywords)) {
       return 'product.stock';
     }
 
     if (
-      this.containsAny(normalized, [
+      this.containsAny(normalizedMessage, [
         'cong dung',
         'dung de lam gi',
         'thuoc nay dung de lam gi',
-        'lam gi',
         'cach dung',
         'luu y',
         'chi dinh',
@@ -613,6 +911,14 @@ Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, sourc
       ])
     ) {
       return 'product.usage';
+    }
+
+    if (symptomRelated && this.containsAny(normalizedMessage, this.stockKeywords)) {
+      return 'symptom.stock_lookup';
+    }
+
+    if (symptomRelated) {
+      return 'symptom.product_search';
     }
 
     return 'unknown';
@@ -624,7 +930,7 @@ Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, sourc
       return true;
     }
 
-    const normalizedSymptom = this.normalize(symptomQuery);
+    const normalizedSymptom = this.normalizeVi(symptomQuery);
     if (!normalizedSymptom) {
       return false;
     }
@@ -632,57 +938,134 @@ Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, sourc
     const tokens = new Set(
       normalizedSymptom.split(' ').filter((token) => token.length > 1),
     );
-    return [
-      'dau',
-      'ho',
-      'sot',
-      'non',
-      'tieu',
-      'cam',
-      'cum',
-      'bung',
-      'day',
-    ].some((token) => tokens.has(token));
+    return ['dau', 'ho', 'sot', 'non', 'tieu', 'cam', 'cum', 'bung', 'day'].some(
+      (token) => tokens.has(token),
+    );
   }
 
   private extractSymptomQuery(message: string): string {
-    return this.normalize(message)
-      .replace(/\b(thuoc|san pham|co|khong|con|hang|ban|khong|nen|dung|gi|nao|cho toi|toi|muon|hoi|kiem tra|xem|giup|voi|khong a|khong vay|khong nhi)\b/g, ' ')
+    return this.normalizeVi(message)
+      .replace(
+        /\b(thuoc|san pham|co|khong|con|hang|ban|nen|dung|gi|nao|cho toi|toi|muon|hoi|kiem tra|xem|giup|voi)\b/g,
+        ' ',
+      )
       .replace(/\b(co ban|con hang|con khong|co thuoc)\b/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
   }
 
-  private containsDangerousSymptom(message: string): boolean {
-    const normalized = this.normalize(message);
-    return this.containsAny(normalized, this.dangerousSymptomPatterns);
+  private detectDangerousMedicalQuestion(normalizedMessage: string): boolean {
+    return this.containsAny(normalizedMessage, this.dangerousMedicalPatterns);
   }
 
-  private buildDangerousSymptomResponse(
-    conversationId: string,
-  ): PublicChatResponseDto {
-    return {
-      answer:
-        'Triệu chứng bạn mô tả có dấu hiệu cần được dược sĩ hoặc bác sĩ đánh giá trực tiếp. Tôi không nên gợi ý sản phẩm trong trường hợp này. Bạn nên đi khám hoặc liên hệ dược sĩ/nhân viên tư vấn sớm để được hỗ trợ an toàn hơn.',
-      mode: 'HYBRID',
-      intent: 'health.sensitive',
-      conversationId,
-      handoffRequired: true,
-      warnings: ['Triệu chứng có dấu hiệu cảnh báo, cần chuyển hỗ trợ chuyên môn.'],
-      suggestedActions: ['Gặp nhân viên tư vấn'],
-    };
+  private stockStatusLabel(product: ChatProductSummary, branchId?: string): string {
+    if (!product.availableBranches.length) {
+      return 'Chua co du lieu ton kho';
+    }
+    if (branchId) {
+      const total = product.availableBranches.reduce(
+        (sum, item) => sum + Number(item.availableQty || 0),
+        0,
+      );
+      return total > 0 ? 'Con hang' : 'Het hang';
+    }
+    return product.availableBranches.some((item) => Number(item.availableQty || 0) > 0)
+      ? 'Con hang'
+      : 'Het hang';
   }
 
-  private usesRealtimeData(intent: PublicIntent): boolean {
-    return (
-      intent === 'product.price' ||
-      intent === 'product.stock' ||
-      intent === 'symptom.stock_lookup'
-    );
+  private stockStatusSentence(product: ChatProductSummary, branchId?: string): string {
+    if (!product.availableBranches.length) {
+      return 'Hien he thong chua co du lieu ton kho.';
+    }
+
+    if (branchId) {
+      const total = product.availableBranches.reduce(
+        (sum, item) => sum + Number(item.availableQty || 0),
+        0,
+      );
+      return total > 0
+        ? `San pham dang con hang tai chi nhanh da chon voi so luong kha dung khoang ${this.formatQuantity(total)}.`
+        : 'Hien chua ghi nhan con hang tai chi nhanh da chon.';
+    }
+
+    const branches = product.availableBranches
+      .slice(0, 2)
+      .map((item) => item.name)
+      .join(', ');
+    return branches ? `San pham dang con hang tai ${branches}.` : 'Hien chua ghi nhan con hang.';
+  }
+
+  private toAvailabilityFacts(
+    availableBranches: ChatProductAvailabilityBranch[],
+  ): Array<{ branchId: string; branchName: string; availableQty: number }> {
+    return availableBranches.map((branch) => ({
+      branchId: branch.id,
+      branchName: branch.name,
+      availableQty: Number(branch.availableQty || 0),
+    }));
+  }
+
+  private buildBranchFallbackAnswer(branches: BranchSummary[]): string {
+    return [
+      'Thong tin chi nhanh nha thuoc:',
+      ...branches.slice(0, 3).map((branch, index) => {
+        const details = [branch.address, branch.phone ? `SDT: ${branch.phone}` : '']
+          .filter(Boolean)
+          .join(' - ');
+        return `${index + 1}. ${branch.name}${details ? `: ${details}` : ''}`;
+      }),
+    ].join('\n');
+  }
+
+  private buildSymptomProductAnswer(products: ChatProductSummary[]): string {
+    const lines = products.slice(0, 3).map((product, index) => {
+      const details = [
+        product.category ? `nhom ${product.category}` : '',
+        product.usage ? `thong tin lien quan: ${this.truncate(product.usage, 90)}` : '',
+        product.activeIngredient
+          ? `hoat chat: ${this.truncate(product.activeIngredient, 50)}`
+          : '',
+      ].filter(Boolean);
+
+      return `${index + 1}. ${product.name}${details.length ? ` (${details.join('; ')})` : ''}`;
+    });
+
+    return [
+      'Toi co tim thay mot so san pham lien quan trong he thong de ban tham khao:',
+      ...lines,
+      'Day chi la thong tin tham khao, ban nen trao doi them voi duoc si de chon san pham phu hop.',
+    ].join('\n');
+  }
+
+  private buildSymptomStockAnswer(
+    products: ChatProductSummary[],
+    branchId?: string,
+  ): string {
+    const lines = products.slice(0, 3).map((product, index) => {
+      return `${index + 1}. ${product.name}: ${this.stockStatusSentence(product, branchId)}`;
+    });
+
+    return [
+      'Toi co tim thay mot so san pham lien quan trong he thong:',
+      ...lines,
+      'Danh sach nay chi mang tinh tham khao theo du lieu san pham va ton kho hien co.',
+    ].join('\n');
   }
 
   private containsAny(text: string, patterns: string[]): boolean {
-    return patterns.some((pattern) => text.includes(this.normalize(pattern)));
+    return patterns.some((pattern) => text.includes(this.normalizeVi(pattern)));
+  }
+
+  private normalizeVi(value: string): string {
+    return value
+      .replace(/[đĐ]/g, 'd')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   private normalize(value: string): string {
@@ -697,7 +1080,7 @@ Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, sourc
   }
 
   private formatCurrency(value: number): string {
-    return `${new Intl.NumberFormat('vi-VN').format(Math.round(value))}đ`;
+    return `${new Intl.NumberFormat('vi-VN').format(Math.round(value))}d`;
   }
 
   private formatQuantity(value: number): string {
@@ -712,6 +1095,18 @@ Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, sourc
     return `${text.slice(0, maxLength - 3)}...`;
   }
 
+  private toSentence(value: string): string {
+    const text = value.replace(/\s+/g, ' ').trim();
+    if (!text) {
+      return '';
+    }
+    return text.endsWith('.') ? text : `${text}.`;
+  }
+
+  private containsTechnicalLeak(answer: string): boolean {
+    return /sourcepath|knowledge-base|chunks?\.json|\.md\b/i.test(answer);
+  }
+
   private async finalizeResponse(
     conversationId: string,
     response: PublicChatResponseDto,
@@ -720,6 +1115,13 @@ Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, sourc
     const sanitizedResponse: PublicChatResponseDto = {
       ...response,
       warnings: sanitizedWarnings,
+      metadata: {
+        ...response.metadata,
+        answerContext: {
+          ...response.metadata.answerContext,
+          facts: response.metadata.facts,
+        },
+      },
     };
 
     await this.conversationService.appendMessage(
@@ -732,6 +1134,7 @@ Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, sourc
         handoffRequired: sanitizedResponse.handoffRequired,
         warnings: sanitizedResponse.warnings,
         suggestedActions: sanitizedResponse.suggestedActions,
+        metadata: sanitizedResponse.metadata,
         channel: 'PUBLIC_RAG',
       },
     );
@@ -745,7 +1148,7 @@ Hay tra loi ngan gon bang tieng Viet tu nhien. Khong nhac toi file, chunk, sourc
 
     return warnings.map((warning) =>
       this.isTechnicalWarning(warning)
-        ? 'Kho tri thức hiện chưa sẵn sàng để trả lời tự động.'
+        ? 'Kho tri thuc hien chua san sang de tra loi tu dong.'
         : warning,
     );
   }

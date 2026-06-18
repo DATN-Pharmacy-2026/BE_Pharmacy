@@ -17,11 +17,18 @@ type ProductApiItem = {
   images?: Array<{ url?: string }>;
 };
 
+type RankedProductCandidate = {
+  product: ProductApiItem;
+  score: number;
+};
+
 type BranchApiItem = {
   id: string;
   name: string;
   code?: string;
   status?: string;
+  address?: string;
+  phone?: string;
 };
 
 @Injectable()
@@ -30,24 +37,53 @@ export class ProductSearchService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  async searchProducts(message: string, branchId?: string): Promise<ChatProductSummary[]> {
+  async searchProducts(
+    message: string,
+    branchId?: string,
+  ): Promise<ChatProductSummary[]> {
     const searchPlan = this.buildSearchPlan(message);
     const collected = new Map<string, ProductApiItem>();
+    const directQuery = this.extractDirectQuery(this.normalizeText(message));
 
     for (const plan of searchPlan) {
       const items = await this.fetchProducts(plan);
       for (const item of items) {
         collected.set(item.id, item);
       }
-      if (collected.size >= 5) break;
+      if (collected.size >= 12) break;
     }
 
-    const products = Array.from(collected.values()).slice(0, 5);
-    if (products.length === 0) {
+    let rankedCandidates = this.rankProductsByName(
+      Array.from(collected.values()),
+      directQuery || message,
+    );
+
+    if (rankedCandidates.length < 3 && directQuery) {
+      const fallbackCatalog = await this.fetchProducts({
+        page: 1,
+        limit: 100,
+        status: 'ACTIVE',
+      });
+      const merged = new Map<string, ProductApiItem>();
+      for (const item of [...collected.values(), ...fallbackCatalog]) {
+        merged.set(item.id, item);
+      }
+      rankedCandidates = this.rankProductsByName(
+        Array.from(merged.values()),
+        directQuery,
+      );
+    }
+
+    if (!rankedCandidates.length) {
       return [];
     }
 
-    return this.resolveProducts(products, branchId);
+    const topCandidates = rankedCandidates.slice(0, 5);
+    return this.resolveProducts(
+      topCandidates.map((item) => item.product),
+      branchId,
+      new Map(topCandidates.map((item) => [item.product.id, item.score])),
+    );
   }
 
   async searchProductsBySymptom(
@@ -91,7 +127,12 @@ export class ProductSearchService {
       return [];
     }
 
-    return this.resolveProducts(rankedCandidates.slice(0, 5), branchId);
+    const topCandidates = rankedCandidates.slice(0, 5);
+    return this.resolveProducts(
+      topCandidates.map((item) => item.product),
+      branchId,
+      new Map(topCandidates.map((item) => [item.product.id, item.score])),
+    );
   }
 
   async getProductsByIds(
@@ -111,7 +152,9 @@ export class ProductSearchService {
     }
 
     const products = (
-      await Promise.all(uniqueIds.map((productId) => this.fetchProductById(productId)))
+      await Promise.all(
+        uniqueIds.map((productId) => this.fetchProductById(productId)),
+      )
     ).filter(Boolean) as ProductApiItem[];
 
     if (!products.length) {
@@ -121,7 +164,58 @@ export class ProductSearchService {
     return this.resolveProducts(products, branchId);
   }
 
-  private async fetchProducts(params: Record<string, string | number>): Promise<ProductApiItem[]> {
+  async searchBranches(
+    message: string,
+    selectedBranchId?: string,
+  ): Promise<BranchApiItem[]> {
+    const branches = await this.fetchActiveBranches();
+    if (!branches.length) {
+      return [];
+    }
+
+    if (selectedBranchId) {
+      const selected = branches.find((branch) => branch.id === selectedBranchId);
+      if (selected) {
+        return [selected];
+      }
+    }
+
+    const normalizedQuery = this.normalizeLookupQuery(message);
+    if (!normalizedQuery) {
+      return branches.slice(0, 3);
+    }
+
+    const tokens = normalizedQuery.split(' ').filter(Boolean);
+    return branches
+      .map((branch) => {
+        const haystack = this.normalizeLookupQuery(
+          [branch.name, branch.code, branch.address, branch.phone]
+            .filter(Boolean)
+            .join(' '),
+        );
+        let score = 0;
+
+        if (haystack.includes(normalizedQuery)) {
+          score += 25;
+        }
+
+        for (const token of tokens) {
+          if (haystack.includes(token)) {
+            score += token.length >= 4 ? 8 : 3;
+          }
+        }
+
+        return { branch, score };
+      })
+      .filter((item) => item.score > 0)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 3)
+      .map((item) => item.branch);
+  }
+
+  private async fetchProducts(
+    params: Record<string, string | number>,
+  ): Promise<ProductApiItem[]> {
     try {
       const response = await firstValueFrom(
         this.httpService.get<{ items?: ProductApiItem[] }>(
@@ -183,6 +277,7 @@ export class ProductSearchService {
     product: ProductApiItem,
     selectedBranchId: string | undefined,
     branches: BranchApiItem[],
+    matchScore?: number,
   ): Promise<ChatProductSummary> {
     const availableBranches = selectedBranchId
       ? await this.fetchAvailabilityForBranch(product.id, selectedBranchId)
@@ -200,6 +295,7 @@ export class ProductSearchService {
       imageUrl: product.images?.[0]?.url,
       requiresPrescription: Boolean(product.requiresPrescription),
       isAvailable: availableBranches.length > 0,
+      matchScore,
       availableBranches,
     };
   }
@@ -207,10 +303,18 @@ export class ProductSearchService {
   private async resolveProducts(
     products: ProductApiItem[],
     branchId?: string,
+    matchScores?: Map<string, number>,
   ): Promise<ChatProductSummary[]> {
     const branches = branchId ? [] : await this.fetchActiveBranches();
     return Promise.all(
-      products.map((product) => this.resolveAvailability(product, branchId, branches)),
+      products.map((product) =>
+        this.resolveAvailability(
+          product,
+          branchId,
+          branches,
+          matchScores?.get(product.id),
+        ),
+      ),
     );
   }
 
@@ -251,8 +355,10 @@ export class ProductSearchService {
     }
 
     const branchName =
-      availability.warehouses?.find((warehouse: { availableQty?: number }) => (warehouse.availableQty ?? 0) > 0)
-        ?.name ?? 'Chi nhánh đã chọn';
+      availability.warehouses?.find(
+        (warehouse: { availableQty?: number }) =>
+          (warehouse.availableQty ?? 0) > 0,
+      )?.name ?? 'Chi nhanh da chon';
 
     return [
       {
@@ -263,7 +369,10 @@ export class ProductSearchService {
     ];
   }
 
-  private async fetchAvailability(productId: string, branchId: string): Promise<any | null> {
+  private async fetchAvailability(
+    productId: string,
+    branchId: string,
+  ): Promise<any | null> {
     try {
       const response = await firstValueFrom(
         this.httpService.get(
@@ -280,7 +389,9 @@ export class ProductSearchService {
       return response.data ?? null;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`Availability lookup failed for ${productId}/${branchId}: ${message}`);
+      this.logger.warn(
+        `Availability lookup failed for ${productId}/${branchId}: ${message}`,
+      );
       return null;
     }
   }
@@ -293,6 +404,8 @@ export class ProductSearchService {
     const directQuery = this.extractDirectQuery(normalized);
     if (directQuery) {
       plans.push({ ...base, search: directQuery });
+      plans.push({ ...base, search: directQuery.replace(/\s+/g, '-') });
+      plans.push({ ...base, search: directQuery.replace(/-/g, ' ') });
     }
 
     const activeIngredient = this.extractAfterKeyword(normalized, [
@@ -343,7 +456,10 @@ export class ProductSearchService {
       ...tokens,
     ]
       .map((value) => this.cleanupQuery(value))
-      .filter((value, index, array) => value.length > 1 && array.indexOf(value) === index);
+      .filter(
+        (value, index, array) =>
+          value.length > 1 && array.indexOf(value) === index,
+      );
 
     for (const phrase of phrases) {
       plans.push({ ...base, useCase: phrase });
@@ -360,12 +476,14 @@ export class ProductSearchService {
   }
 
   private extractDirectQuery(normalized: string): string {
-    const stripped = normalized
-      .replace(/\b(bao nhieu|gia|con hang|co ban|chi nhanh nao|thuoc nay|san pham nay|khong|co|hay|voi|cho toi|toi muon hoi)\b/g, ' ')
+    return normalized
+      .replace(
+        /\b(bao nhieu tien|gia bao nhieu|gia cua|bao nhieu|bao tien|gia thuoc|gia|con hang|co ban|chi nhanh nao|thuoc nay|san pham nay|khong|co|hay|voi|cho toi|toi muon hoi)\b/g,
+        ' ',
+      )
       .replace(/\b(thuoc|san pham|mat hang)\b/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    return stripped;
   }
 
   private extractAfterKeyword(normalized: string, keywords: string[]): string {
@@ -390,7 +508,10 @@ export class ProductSearchService {
 
   private cleanupQuery(value: string): string {
     return value
-      .replace(/\b(khong|khong a|khong vay|khong nhi|bao nhieu|gia|con hang|con khong|chi nhanh nao|co ban|co thuoc|thuoc gi|nen dung|trieu chung|bi|kem)\b/g, ' ')
+      .replace(
+        /\b(khong|khong a|khong vay|khong nhi|bao nhieu tien|gia bao nhieu|gia cua|bao nhieu|bao tien|gia thuoc|gia|con hang|con khong|chi nhanh nao|co ban|co thuoc|thuoc gi|nen dung|trieu chung|bi|kem)\b/g,
+        ' ',
+      )
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -444,7 +565,18 @@ export class ProductSearchService {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
+      .replace(/[-_]+/g, ' ')
       .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private normalizeLookupQuery(value: string): string {
+    return this.normalizeText(value)
+      .replace(
+        /\b(thuoc|san pham|gia|bao nhieu tien|gia bao nhieu|gia cua|bao nhieu|bao tien|co|khong|nao|nay)\b/g,
+        ' ',
+      )
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -452,7 +584,7 @@ export class ProductSearchService {
   private rankProductsBySymptom(
     products: ProductApiItem[],
     symptomQuery: string,
-  ): ProductApiItem[] {
+  ): RankedProductCandidate[] {
     const normalizedSymptom = this.normalizeText(symptomQuery);
     const tokens = this.tokenizeMeaningful(normalizedSymptom);
 
@@ -483,14 +615,18 @@ export class ProductSearchService {
 
         if (
           normalizedSymptom &&
-          this.normalizeText(product.indication || '').includes(normalizedSymptom)
+          this.normalizeText(product.indication || '').includes(
+            normalizedSymptom,
+          )
         ) {
           score += 4;
         }
 
         if (
           normalizedSymptom &&
-          this.normalizeText(product.category?.name || '').includes(normalizedSymptom)
+          this.normalizeText(product.category?.name || '').includes(
+            normalizedSymptom,
+          )
         ) {
           score += 2;
         }
@@ -499,7 +635,63 @@ export class ProductSearchService {
       })
       .filter((item) => item.score >= 2)
       .sort((left, right) => right.score - left.score)
-      .map((item) => item.product);
+      .slice(0, 12);
+  }
+
+  private rankProductsByName(
+    products: ProductApiItem[],
+    query: string,
+  ): RankedProductCandidate[] {
+    const normalizedQuery = this.normalizeLookupQuery(query);
+    const queryTokens = normalizedQuery.split(' ').filter(Boolean);
+    if (!normalizedQuery) {
+      return [];
+    }
+
+    return products
+      .map((product) => {
+        const normalizedName = this.normalizeLookupQuery(product.name);
+        const normalizedSlug = this.normalizeLookupQuery(product.slug || '');
+        const normalizedIngredient = this.normalizeLookupQuery(
+          product.activeIngredient || '',
+        );
+
+        let score = 0;
+        if (normalizedName === normalizedQuery || normalizedSlug === normalizedQuery) {
+          score += 100;
+        }
+        if (
+          normalizedName.replace(/\s+/g, '') ===
+            normalizedQuery.replace(/\s+/g, '') ||
+          normalizedSlug.replace(/\s+/g, '') ===
+            normalizedQuery.replace(/\s+/g, '')
+        ) {
+          score += 95;
+        }
+        if (normalizedName.includes(normalizedQuery)) {
+          score += 45;
+        }
+        if (normalizedIngredient.includes(normalizedQuery)) {
+          score += 35;
+        }
+
+        for (const token of queryTokens) {
+          if (normalizedName.includes(token)) {
+            score += token.length >= 5 ? 12 : 5;
+          } else if (normalizedIngredient.includes(token)) {
+            score += token.length >= 5 ? 8 : 3;
+          }
+        }
+
+        if (product.status?.toUpperCase() === 'ACTIVE') {
+          score += 2;
+        }
+
+        return { product, score };
+      })
+      .filter((item) => item.score > 0)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 12);
   }
 
   private getCommerceBaseUrl(): string {

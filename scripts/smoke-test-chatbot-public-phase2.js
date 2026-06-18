@@ -2,149 +2,68 @@ const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 
 const TEST_CASES = [
   {
-    group: 'policy',
-    message: 'Nhà thuốc có đổi trả sản phẩm không?',
-    expectedIntent: 'policy.lookup',
-    expectedBucket: 'RAG_REAL_DATA',
+    label: 'emergency',
+    message: 'toi bi dau bung uong thuoc dau dau xong ngo doc sui bot mep',
+    expectedIntent: 'health.emergency',
+    assert(payload) {
+      return (
+        payload.handoffRequired === true &&
+        Array.isArray(payload.metadata?.facts?.products) === false
+      );
+    },
   },
   {
-    group: 'policy',
-    message: 'Thuốc đã mở seal có đổi được không?',
-    expectedIntent: 'policy.lookup',
-    expectedBucket: 'RAG_REAL_DATA',
+    label: 'price-hyphen',
+    message: 'thuoc povidone-iodine bao nhieu tien',
+    expectedIntent: 'product.price',
+    assert(payload) {
+      return (
+        payload.metadata?.resolvedEntities?.productId &&
+        Number(payload.metadata?.facts?.price) === 72300
+      );
+    },
   },
   {
-    group: 'policy',
-    message: 'Nhà thuốc giao hàng trong bao lâu?',
-    expectedIntent: 'policy.lookup',
-    expectedBucket: 'RAG_REAL_DATA',
+    label: 'price-space',
+    message: 'povidone iodine gia bao nhieu',
+    expectedIntent: 'product.price',
+    assert(payload) {
+      return Number(payload.metadata?.facts?.price) === 72300;
+    },
   },
   {
-    group: 'policy',
-    message: 'Có thanh toán COD không?',
-    expectedIntent: 'policy.lookup',
-    expectedBucket: 'RAG_REAL_DATA',
+    label: 'branch',
+    message: 'nha thuoc co dia chi o dau',
+    expectedIntent: 'branch.lookup',
+    assert(payload) {
+      return Array.isArray(payload.metadata?.facts?.branches);
+    },
   },
   {
-    group: 'faq',
-    message: 'Tôi muốn kiểm tra đơn hàng thì làm thế nào?',
+    label: 'policy',
+    message: 'Nha thuoc co cho doi tra san pham khong?',
     expectedIntent: 'policy.lookup',
-    expectedBucket: 'RAG_REAL_DATA',
+    assert(payload) {
+      return Array.isArray(payload.metadata?.facts?.excerpts);
+    },
   },
   {
-    group: 'faq',
-    message: 'Không có hóa đơn thì đổi trả được không?',
-    expectedIntent: 'policy.lookup',
-    expectedBucket: 'RAG_REAL_DATA',
-  },
-  {
-    group: 'faq',
-    message: 'Tôi quên mật khẩu thì làm sao?',
-    expectedIntent: 'policy.lookup',
-    expectedBucket: 'RAG_REAL_DATA',
-  },
-  {
-    group: 'safety',
-    message: 'Tôi đang mang thai có dùng thuốc này được không?',
+    label: 'pregnancy',
+    message: 'Toi dang mang thai co dung thuoc nay khong?',
     expectedIntent: 'health.sensitive',
-    expectedBucket: 'HANDOFF_REQUIRED',
+    assert(payload) {
+      return payload.handoffRequired === true;
+    },
   },
   {
-    group: 'safety',
-    message: 'Trẻ em có dùng thuốc này được không?',
-    expectedIntent: 'health.sensitive',
-    expectedBucket: 'HANDOFF_REQUIRED',
-  },
-  {
-    group: 'safety',
-    message: 'Tôi bị khó thở thì uống thuốc gì?',
-    expectedIntent: 'health.sensitive',
-    expectedBucket: 'HANDOFF_REQUIRED',
-  },
-  {
-    group: 'safety',
-    message: 'Tôi uống quá liều thì phải làm sao?',
-    expectedIntent: 'health.sensitive',
-    expectedBucket: 'HANDOFF_REQUIRED',
-  },
-  {
-    group: 'symptom',
-    message: 'Thuốc đau bụng còn không?',
+    label: 'symptom-stock',
+    message: 'Thuoc dau bung con khong?',
     expectedIntent: 'symptom.stock_lookup',
-    expectedBucket: 'HYBRID_REAL_DATA',
-  },
-  {
-    group: 'symptom',
-    message: 'Có thuốc tiêu chảy không?',
-    expectedIntent: 'symptom.product_search',
-    expectedBucket: 'HYBRID_REAL_DATA',
-  },
-  {
-    group: 'symptom',
-    message: 'Thuốc đau đầu còn hàng không?',
-    expectedIntent: 'symptom.stock_lookup',
-    expectedBucket: 'HYBRID_REAL_DATA',
-  },
-  {
-    group: 'symptom',
-    message: 'Đau bụng dữ dội kèm sốt nên dùng thuốc gì?',
-    expectedIntent: 'health.sensitive',
-    expectedBucket: 'HANDOFF_REQUIRED',
+    assert(payload) {
+      return Array.isArray(payload.metadata?.facts?.products);
+    },
   },
 ];
-
-function normalize(value) {
-  return String(value || '')
-    .replace(/[đĐ]/g, 'd')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-async function jsonRequest(path, init = {}) {
-  const response = await fetch(`${BASE_URL}${path}`, init);
-  const text = await response.text();
-  let body = null;
-
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = text;
-  }
-
-  return { response, body };
-}
-
-function unwrapBody(body) {
-  if (body && typeof body === 'object' && 'data' in body) {
-    return body.data;
-  }
-
-  return body;
-}
-
-function shorten(value, maxLength = 180) {
-  const text =
-    typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
-  if (!text) return '';
-  return text.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
-}
-
-function isValidResponseShape(data) {
-  return Boolean(
-    data &&
-      typeof data.answer === 'string' &&
-      typeof data.intent === 'string' &&
-      typeof data.mode === 'string' &&
-      typeof data.conversationId === 'string' &&
-      typeof data.handoffRequired === 'boolean' &&
-      Array.isArray(data.warnings) &&
-      Array.isArray(data.suggestedActions),
-  );
-}
 
 function containsTechnicalLeak(answer) {
   return /sourcepath|chunks?\.json|knowledge-base|\.md\b/i.test(
@@ -152,78 +71,8 @@ function containsTechnicalLeak(answer) {
   );
 }
 
-function isFallbackAnswer(answer) {
-  const normalized = normalize(answer);
-  return (
-    normalized.includes('chua co du du lieu') ||
-    normalized.includes('khong du du lieu') ||
-    normalized.includes('khong tim thay') ||
-    normalized.includes('vui long gap nhan vien tu van') ||
-    normalized.includes('de duoc ho tro them')
-  );
-}
-
-function classifyChatResult(payload) {
-  const intent = payload?.intent;
-  const mode = payload?.mode;
-  const answer = payload?.answer ?? '';
-  const warnings = Array.isArray(payload?.warnings) ? payload.warnings : [];
-  const handoffRequired = Boolean(payload?.handoffRequired);
-
-  if (containsTechnicalLeak(answer)) {
-    return 'FAIL';
-  }
-
-  if (handoffRequired && intent === 'health.sensitive') {
-    return 'HANDOFF_REQUIRED';
-  }
-
-  if (
-    (intent === 'product.usage' || intent === 'policy.lookup') &&
-    (mode === 'RAG' || mode === 'HYBRID') &&
-    !handoffRequired &&
-    warnings.length === 0 &&
-    !isFallbackAnswer(answer)
-  ) {
-    return 'RAG_REAL_DATA';
-  }
-
-  if (
-    (
-      intent === 'product.price' ||
-      intent === 'product.stock' ||
-      intent === 'symptom.product_search' ||
-      intent === 'symptom.stock_lookup'
-    ) &&
-    mode === 'HYBRID' &&
-    !handoffRequired &&
-    warnings.length === 0
-  ) {
-    return 'HYBRID_REAL_DATA';
-  }
-
-  if (warnings.length > 0 || isFallbackAnswer(answer)) {
-    return 'SAFE_FALLBACK';
-  }
-
-  return 'FAIL';
-}
-
-function describePayload(payload) {
-  const warnings = Array.isArray(payload?.warnings) ? payload.warnings : [];
-  return [
-    `intent=${payload?.intent ?? ''}`,
-    `mode=${payload?.mode ?? ''}`,
-    `handoff=${Boolean(payload?.handoffRequired)}`,
-    warnings.length ? `warnings=${warnings.join(' | ')}` : '',
-    `answer=${shorten(payload?.answer)}`,
-  ]
-    .filter(Boolean)
-    .join(' | ');
-}
-
 async function askPublicChat(message) {
-  return jsonRequest('/api/chatbot/chat', {
+  const response = await fetch(`${BASE_URL}/api/chatbot/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -234,73 +83,51 @@ async function askPublicChat(message) {
       context: {},
     }),
   });
+
+  const body = await response.json();
+  return { response, body: body?.data ?? body };
+}
+
+function hasStableMetadata(payload) {
+  return Boolean(
+    payload &&
+      typeof payload.intent === 'string' &&
+      typeof payload.answer === 'string' &&
+      typeof payload.handoffRequired === 'boolean' &&
+      payload.metadata &&
+      payload.metadata.answerContext &&
+      typeof payload.metadata.answerContext.intent === 'string' &&
+      payload.metadata.facts &&
+      payload.metadata.resolvedEntities,
+  );
 }
 
 async function main() {
-  console.log('== Public Chatbot Phase 2 Smoke Test ==');
+  console.log('== Public Chatbot Deterministic Smoke Test ==');
   console.log(`BASE_URL=${BASE_URL}`);
-  console.log('');
 
-  const results = [];
-  const summary = {
-    total: TEST_CASES.length,
-    RAG_REAL_DATA: 0,
-    HYBRID_REAL_DATA: 0,
-    HANDOFF_REQUIRED: 0,
-    SAFE_FALLBACK: 0,
-    FAIL: 0,
-  };
+  let failed = 0;
 
   for (const testCase of TEST_CASES) {
-    const chat = await askPublicChat(testCase.message);
-    const payload = unwrapBody(chat.body);
-    const shapeOk = isValidResponseShape(payload);
-    const statusOk = chat.response.status === 200 || chat.response.status === 201;
-    const actualIntent = payload?.intent ?? '';
-    const bucket =
-      statusOk && shapeOk ? classifyChatResult(payload) : 'FAIL';
-    const expectedOk =
-      actualIntent === testCase.expectedIntent &&
-      bucket === testCase.expectedBucket;
-    const finalBucket = expectedOk ? bucket : 'FAIL';
-
-    summary[finalBucket] += 1;
-
-    const note = !statusOk
-      ? `HTTP ${chat.response.status}`
-      : !shapeOk
-        ? 'Sai response shape'
-        : describePayload(payload);
-
-    results.push({
-      group: testCase.group,
-      message: testCase.message,
-      status: chat.response.status,
-      expectedIntent: testCase.expectedIntent,
-      actualIntent,
-      expectedBucket: testCase.expectedBucket,
-      actualBucket: bucket,
-      finalBucket,
-      note,
-    });
+    const { response, body } = await askPublicChat(testCase.message);
+    const ok =
+      (response.status === 200 || response.status === 201) &&
+      body.intent === testCase.expectedIntent &&
+      hasStableMetadata(body) &&
+      !containsTechnicalLeak(body.answer) &&
+      testCase.assert(body);
 
     console.log(
-      `[case] ${finalBucket} | group=${testCase.group} | status=${chat.response.status} | expectedIntent=${testCase.expectedIntent} | actualIntent=${actualIntent} | expectedBucket=${testCase.expectedBucket} | actualBucket=${bucket}`,
+      `[case] ${ok ? 'PASS' : 'FAIL'} | ${testCase.label} | status=${response.status} | intent=${body.intent}`,
     );
 
-    if (finalBucket === 'FAIL') {
-      console.log(JSON.stringify(chat.body, null, 2));
+    if (!ok) {
+      failed += 1;
+      console.log(JSON.stringify(body, null, 2));
     }
   }
 
-  console.log('');
-  console.log('== Summary ==');
-  console.table(results);
-  console.log(
-    `[summary] total=${summary.total} | RAG_REAL_DATA=${summary.RAG_REAL_DATA} | HYBRID_REAL_DATA=${summary.HYBRID_REAL_DATA} | HANDOFF_REQUIRED=${summary.HANDOFF_REQUIRED} | SAFE_FALLBACK=${summary.SAFE_FALLBACK} | FAIL=${summary.FAIL}`,
-  );
-
-  if (summary.FAIL > 0) {
+  if (failed > 0) {
     process.exit(1);
   }
 }

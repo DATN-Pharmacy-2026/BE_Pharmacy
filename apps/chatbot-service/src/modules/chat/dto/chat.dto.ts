@@ -40,6 +40,7 @@ export interface ChatProductSummary {
   imageUrl?: string;
   requiresPrescription: boolean;
   isAvailable: boolean;
+  matchScore?: number;
   availableBranches: ChatProductAvailabilityBranch[];
 }
 

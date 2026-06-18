@@ -33,6 +33,26 @@ export class PublicChatRequestDto {
 
 export type PublicChatMode = 'RAG' | 'HYBRID';
 
+export interface PublicChatResolvedEntitiesDto {
+  productId?: string;
+  orderId?: string;
+  categoryId?: string;
+  branchId?: string;
+  knowledgeIds?: string[];
+}
+
+export interface PublicChatAnswerContextDto {
+  intent: string;
+  facts: Record<string, unknown>;
+  rules: string[];
+}
+
+export interface PublicChatMetadataDto {
+  answerContext: PublicChatAnswerContextDto;
+  facts: Record<string, unknown>;
+  resolvedEntities: PublicChatResolvedEntitiesDto;
+}
+
 export interface PublicChatResponseDto {
   answer: string;
   mode: PublicChatMode;
@@ -41,4 +61,5 @@ export interface PublicChatResponseDto {
   handoffRequired: boolean;
   warnings: string[];
   suggestedActions: string[];
+  metadata: PublicChatMetadataDto;
 }

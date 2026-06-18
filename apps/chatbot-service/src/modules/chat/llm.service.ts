@@ -44,16 +44,24 @@ export class LlmService {
   async generateAnswer(
     systemPrompt: string,
     userPrompt: string,
+    options?: {
+      temperature?: number;
+      topP?: number;
+    },
   ): Promise<string> {
     if (this.provider === 'gemini') {
-      return this.generateWithGemini(systemPrompt, userPrompt);
+      return this.generateWithGemini(systemPrompt, userPrompt, options);
     }
-    return this.generateWithOpenAi(systemPrompt, userPrompt);
+    return this.generateWithOpenAi(systemPrompt, userPrompt, options);
   }
 
   private async generateWithOpenAi(
     systemPrompt: string,
     userPrompt: string,
+    options?: {
+      temperature?: number;
+      topP?: number;
+    },
   ): Promise<string> {
     if (!this.openAiApiKey) {
       throw new Error('OPENAI_API_KEY is missing.');
@@ -71,7 +79,8 @@ export class LlmService {
           },
           body: JSON.stringify({
             model: this.openAiModel,
-            temperature: 0.2,
+            temperature: options?.temperature ?? 0.2,
+            top_p: options?.topP ?? 0.9,
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt },
@@ -106,6 +115,10 @@ export class LlmService {
   private async generateWithGemini(
     systemPrompt: string,
     userPrompt: string,
+    options?: {
+      temperature?: number;
+      topP?: number;
+    },
   ): Promise<string> {
     if (!this.geminiApiKey) {
       throw new Error('GEMINI_API_KEY is missing.');
@@ -131,7 +144,8 @@ export class LlmService {
             },
           ],
           generationConfig: {
-            temperature: 0.2,
+            temperature: options?.temperature ?? 0.2,
+            topP: options?.topP ?? 0.9,
           },
         }),
       });
