@@ -14,6 +14,7 @@ import { CreateProductVariantDto } from './dto/create-product-variant.dto';
 import { QueryProductsDto } from './dto/query-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto';
+import { toRelativeUploadUrl } from '../uploads/upload-url.util';
 
 @Injectable()
 export class ProductsService {
@@ -157,7 +158,7 @@ export class ProductsService {
     ]);
 
     return {
-      items,
+      items: items.map((item) => this.normalizeProductImageUrls(item)),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -173,7 +174,7 @@ export class ProductsService {
       },
     });
     if (!product) throw new NotFoundException('Product not found');
-    return product;
+    return this.normalizeProductImageUrls(product);
   }
 
   async findBySku(sku: string) {
@@ -227,11 +228,13 @@ export class ProductsService {
     await this.assertUniqueProductFields(dto, id);
 
     try {
-      return await this.prisma.product.update({
-        where: { id },
-        data: dto,
-        include: { images: { orderBy: { sortOrder: 'asc' } } },
-      });
+      return this.normalizeProductImageUrls(
+        await this.prisma.product.update({
+          where: { id },
+          data: dto,
+          include: { images: { orderBy: { sortOrder: 'asc' } } },
+        }),
+      );
     } catch (error) {
       this.handleProductUniqueError(error);
       throw error;
@@ -288,14 +291,16 @@ export class ProductsService {
       }
     }
 
-    return this.prisma.productImage.create({
-      data: {
-        productId,
-        url: dto.url,
-        alt: dto.alt,
-        sortOrder,
-      },
-    });
+    return this.normalizeImageUrl(
+      await this.prisma.productImage.create({
+        data: {
+          productId,
+          url: toRelativeUploadUrl(dto.url) ?? dto.url,
+          alt: dto.alt,
+          sortOrder,
+        },
+      }),
+    );
   }
 
   async removeImage(productId: string, imageId: string) {
@@ -441,5 +446,25 @@ export class ProductsService {
         sortOrder: 0,
       },
     });
+  }
+
+  private normalizeImageUrl<T extends { url: string }>(image: T): T {
+    return {
+      ...image,
+      url: toRelativeUploadUrl(image.url) ?? image.url,
+    };
+  }
+
+  private normalizeProductImageUrls<T extends { images?: Array<{ url: string }> }>(
+    product: T,
+  ): T {
+    if (!Array.isArray(product.images)) {
+      return product;
+    }
+
+    return {
+      ...product,
+      images: product.images.map((image) => this.normalizeImageUrl(image)),
+    };
   }
 }

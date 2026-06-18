@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto';
 import { access, mkdir, writeFile } from 'fs/promises';
 import { join, resolve } from 'path';
 import { UploadProductImageDto } from './dto/upload-product-image.dto';
+import { toRelativeUploadUrl } from './upload-url.util';
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const EXTENSIONS: Record<UploadProductImageDto['mimeType'], string> = {
@@ -45,7 +46,7 @@ export class UploadsService {
       fileName: dto.fileName,
       mimeType: dto.mimeType,
       size: buffer.length,
-      url: `/api/uploads/product-images/${filename}`,
+      url: toRelativeUploadUrl(`/api/uploads/product-images/${filename}`),
     };
   }
 
