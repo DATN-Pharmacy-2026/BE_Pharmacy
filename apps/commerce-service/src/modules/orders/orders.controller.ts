@@ -38,7 +38,7 @@ export class OrdersController {
   }
 
   @Get('order-no/:orderNo')
-  @Permissions('order.view')
+  @Permissions('order.view|customer.order.view_self')
   findByOrderNo(@Param('orderNo') orderNo: string, @Req() req: Request) {
     return this.ordersService.findByOrderNo(orderNo, req);
   }

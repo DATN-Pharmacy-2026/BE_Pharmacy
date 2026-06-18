@@ -39,6 +39,11 @@ export class CheckoutDto {
   @IsString()
   note?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  clientRequestId?: string;
+
   @ApiProperty({ enum: ['COD', 'MOCK', 'VNPAY', 'MOMO'] })
   @IsString()
   @IsIn(['COD', 'MOCK', 'VNPAY', 'MOMO'])

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   BadGatewayException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
@@ -22,6 +23,8 @@ type RequestWithUser = Request & { user?: { id?: string } };
 
 @Injectable()
 export class CheckoutService {
+  private readonly logger = new Logger(CheckoutService.name);
+
   constructor(
     private readonly prisma: CommercePrismaService,
     private readonly httpService: HttpService,
@@ -125,6 +128,13 @@ export class CheckoutService {
         : isMock
           ? 'MOCK'
           : null;
+    const clientRequestId = dto.clientRequestId?.trim() || null;
+    const orderNote = [
+      dto.note?.trim(),
+      clientRequestId ? `clientRequestId=${clientRequestId}` : null,
+    ]
+      .filter((segment): segment is string => Boolean(segment))
+      .join(' | ');
 
     const result = await this.prisma.$transaction(async (tx) => {
       const orderNo = await this.generateOrderNo(tx);
@@ -145,7 +155,7 @@ export class CheckoutService {
           customerName: dto.customerName,
           customerPhone: dto.customerPhone,
           shippingAddress: dto.shippingAddress,
-          note: dto.note,
+          note: orderNote || null,
         },
       });
 
@@ -206,6 +216,7 @@ export class CheckoutService {
         'Order was created without inventory reservation data',
       );
     }
+
     try {
       await this.reserveOperationInventory({
         orderId: result.order.id,
@@ -229,7 +240,51 @@ export class CheckoutService {
       throw error;
     }
 
-    return result;
+    await this.runNonCriticalSideEffects(result.order);
+
+    const primaryPayment = result.order.payments[0] ?? null;
+    return {
+      order: {
+        id: result.order.id,
+        orderNo: result.order.orderNo,
+        status: result.order.status,
+        paymentStatus: result.order.paymentStatus,
+        fulfillmentStatus: result.order.fulfillmentStatus,
+        grandTotal: result.order.grandTotal,
+        paymentMethod: primaryPayment?.provider ?? primaryPayment?.method ?? null,
+        customerName: result.order.customerName,
+        customerPhone: result.order.customerPhone,
+        shippingAddress: result.order.shippingAddress,
+        note: result.order.note,
+        createdAt: result.order.createdAt,
+        updatedAt: result.order.updatedAt,
+        items: result.order.items,
+        payments: result.order.payments,
+      },
+      payment: primaryPayment,
+      cart: {
+        id: result.newActiveCartId,
+      },
+      message: 'Đặt hàng thành công',
+    };
+  }
+
+  private async runNonCriticalSideEffects(order: {
+    id: string;
+    orderNo: string;
+  }): Promise<void> {
+    const tasks: Array<{ label: string; run: () => Promise<void> }> = [];
+
+    for (const task of tasks) {
+      try {
+        await task.run();
+      } catch (error) {
+        this.logger.warn(
+          `Non-critical checkout side effect failed: ${task.label} for order ${order.orderNo} (${order.id})`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
   }
 
   private async resolveCart(
