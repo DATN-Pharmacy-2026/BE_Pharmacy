@@ -46,7 +46,7 @@ curl -sS -X POST "${BASE_URL}/coupons/validate" "${COMMON_HEADERS[@]}" \
 
 echo "[7] Checkout cart"
 CHECKOUT_JSON=$(curl -sS -X POST "${BASE_URL}/checkout" "${COMMON_HEADERS[@]}" \
-  -d '{"sessionId":"'"${SESSION_ID}"'","customerName":"Smoke User","customerPhone":"0900000000","shippingAddress":"123 Smoke Street","paymentMethod":"COD"}')
+  -d '{"sessionId":"'"${SESSION_ID}"'","customerName":"Smoke User","customerPhone":"0900000000","shippingAddress":"123 Smoke Street","paymentMethod":"COD","couponCode":"WELCOME10"}')
 ORDER_ID=$(echo "${CHECKOUT_JSON}" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -n1)
 
 echo "[8] List orders"

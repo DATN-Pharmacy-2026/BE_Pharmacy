@@ -9,6 +9,8 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import {
   CartStatus,
+  CouponStatus,
+  DiscountType,
   FulfillmentStatus,
   OrderStatus,
   PaymentMethod,
@@ -113,7 +115,11 @@ export class CheckoutService {
     const subtotal = cartWithItems.items.reduce((acc, item) => {
       return acc + Number(item.unitPrice) * item.quantity;
     }, 0);
-    const discountTotal = 0;
+    const couponCode = dto.couponCode?.trim().toUpperCase() || null;
+    const couponValidation = couponCode
+      ? await this.validateCouponForCheckout(couponCode, subtotal, userId)
+      : null;
+    const discountTotal = couponValidation?.discountAmount ?? 0;
     const shippingFee = 0;
     const grandTotal = subtotal - discountTotal + shippingFee;
 
@@ -184,6 +190,17 @@ export class CheckoutService {
           paidAt: isMock ? new Date() : null,
         },
       });
+
+      if (couponValidation) {
+        await tx.couponUsage.create({
+          data: {
+            couponId: couponValidation.couponId,
+            userId: userId ?? null,
+            onlineOrderId: order.id,
+            usedAt: new Date(),
+          },
+        });
+      }
 
       await tx.cartItem.deleteMany({ where: { cartId: cartWithItems.id } });
       await tx.cart.update({
@@ -384,5 +401,71 @@ export class CheckoutService {
     } catch {
       throw new BadGatewayException('Unable to reserve inventory');
     }
+  }
+
+  private async validateCouponForCheckout(
+    code: string,
+    orderAmount: number,
+    userId?: string,
+  ): Promise<{ couponId: string; discountAmount: number } | null> {
+    const coupon = await this.prisma.coupon.findUnique({ where: { code } });
+    if (!coupon) {
+      throw new BadRequestException('Coupon not found');
+    }
+
+    if (coupon.status !== CouponStatus.ACTIVE) {
+      throw new BadRequestException('Coupon is not active');
+    }
+
+    const now = new Date();
+    if (now < coupon.startsAt || now > coupon.endsAt) {
+      throw new BadRequestException('Coupon expired or not started');
+    }
+
+    const minOrderAmount = coupon.minOrderAmount
+      ? Number(coupon.minOrderAmount)
+      : 0;
+    if (orderAmount < minOrderAmount) {
+      throw new BadRequestException(
+        `Order amount must be at least ${minOrderAmount}`,
+      );
+    }
+
+    if (coupon.usageLimit !== null) {
+      const usageCount = await this.prisma.couponUsage.count({
+        where: { couponId: coupon.id },
+      });
+      if (usageCount >= coupon.usageLimit) {
+        throw new BadRequestException('Coupon usage limit reached');
+      }
+    }
+
+    const discountAmount = this.calculateCouponDiscount(
+      coupon.discountType,
+      Number(coupon.discountValue),
+      orderAmount,
+      coupon.maxDiscountAmount ? Number(coupon.maxDiscountAmount) : undefined,
+    );
+
+    return {
+      couponId: coupon.id,
+      discountAmount,
+    };
+  }
+
+  private calculateCouponDiscount(
+    type: DiscountType,
+    value: number,
+    orderAmount: number,
+    maxDiscountAmount?: number,
+  ): number {
+    let discount =
+      type === DiscountType.PERCENTAGE ? (orderAmount * value) / 100 : value;
+
+    if (maxDiscountAmount !== undefined) {
+      discount = Math.min(discount, maxDiscountAmount);
+    }
+
+    return Math.min(discount, orderAmount);
   }
 }

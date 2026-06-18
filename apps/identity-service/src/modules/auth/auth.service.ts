@@ -141,6 +141,7 @@ export class AuthService {
         username: authUser.username,
         email: authUser.email,
         fullName: user.fullName,
+        phone: user.phone,
         roles: authUser.roles,
         permissions: authUser.permissions,
         branchAccess: user.branchAccesses,
@@ -431,6 +432,7 @@ export class AuthService {
       email: fullUser.email,
       status: fullUser.status,
       fullName: fullUser.fullName,
+      phone: fullUser.phone,
       avatarUrl: fullUser.avatarUrl,
       isSystemAdmin: fullUser.isSystemAdmin,
       roles: fullUser.userRoles.map((entry) => ({

@@ -207,20 +207,8 @@ async function seedCoupons() {
   const startsAt = new Date(baseDate.getTime() - DAY_MS);
   const endsAt = new Date(baseDate.getTime() + 365 * DAY_MS);
 
-  await prisma.coupon.upsert({
-    where: { code: 'WELCOME10' },
-    update: {
-      name: 'Welcome 10 Percent',
-      discountType: DiscountType.PERCENTAGE,
-      discountValue: '10',
-      minOrderAmount: '100000',
-      maxDiscountAmount: '50000',
-      usageLimit: 1000,
-      startsAt,
-      endsAt,
-      status: CouponStatus.ACTIVE,
-    },
-    create: {
+  const coupons = [
+    {
       code: 'WELCOME10',
       name: 'Welcome 10 Percent',
       discountType: DiscountType.PERCENTAGE,
@@ -228,37 +216,82 @@ async function seedCoupons() {
       minOrderAmount: '100000',
       maxDiscountAmount: '50000',
       usageLimit: 1000,
-      startsAt,
-      endsAt,
-      status: CouponStatus.ACTIVE,
     },
-  });
-
-  await prisma.coupon.upsert({
-    where: { code: 'MOCK_FIXED' },
-    update: {
+    {
+      code: 'MOCK_FIXED',
       name: 'Mock Fixed Discount',
       discountType: DiscountType.FIXED_AMOUNT,
       discountValue: '30000',
       minOrderAmount: '150000',
       maxDiscountAmount: null,
       usageLimit: 500,
-      startsAt,
-      endsAt,
-      status: CouponStatus.ACTIVE,
     },
-    create: {
-      code: 'MOCK_FIXED',
-      name: 'Mock Fixed Discount',
+    {
+      code: 'PHARMPLUS15',
+      name: 'PharmPlus 15 Percent',
+      discountType: DiscountType.PERCENTAGE,
+      discountValue: '15',
+      minOrderAmount: '200000',
+      maxDiscountAmount: '75000',
+      usageLimit: 800,
+    },
+    {
+      code: 'FREESHIP25K',
+      name: 'Freeship Style 25K Discount',
       discountType: DiscountType.FIXED_AMOUNT,
-      discountValue: '30000',
-      minOrderAmount: '150000',
-      usageLimit: 500,
-      startsAt,
-      endsAt,
-      status: CouponStatus.ACTIVE,
+      discountValue: '25000',
+      minOrderAmount: '120000',
+      maxDiscountAmount: null,
+      usageLimit: 1200,
     },
-  });
+    {
+      code: 'SAVE50K',
+      name: 'Save 50K For Large Orders',
+      discountType: DiscountType.FIXED_AMOUNT,
+      discountValue: '50000',
+      minOrderAmount: '350000',
+      maxDiscountAmount: null,
+      usageLimit: 400,
+    },
+    {
+      code: 'VIP20',
+      name: 'VIP 20 Percent',
+      discountType: DiscountType.PERCENTAGE,
+      discountValue: '20',
+      minOrderAmount: '500000',
+      maxDiscountAmount: '120000',
+      usageLimit: 250,
+    },
+  ] as const;
+
+  for (const coupon of coupons) {
+    await prisma.coupon.upsert({
+      where: { code: coupon.code },
+      update: {
+        name: coupon.name,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        minOrderAmount: coupon.minOrderAmount,
+        maxDiscountAmount: coupon.maxDiscountAmount,
+        usageLimit: coupon.usageLimit,
+        startsAt,
+        endsAt,
+        status: CouponStatus.ACTIVE,
+      },
+      create: {
+        code: coupon.code,
+        name: coupon.name,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        minOrderAmount: coupon.minOrderAmount,
+        maxDiscountAmount: coupon.maxDiscountAmount,
+        usageLimit: coupon.usageLimit,
+        startsAt,
+        endsAt,
+        status: CouponStatus.ACTIVE,
+      },
+    });
+  }
 }
 
 async function seedCommerceTransactions() {

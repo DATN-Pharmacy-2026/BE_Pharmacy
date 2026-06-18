@@ -61,7 +61,8 @@ Content-Type: application/json
   "customerName": "Demo Customer",
   "customerPhone": "0900000001",
   "shippingAddress": "Demo Address",
-  "paymentMethod": "COD"
+  "paymentMethod": "COD",
+  "couponCode": "WELCOME10"
 }
 
 ### Order list
