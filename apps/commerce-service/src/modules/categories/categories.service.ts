@@ -14,7 +14,15 @@ export class CategoriesService {
   constructor(private readonly prisma: CommercePrismaService) {}
 
   async findAll(query: QueryCategoriesDto) {
-    const { page = 1, limit = 20, search, parentId, isActive } = query;
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      parentId,
+      isActive,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
     const where: Prisma.CategoryWhereInput = {
       ...(typeof isActive === 'boolean' ? { isActive } : {}),
       ...(parentId ? { parentId } : {}),
@@ -34,13 +42,31 @@ export class CategoriesService {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy:
+          sortBy === 'productCount'
+            ? { products: { _count: sortOrder } }
+            : { createdAt: sortOrder },
+        include: {
+          _count: {
+            select: {
+              products: {
+                where: {
+                  deletedAt: null,
+                  status: 'ACTIVE',
+                },
+              },
+            },
+          },
+        },
       }),
       this.prisma.category.count({ where }),
     ]);
 
     return {
-      items,
+      items: items.map(({ _count, ...item }) => ({
+        ...item,
+        productCount: _count.products,
+      })),
       meta: {
         page,
         limit,
