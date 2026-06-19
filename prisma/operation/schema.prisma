@@ -586,8 +586,6 @@ model FEFOAllocation {
   batchId      String            @db.Uuid
   expiryDate   DateTime
   allocatedQty Int
-  unitCost     Decimal?          @db.Decimal(18, 2)
-  totalCost    Decimal?          @db.Decimal(18, 2)
   status       AllocationStatus
   createdAt    DateTime          @default(now())
 

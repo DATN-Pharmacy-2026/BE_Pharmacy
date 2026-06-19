@@ -395,8 +395,6 @@ export class PosOrdersService {
               batchId: inputItem.batchId,
               expiryDate: inventory.expiryDate,
               allocatedQty: inputItem.quantity,
-              unitCost: profitSnapshot.unitCost,
-              totalCost: profitSnapshot.totalCost,
               status: AllocationStatus.CONSUMED,
             },
           });
@@ -487,8 +485,6 @@ export class PosOrdersService {
               batchId: inventory.batchId,
               expiryDate: inventory.expiryDate,
               allocatedQty: deductedQty,
-              unitCost: profitSnapshot.unitCost,
-              totalCost: profitSnapshot.totalCost,
               status: AllocationStatus.CONSUMED,
             },
           });

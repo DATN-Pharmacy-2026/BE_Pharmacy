@@ -437,11 +437,6 @@ export class FefoService {
               batchId: line.batchId,
               expiryDate: line.expiryDate,
               allocatedQty: line.allocatedQty,
-              unitCost: line.unitCost,
-              totalCost:
-                line.unitCost === null
-                  ? null
-                  : new Prisma.Decimal(line.unitCost).mul(line.allocatedQty),
               status: AllocationStatus.RESERVED,
             },
           });
