@@ -13,6 +13,10 @@ export class HandoffListQueryDto {
   @IsOptional()
   @IsIn(['PENDING', 'IN_PROGRESS', 'RESOLVED'])
   status?: HandoffStatus;
+
+  @IsOptional()
+  @IsString()
+  assignedUserId?: string;
 }
 
 export class UpdateHandoffTicketDto {

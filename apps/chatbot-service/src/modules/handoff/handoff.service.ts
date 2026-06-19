@@ -1,12 +1,16 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '../../../../../node_modules/.prisma/client/commerce';
 
 export type HandoffStatus = 'PENDING' | 'IN_PROGRESS' | 'RESOLVED';
 
 @Injectable()
 export class HandoffService implements OnModuleInit {
+  private readonly logger = new Logger(HandoffService.name);
   private readonly prisma = new PrismaClient();
+
+  constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit(): Promise<void> {
     await this.prisma.$executeRawUnsafe(`
@@ -102,17 +106,32 @@ export class HandoffService implements OnModuleInit {
     };
   }
 
-  async getTickets(status?: HandoffStatus) {
-    if (status) {
+  async getTickets(status?: HandoffStatus, assignedUserId?: string) {
+    const safeAssignedUserId = this.safeUuid(assignedUserId);
+
+    if (status || safeAssignedUserId) {
+      const conditions: string[] = [];
+      const params: unknown[] = [];
+
+      if (status) {
+        params.push(status);
+        conditions.push(`status = $${params.length}`);
+      }
+
+      if (safeAssignedUserId) {
+        params.push(safeAssignedUserId);
+        conditions.push(`assigned_user_id = $${params.length}::uuid`);
+      }
+
       return this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
         `SELECT id, ticket_code, conversation_id, user_id, question, handoff_reason, status, response_note,
                 source, customer_name, customer_phone, customer_email, branch_id, latest_chatbot_reply, conversation_snapshot,
                 assigned_user_id, assigned_by_user_id, assignment_source, assigned_at, contact_status,
                 created_at, updated_at
          FROM chatbot_handoff_ticket
-         WHERE status = $1
+         WHERE ${conditions.join(' AND ')}
          ORDER BY created_at DESC`,
-        status,
+        ...params,
       );
     }
 
@@ -190,6 +209,140 @@ export class HandoffService implements OnModuleInit {
       input.responseNote ?? null,
     );
 
-    return this.getTicketById(input.id);
+    const updated = await this.getTicketById(input.id);
+    if (updated) {
+      void this.publishAssignmentNotification(updated, input).catch((error) => {
+        const detail =
+          error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `publishAssignmentNotification failed for ticket=${input.id}: ${detail}`,
+        );
+      });
+    }
+
+    return updated;
+  }
+
+  private async publishAssignmentNotification(
+    ticket: Record<string, unknown>,
+    input: {
+      assignedUserId: string;
+      assignedByUserId?: string;
+      assignmentSource?: 'MANUAL' | 'ACTIVE_POS_SESSION';
+    },
+  ) {
+    const baseUrl = this.getReportingBaseUrl();
+    const ticketId =
+      typeof ticket.id === 'string' ? ticket.id : input.assignedUserId;
+    const ticketCode =
+      typeof ticket.ticket_code === 'string'
+        ? ticket.ticket_code
+        : typeof ticket.ticketCode === 'string'
+          ? ticket.ticketCode
+          : `TCK-${ticketId.slice(-6).toUpperCase()}`;
+    const customerName =
+      typeof ticket.customer_name === 'string'
+        ? ticket.customer_name
+        : typeof ticket.customerName === 'string'
+          ? ticket.customerName
+          : 'khach hang';
+    const question =
+      typeof ticket.question === 'string' ? ticket.question.trim() : '';
+    const preview =
+      question.length > 140 ? `${question.slice(0, 137)}...` : question;
+    const assignmentLabel =
+      input.assignmentSource === 'ACTIVE_POS_SESSION'
+        ? 'ca POS dang mo'
+        : 'admin';
+
+    const shouldSend = await this.shouldSendInAppAssignmentNotification(
+      baseUrl,
+      input.assignedUserId,
+    );
+    if (!shouldSend) {
+      return;
+    }
+
+    const response = await fetch(`${baseUrl}/api/notification-events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'CUSTOM',
+        channel: 'IN_APP',
+        severity: 'INFO',
+        title: `Ticket moi duoc giao: ${ticketCode}`,
+        message: `Ban vua nhan mot ticket ho tro tu ${assignmentLabel} cho ${customerName}. ${preview || 'Mo ticket de xem chi tiet va lien he khach hang.'}`,
+        recipientUserId: input.assignedUserId,
+        actorUserId: input.assignedByUserId,
+        branchId:
+          typeof ticket.branch_id === 'string'
+            ? ticket.branch_id
+            : typeof ticket.branchId === 'string'
+              ? ticket.branchId
+              : undefined,
+        sourceService: 'chatbot-service',
+        sourceModule: 'handoff',
+        sourceEntityType: 'ChatbotHandoffTicket',
+        sourceEntityId: ticketId,
+        payload: {
+          kind: 'CHATBOT_HANDOFF_ASSIGNMENT',
+          ticketId,
+          ticketCode,
+          question,
+          handoffReason:
+            typeof ticket.handoff_reason === 'string'
+              ? ticket.handoff_reason
+              : typeof ticket.handoffReason === 'string'
+                ? ticket.handoffReason
+                : null,
+          assignmentSource: input.assignmentSource ?? 'MANUAL',
+        },
+        status: 'PENDING',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`status=${response.status}`);
+    }
+  }
+
+  private async shouldSendInAppAssignmentNotification(
+    baseUrl: string,
+    userId: string,
+  ): Promise<boolean> {
+    const response = await fetch(
+      `${baseUrl}/api/notification-preferences/resolve`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          eventType: 'CUSTOM',
+          channel: 'IN_APP',
+          severity: 'INFO',
+          checkQuietHours: true,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`resolve-status=${response.status}`);
+    }
+
+    const result = (await response.json()) as { enabled?: boolean };
+    return result.enabled !== false;
+  }
+
+  private getReportingBaseUrl(): string {
+    return (
+      process.env.REPORTING_SERVICE_URL?.trim() ||
+      process.env.REPORTING_SETTING_SERVICE_URL?.trim() ||
+      this.configService.get<string>('gateway.services.reportingSetting') ||
+      'http://localhost:3004'
+    ).replace(/\/+$/, '');
   }
 }

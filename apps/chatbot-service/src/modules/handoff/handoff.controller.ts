@@ -24,7 +24,10 @@ export class HandoffController {
     @Query(new ValidationPipe({ transform: true, whitelist: true }))
     query: HandoffListQueryDto,
   ) {
-    const items = await this.handoffService.getTickets(query.status);
+    const items = await this.handoffService.getTickets(
+      query.status,
+      query.assignedUserId?.trim(),
+    );
     return { items };
   }
 
