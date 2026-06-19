@@ -27,6 +27,22 @@ const EMPLOYEE_ROLE_CODES = new Set([
   'CUSTOMER_SERVICE',
 ]);
 
+const ADMIN_USER_INCLUDE = {
+  userRoles: {
+    include: {
+      role: true,
+    },
+  },
+  branchAccesses: {
+    where: { isDefaultBranch: true },
+    orderBy: { createdAt: 'asc' as const },
+  },
+  warehouseAccesses: {
+    orderBy: { createdAt: 'asc' as const },
+    take: 1,
+  },
+} satisfies Prisma.UserInclude;
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -67,12 +83,13 @@ export class UsersService {
         skip,
         take: query.limit,
         orderBy: { createdAt: 'desc' },
+        include: ADMIN_USER_INCLUDE,
       }),
       this.prisma.user.count({ where }),
     ]);
 
     return {
-      data: data.map(this.toSafeUser),
+      data: data.map((user) => this.toAdminUser(user)),
       pagination: {
         page: query.page,
         limit: query.limit,
@@ -84,11 +101,12 @@ export class UsersService {
   async findOne(id: string) {
     const user = await this.prisma.user.findFirst({
       where: { id, deletedAt: null },
+      include: ADMIN_USER_INCLUDE,
     });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return this.toSafeUser(user);
+    return this.toAdminUser(user);
   }
 
   async create(dto: CreateUserDto) {
@@ -352,9 +370,28 @@ export class UsersService {
     }
   }
 
-  private toSafeUser(user: Prisma.UserGetPayload<Record<string, never>>) {
+  private toSafeUser<T extends { passwordHash?: string | null }>(user: T) {
     const { passwordHash: _passwordHash, ...safeUser } = user;
     return safeUser;
+  }
+
+  private toAdminUser(
+    user: Prisma.UserGetPayload<{ include: typeof ADMIN_USER_INCLUDE }>,
+  ) {
+    const safeUser = this.toSafeUser(user);
+    const primaryBranchAccess = user.branchAccesses[0];
+    const primaryWarehouseAccess = user.warehouseAccesses[0];
+
+    return {
+      ...safeUser,
+      userRoles: user.userRoles,
+      roles: user.userRoles.map((entry) => entry.role),
+      primaryRole: user.userRoles[0]?.role ?? null,
+      roleCode: user.userRoles[0]?.role?.code ?? null,
+      roleName: user.userRoles[0]?.role?.name ?? null,
+      branchId: primaryBranchAccess?.branchId ?? null,
+      warehouseId: primaryWarehouseAccess?.warehouseId ?? null,
+    };
   }
 
   // --- Profile Management ---
