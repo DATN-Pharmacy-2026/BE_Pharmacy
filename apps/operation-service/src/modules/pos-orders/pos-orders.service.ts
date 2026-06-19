@@ -22,6 +22,36 @@ import { QueryPosOrdersDto } from './dto/query-pos-orders.dto';
 import { RefundPosOrderDto } from './dto/refund-pos-order.dto';
 import { UpdatePosOrderStatusDto } from './dto/update-pos-order-status.dto';
 
+const buildProfitSnapshot = (params: {
+  quantity: number;
+  totalAmount: number;
+  unitCost: Prisma.Decimal | number | null | undefined;
+}) => {
+  if (params.unitCost === null || params.unitCost === undefined) {
+    return {
+      unitCost: null,
+      totalCost: null,
+      grossProfit: null,
+      profitMargin: null,
+    };
+  }
+
+  const revenue = new Prisma.Decimal(params.totalAmount);
+  const unitCost = new Prisma.Decimal(params.unitCost);
+  const totalCost = unitCost.mul(params.quantity);
+  const grossProfit = revenue.sub(totalCost);
+  const profitMargin = revenue.eq(0)
+    ? new Prisma.Decimal(0)
+    : grossProfit.div(revenue).mul(100);
+
+  return {
+    unitCost,
+    totalCost,
+    grossProfit,
+    profitMargin,
+  };
+};
+
 @Injectable()
 export class PosOrdersService {
   constructor(private readonly prisma: OperationPrismaService) {}
@@ -313,6 +343,13 @@ export class PosOrdersService {
               quantityAvailable: afterAvailable,
             },
           });
+          const lineTotal =
+            inputItem.quantity * inputItem.unitPrice - itemDiscount;
+          const profitSnapshot = buildProfitSnapshot({
+            quantity: inputItem.quantity,
+            totalAmount: lineTotal,
+            unitCost: inventory.unitCost,
+          });
 
           const item = await tx.pOSOrderItem.create({
             data: {
@@ -327,8 +364,8 @@ export class PosOrdersService {
               quantity: inputItem.quantity,
               unitPrice: inputItem.unitPrice,
               discountAmount: itemDiscount,
-              totalAmount:
-                inputItem.quantity * inputItem.unitPrice - itemDiscount,
+              totalAmount: lineTotal,
+              ...profitSnapshot,
             },
           });
 
@@ -358,6 +395,8 @@ export class PosOrdersService {
               batchId: inputItem.batchId,
               expiryDate: inventory.expiryDate,
               allocatedQty: inputItem.quantity,
+              unitCost: profitSnapshot.unitCost,
+              totalCost: profitSnapshot.totalCost,
               status: AllocationStatus.CONSUMED,
             },
           });
@@ -398,6 +437,12 @@ export class PosOrdersService {
 
           const ratioDiscount =
             itemDiscount * (deductedQty / inputItem.quantity);
+          const lineTotal = deductedQty * inputItem.unitPrice - ratioDiscount;
+          const profitSnapshot = buildProfitSnapshot({
+            quantity: deductedQty,
+            totalAmount: lineTotal,
+            unitCost: inventory.unitCost,
+          });
           const item = await tx.pOSOrderItem.create({
             data: {
               posOrderId: order.id,
@@ -411,7 +456,8 @@ export class PosOrdersService {
               quantity: deductedQty,
               unitPrice: inputItem.unitPrice,
               discountAmount: ratioDiscount,
-              totalAmount: deductedQty * inputItem.unitPrice - ratioDiscount,
+              totalAmount: lineTotal,
+              ...profitSnapshot,
             },
           });
 
@@ -441,6 +487,8 @@ export class PosOrdersService {
               batchId: inventory.batchId,
               expiryDate: inventory.expiryDate,
               allocatedQty: deductedQty,
+              unitCost: profitSnapshot.unitCost,
+              totalCost: profitSnapshot.totalCost,
               status: AllocationStatus.CONSUMED,
             },
           });

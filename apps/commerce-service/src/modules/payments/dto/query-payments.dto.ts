@@ -36,6 +36,11 @@ export class QueryPaymentsDto {
   @IsOptional()
   onlineOrderId?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  branchId?: string;
+
   @ApiPropertyOptional({ enum: PaymentMethod })
   @IsOptional()
   @IsEnum(PaymentMethod)

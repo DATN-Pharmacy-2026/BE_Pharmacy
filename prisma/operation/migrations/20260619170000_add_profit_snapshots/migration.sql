@@ -1,0 +1,9 @@
+ALTER TABLE "FEFOAllocation"
+ADD COLUMN "unitCost" DECIMAL(18,2),
+ADD COLUMN "totalCost" DECIMAL(18,2);
+
+ALTER TABLE "POSOrderItem"
+ADD COLUMN "unitCost" DECIMAL(18,2),
+ADD COLUMN "totalCost" DECIMAL(18,2),
+ADD COLUMN "grossProfit" DECIMAL(18,2),
+ADD COLUMN "profitMargin" DECIMAL(7,2);

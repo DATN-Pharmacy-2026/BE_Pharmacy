@@ -586,6 +586,8 @@ model FEFOAllocation {
   batchId      String            @db.Uuid
   expiryDate   DateTime
   allocatedQty Int
+  unitCost     Decimal?          @db.Decimal(18, 2)
+  totalCost    Decimal?          @db.Decimal(18, 2)
   status       AllocationStatus
   createdAt    DateTime          @default(now())
 
@@ -634,6 +636,10 @@ model POSOrderItem {
   unitPrice           Decimal   @db.Decimal(18, 2)
   discountAmount      Decimal   @db.Decimal(18, 2)
   totalAmount         Decimal   @db.Decimal(18, 2)
+  unitCost            Decimal?  @db.Decimal(18, 2)
+  totalCost           Decimal?  @db.Decimal(18, 2)
+  grossProfit         Decimal?  @db.Decimal(18, 2)
+  profitMargin        Decimal?  @db.Decimal(7, 2)
   posOrder            POSOrder  @relation(fields: [posOrderId], references: [id])
 
   @@index([productId])

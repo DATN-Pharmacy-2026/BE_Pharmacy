@@ -26,6 +26,7 @@ type AllocationPlanLine = {
   expiryDate: Date;
   quantityAvailable: number;
   allocatedQty: number;
+  unitCost: Prisma.Decimal | null;
 };
 
 @Injectable()
@@ -366,11 +367,32 @@ export class FefoService {
       },
     });
     if (duplicate) {
-      return { orderId: dto.orderId, reserved: true, duplicate: true };
+      const existingAllocations = await this.prisma.fEFOAllocation.findMany({
+        where: {
+          orderType: AllocationOrderType.ONLINE_ORDER,
+          orderId: dto.orderId,
+          status: { in: [AllocationStatus.RESERVED, AllocationStatus.PICKED] },
+        },
+        orderBy: [{ createdAt: 'asc' }],
+      });
+      return {
+        orderId: dto.orderId,
+        reserved: true,
+        duplicate: true,
+        allocations: existingAllocations,
+      };
     }
 
     return this.prisma.$transaction(async (tx) => {
       let reservedQty = 0;
+      const allocations: Array<{
+        orderItemId: string;
+        productId: string;
+        batchId: string;
+        allocatedQty: number;
+        unitCost: Prisma.Decimal | null;
+        totalCost: Prisma.Decimal | null;
+      }> = [];
       for (const item of dto.items) {
         const plan = await this.calculatePlan(
           {
@@ -415,13 +437,29 @@ export class FefoService {
               batchId: line.batchId,
               expiryDate: line.expiryDate,
               allocatedQty: line.allocatedQty,
+              unitCost: line.unitCost,
+              totalCost:
+                line.unitCost === null
+                  ? null
+                  : new Prisma.Decimal(line.unitCost).mul(line.allocatedQty),
               status: AllocationStatus.RESERVED,
             },
+          });
+          allocations.push({
+            orderItemId: item.orderItemId,
+            productId: item.productId,
+            batchId: line.batchId,
+            allocatedQty: line.allocatedQty,
+            unitCost: line.unitCost,
+            totalCost:
+              line.unitCost === null
+                ? null
+                : new Prisma.Decimal(line.unitCost).mul(line.allocatedQty),
           });
           reservedQty += line.allocatedQty;
         }
       }
-      return { orderId: dto.orderId, reserved: true, reservedQty };
+      return { orderId: dto.orderId, reserved: true, reservedQty, allocations };
     });
   }
 
@@ -528,6 +566,7 @@ export class FefoService {
         expiryDate: row.expiryDate,
         quantityAvailable: row.quantityAvailable,
         allocatedQty: alloc,
+        unitCost: row.unitCost ?? null,
       });
       remaining -= alloc;
     }

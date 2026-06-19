@@ -27,4 +27,9 @@ export class QueryUsersDto {
   @IsOptional()
   @IsEnum(UserStatus)
   status?: UserStatus;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  roleCode?: string;
 }

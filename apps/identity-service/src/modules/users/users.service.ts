@@ -38,6 +38,17 @@ export class UsersService {
     const where: Prisma.UserWhereInput = {
       deletedAt: null,
       ...(query.status ? { status: query.status } : {}),
+      ...(query.roleCode
+        ? {
+            userRoles: {
+              some: {
+                role: {
+                  code: query.roleCode.trim(),
+                },
+              },
+            },
+          }
+        : {}),
       ...(query.search
         ? {
             OR: [
@@ -449,4 +460,3 @@ export class UsersService {
     return { message: 'Default address updated successfully' };
   }
 }
-

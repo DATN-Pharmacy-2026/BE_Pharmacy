@@ -24,8 +24,8 @@ export class PaymentsController {
 
   @Get()
   @Permissions('payment.view')
-  findAll(@Query() query: QueryPaymentsDto) {
-    return this.paymentsService.findAll(query);
+  findAll(@Query() query: QueryPaymentsDto, @Req() req: Request) {
+    return this.paymentsService.findAll(query, req);
   }
 
   @Get('order/:onlineOrderId')

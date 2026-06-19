@@ -19,6 +19,13 @@ export class PaymentsService {
     return (req as Request & { user?: { id?: string } })?.user?.id;
   }
 
+  private getHeader(req: Request | undefined, key: string): string | undefined {
+    if (!req) return undefined;
+    const value = req.headers[key];
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    return undefined;
+  }
+
   private isUuid(value: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
       value,
@@ -61,12 +68,13 @@ export class PaymentsService {
     };
   }
 
-  async findAll(query: QueryPaymentsDto) {
+  async findAll(query: QueryPaymentsDto, req?: Request) {
     const {
       page = 1,
       limit = 20,
       q,
       onlineOrderId,
+      branchId,
       method,
       provider,
       status,
@@ -74,6 +82,7 @@ export class PaymentsService {
       dateTo,
     } = query;
     const search = q?.trim();
+    const branchIdFilter = branchId ?? this.getHeader(req, 'x-branch-id');
 
     const orSearch: Prisma.PaymentWhereInput[] = [];
     if (search) {
@@ -103,6 +112,13 @@ export class PaymentsService {
 
     const where: Prisma.PaymentWhereInput = {
       ...(onlineOrderId ? { onlineOrderId } : {}),
+      ...(branchIdFilter
+        ? {
+            onlineOrder: {
+              is: { branchId: branchIdFilter },
+            },
+          }
+        : {}),
       ...(method ? { method } : {}),
       ...(provider
         ? { provider: { contains: provider, mode: 'insensitive' } }
